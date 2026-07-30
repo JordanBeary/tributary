@@ -6,7 +6,7 @@ Tributary simulates the data environment of a fictional two-sided lead-generatio
 
 The trick that makes it measurable: the simulator generates every consumer with a hidden `consumer_key`, strips it from all three silos, and keeps it in a private crosswalk. Entity-resolution accuracy is scored against that ground truth — the silo unification is *provably* correct, with numbers.
 
-```
+```text
              simulation/ (local Python, seeded, --scale dial)
                   │            │            │
           ┌───────▼──┐   ┌─────▼─────┐  ┌───▼──────────┐
@@ -27,7 +27,7 @@ Full design: [docs/design.md](docs/design.md) · Calibration spec: [docs/calibra
 ## Repository map
 
 | Path | Contents |
-|---|---|
+| --- | --- |
 | `simulation/` | Consumer/lead/waterfall/marketing generators + silo fracturing (Phase 1) |
 | `infra/` | Cloud setup scripts: buckets, IAM policies, budget alarms (Phase 0) |
 | `silos/` | Loaders that deploy fractured outputs to S3 / Postgres / BigQuery (Phase 2) |
@@ -48,7 +48,7 @@ Or open in GitHub Codespaces — the devcontainer pre-installs everything.
 
 ## Status
 
-- [x] Phase 0 — repo, devcontainer, design doc, infra scripts *(cloud accounts + budget alarms: run `infra/` scripts)*
+- [x] Phase 0 — repo, devcontainer, design doc, cloud silos provisioned (S3 · Neon · BigQuery), budget alarms live
 - [ ] Phase 1 — simulation engine + calibration vs. iPinYou / LendingClub / Criteo
 - [ ] Phase 2 — silo deployment (S3, Neon, BigQuery)
 - [ ] Phase 3 — unification: dbt staging + Splink ER (target F1 ≥ 0.9)
