@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tributary"
+version = "0.1.0"
+description = "Simulated lead-marketplace silos, unification, and auction optimization (CLX portfolio project)"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=1.26",
+    "pandas>=2.1",
+    "pyarrow>=15",
+    "scipy>=1.11",
+    "faker>=24",
+    "duckdb>=1.0",
+    "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "jupyter",
+    "plotly>=5.20",
+    "dbt-duckdb>=1.8",
+    "splink>=4.0",
+    "boto3>=1.34",
+    "google-cloud-bigquery>=3.20",
+    "psycopg2-binary>=2.9",
+    "pytest>=8",
+]
+ml = [
+    "lightgbm>=4.3",
+    "scikit-learn>=1.4",
+]
+
+[tool.setuptools]
+packages = ["simulation"]

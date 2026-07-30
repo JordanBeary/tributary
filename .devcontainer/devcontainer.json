@@ -1,0 +1,22 @@
+{
+  "name": "tributary",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "features": {
+    "ghcr.io/devcontainers/features/aws-cli:1": {},
+    "ghcr.io/dhoeric/features/google-cloud-cli:1": {}
+  },
+  "postCreateCommand": "pip install -e '.[dev]'",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-toolsai.jupyter",
+        "mtxr.sqltools",
+        "mtxr.sqltools-driver-pg",
+        "innoverio.vscode-dbt-power-user",
+        "mechatroner.rainbow-csv",
+        "eamodio.gitlens"
+      ]
+    }
+  }
+}

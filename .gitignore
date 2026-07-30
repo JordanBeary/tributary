@@ -1,0 +1,32 @@
+# Secrets — never commit credentials
+.env
+*.pem
+service-account*.json
+
+# Private ground truth — the crosswalk must never enter git or the cloud
+data/private/
+**/crosswalk*
+
+# Data — raw downloads and generated outputs are reproducible, not versioned
+data/
+*.parquet
+*.csv.gz
+*.ndjson
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# dbt
+warehouse/target/
+warehouse/dbt_packages/
+warehouse/logs/
+
+# Tooling
+.DS_Store
+.duckdb
+*.duckdb.wal
