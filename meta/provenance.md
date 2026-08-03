@@ -21,12 +21,14 @@ Applied to every committed artifact:
 
 Every commit carries:
 
-```
+```text
 Provenance: H | HD | A
 Directs: <prompt-log id>        (optional — the prompt that directed this work)
 ```
 
 Design documents additionally carry a provenance line in their front matter.
+
+Commits carry **no AI co-author trailers** (`Co-Authored-By: Claude ...` or similar) — the human's standing decision (INT-010). Contribution attribution is expressed solely through the `Provenance:`/`Directs:` trailers and this ledger, which say something precise; a boilerplate signature says nothing.
 
 ## 3. Ledger
 

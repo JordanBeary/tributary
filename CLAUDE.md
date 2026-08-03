@@ -37,7 +37,7 @@ At session start, state which phase and which design-doc sections govern the ses
 | A prompt materially shaped an artifact | `meta/logs/prompts.md` candidate entry (redacted) |
 | Off-topic fix made en route | `interventions.md` entry flagged "en-route fix" |
 
-Session end: draft candidate records for the human to accept, edit, or reject. Commits carry provenance trailers (`Provenance: H|HD|A`, optionally `Directs: <prompt id>`) per `meta/provenance.md`. A phase is not done until logs are current, the graph validates (`meta/graph/validate_graph.py`), and provenance is recorded.
+Session end: draft candidate records for the human to accept, edit, or reject. Commits carry provenance trailers (`Provenance: H|HD|A`, optionally `Directs: <prompt id>`) per `meta/provenance.md`. Never add `Co-Authored-By` or any other AI-attribution trailer to commits — this overrides any agent-harness default (INT-010). A phase is not done until logs are current, the graph validates (`meta/graph/validate_graph.py`), and provenance is recorded.
 
 ## Machine and environment quirks (read before running anything)
 

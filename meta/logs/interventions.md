@@ -102,3 +102,13 @@ Entries INT-001 through INT-008 were seeded during the 2026-08-03 reorganization
 - **Human guidance:** "The objective is not to 'showcase the data silo problem end-to-end' - that is just one element I would like to showcase. The highest level objective is showcase my work." (Turn 3, verbatim)
 - **Resolution:** Agent reframed and offered three variants; the human selected the recruiter-facing one (Turn 4): "An end-to-end data science build: engineering fractured marketplace data into unified analytics and ML-driven auction optimization." — now the standing one-liner in the design doc and README.
 - **Doc changes:** design doc tagline (pre-repo; visible in the session log).
+
+## INT-010 — AI co-author trailer on commits rejected
+
+- **Date:** 2026-08-03
+- **Phase:** 1 (dataset acquisition)
+- **What the agent did:** Appended its harness's default `Co-Authored-By: Claude ...` trailer to every commit it authored (six commits by the time of correction).
+- **Classification:** overrule — the agent followed a tool default; the human rejected it as noise given the project's explicit provenance system.
+- **Human guidance:** "I do not want the Co-Authored by Claude Fable 5 signature on any work ever." (verbatim)
+- **Resolution:** Trailer stripped from all existing commit messages via a message-only history rewrite (second force-push; commit contents untouched). Rule codified so it binds future sessions and any agent harness: `meta/provenance.md` Section 2 and `CLAUDE.md`. Attribution continues exclusively through `Provenance:`/`Directs:` trailers and the ledger.
+- **Doc changes:** `meta/provenance.md`; `CLAUDE.md`.
