@@ -41,7 +41,9 @@ Project status: **Phases 0 and 0.5 complete, Phase 1 (simulation engine) next**
 
 **AWS profiles**: `tributary` (least-privilege, S3-only, single bucket — use for all daily work) and `tributary-admin` (infra only; its access key is kept **deactivated** between infra sessions, INT-005).
 
-**Not yet done**: domain purchase (Q1); Kaggle token + dataset downloads (LendingClub via Kaggle CLI, iPinYou manual, Criteo via curl — see `scripts/download_datasets.sh`); everything Phase 1+.
+**Source datasets** (downloaded 2026-08-03 to git-ignored `data/raw/`, per `scripts/download_datasets.sh`): LendingClub accepted+rejected (gzip-verified), Criteo Uplift v2.1 (gzip-verified), and the D4 iPinYou day sample — 32 files across seasons 2–3, all verified against the dataset's `files.md5`. Kaggle token lives in `~/.tributary-credentials/` (never in the repo).
+
+**Not yet done**: domain purchase (Q1); everything else Phase 1+.
 
 ## 4. Guidance for the work ahead
 
