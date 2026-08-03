@@ -1,0 +1,18 @@
+# Validates the knowledge graph on every push: node paths must exist, phases
+# must be gated, edges must be well-formed (meta/plan.md Section 5.5).
+name: validate-graph
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pyyaml
+      - run: python meta/graph/validate_graph.py

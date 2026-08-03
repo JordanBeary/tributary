@@ -1,0 +1,135 @@
+# Tributary knowledge graph — machine-readable index of the repository.
+# Load this at session start to navigate the repo cheaply.
+#
+# Node types: document, directory, phase, dataset, silo, model, decision, log-entry
+# Edge types: implements, calibrates, gates, depends-on, documents, corrected-by
+# Edges are [from, type, to] triples; both endpoints must be node ids.
+# Any structural change to the repo ships with a diff to this file in the same commit
+# (validated in CI by validate_graph.py).
+
+nodes:
+  # ── Global track: documents ──
+  - {id: readme,          type: document, path: README.md,                  title: "Router: pitch + two-track explanation"}
+  - {id: claude-md,       type: document, path: CLAUDE.md,                  title: "Agent entry point (auto-loaded)"}
+  - {id: plan,            type: document, path: meta/plan.md,               title: "Global charter and reorganization plan (adopted v0.3)"}
+  - {id: charter,         type: document, path: meta/charter.md,            title: "Global objectives, exit criterion, project history"}
+  - {id: conventions,     type: document, path: meta/conventions.md,        title: "Standing instruction set + redaction rule + trigger table"}
+  - {id: provenance,      type: document, path: meta/provenance.md,         title: "Contribution taxonomy, trailer spec, ledger"}
+  - {id: interventions,   type: log-entry, path: meta/logs/interventions.md, title: "Agent errors corrected + human guidance (INT-series)"}
+  - {id: prompts,         type: log-entry, path: meta/logs/prompts.md,      title: "Significant prompts, verbatim minus redactions (P-series)"}
+  - {id: decisions,       type: log-entry, path: meta/logs/decisions.md,    title: "ADR log (A/B/C/D/Q series)"}
+  - {id: graph-dir,       type: directory, path: meta/graph,                title: "This graph + validator"}
+
+  # ── Local track: documents ──
+  - {id: design-doc,      type: document, path: docs/design.md,             title: "Local seed: what to build (v1.1)"}
+  - {id: calibration-spec, type: document, path: docs/calibration_spec.md,  title: "Source datasets -> simulator parameters (v0.1)"}
+  - {id: project-guide,   type: document, path: project_guide.md,           title: "Local working companion: current state + guidance (v2.0)"}
+  - {id: docs-img,        type: directory, path: docs/img,                  title: "Doc assets (budget screenshots)"}
+
+  # ── Local track: code and infrastructure ──
+  - {id: simulation-pkg,  type: directory, path: simulation,                title: "Seeded generators + silo fracturing (stage contracts frozen)"}
+  - {id: infra,           type: directory, path: infra,                     title: "Cloud setup scripts: bucket, IAM, budgets"}
+  - {id: silos-dir,       type: directory, path: silos,                     title: "Silo loaders (Phase 2)"}
+  - {id: warehouse,       type: directory, path: warehouse,                 title: "dbt project: staging -> ER -> marts (Phases 3-4)"}
+  - {id: er-dir,          type: directory, path: er,                        title: "Splink pipeline + crosswalk scoring (Phase 3)"}
+  - {id: analysis,        type: directory, path: analysis,                  title: "Notebooks + dashboard exports (Phase 4)"}
+  - {id: models-dir,      type: directory, path: models,                    title: "ML training, model cards, strategy memo (Phases 5-6)"}
+  - {id: site,            type: directory, path: site,                      title: "Quarto site (Phase 7)"}
+  - {id: scripts,         type: directory, path: scripts,                   title: "Dataset download helpers"}
+  - {id: devcontainer,    type: directory, path: .devcontainer,             title: "One-click reproducible environment"}
+  - {id: ci,              type: directory, path: .github,                   title: "CI workflows (graph validation)"}
+
+  # ── Cloud silos (live resources; names per decision D3) ──
+  - {id: auction-lake,    type: silo, resource: "s3://tributary-auction-lake-jb", title: "Auction event lake (Parquet, us-east-1)"}
+  - {id: crm-postgres,    type: silo, resource: "Neon Postgres (connection in .env)", title: "CRM silo (transactional)"}
+  - {id: marketing-bq,    type: silo, resource: "tributary-jb:marketing",   title: "Marketing silo (BigQuery, US)"}
+
+  # ── Calibration datasets ──
+  - {id: ipinyou,         type: dataset, title: "iPinYou RTB seasons 2-3: bid/win-price distributions, censoring"}
+  - {id: lendingclub,     type: dataset, title: "LendingClub accepted+rejected: applicant features, funnel shape"}
+  - {id: criteo-uplift,   type: dataset, title: "Criteo Uplift: treatment/control response structure"}
+
+  # ── Phases (status in README; exit criteria in design-doc Section 9 + charter Section 2) ──
+  - {id: phase-0,   type: phase, title: "Setup & scoping (complete)"}
+  - {id: phase-0.5, type: phase, title: "Harness build (complete)"}
+  - {id: phase-1,   type: phase, title: "Simulation engine"}
+  - {id: phase-2,   type: phase, title: "Silo deployment"}
+  - {id: phase-3,   type: phase, title: "Unification: dbt + Splink ER"}
+  - {id: phase-4,   type: phase, title: "Analytics marts + dashboards"}
+  - {id: phase-5,   type: phase, title: "ML models 1-4"}
+  - {id: phase-6,   type: phase, title: "Optimization + strategy memo"}
+  - {id: phase-7,   type: phase, title: "Website & launch"}
+
+edges:
+  # Exit criteria gate phases: local (design-doc Section 9) and global (charter Section 2)
+  - [design-doc, gates, phase-0]
+  - [design-doc, gates, phase-1]
+  - [design-doc, gates, phase-2]
+  - [design-doc, gates, phase-3]
+  - [design-doc, gates, phase-4]
+  - [design-doc, gates, phase-5]
+  - [design-doc, gates, phase-6]
+  - [design-doc, gates, phase-7]
+  - [charter, gates, phase-0]
+  - [charter, gates, phase-0.5]
+  - [charter, gates, phase-1]
+  - [charter, gates, phase-2]
+  - [charter, gates, phase-3]
+  - [charter, gates, phase-4]
+  - [charter, gates, phase-5]
+  - [charter, gates, phase-6]
+  - [charter, gates, phase-7]
+
+  # What implements which phase
+  - [infra, implements, phase-0]
+  - [devcontainer, implements, phase-0]
+  - [graph-dir, implements, phase-0.5]
+  - [ci, implements, phase-0.5]
+  - [simulation-pkg, implements, phase-1]
+  - [scripts, implements, phase-1]
+  - [silos-dir, implements, phase-2]
+  - [warehouse, implements, phase-3]
+  - [er-dir, implements, phase-3]
+  - [analysis, implements, phase-4]
+  - [models-dir, implements, phase-5]
+  - [models-dir, implements, phase-6]
+  - [site, implements, phase-7]
+
+  # Calibration lineage
+  - [ipinyou, calibrates, simulation-pkg]
+  - [lendingclub, calibrates, simulation-pkg]
+  - [criteo-uplift, calibrates, simulation-pkg]
+  - [calibration-spec, documents, simulation-pkg]
+
+  # Silo lineage: loaders depend on the simulator; silos are documented by infra
+  - [silos-dir, depends-on, simulation-pkg]
+  - [infra, documents, auction-lake]
+  - [infra, documents, marketing-bq]
+  - [silos-dir, documents, crm-postgres]
+  - [warehouse, depends-on, auction-lake]
+  - [warehouse, depends-on, crm-postgres]
+  - [warehouse, depends-on, marketing-bq]
+  - [er-dir, depends-on, warehouse]
+  - [analysis, depends-on, warehouse]
+  - [models-dir, depends-on, warehouse]
+  - [site, depends-on, analysis]
+  - [site, depends-on, models-dir]
+
+  # Documentation edges
+  - [readme, documents, design-doc]
+  - [claude-md, documents, conventions]
+  - [plan, documents, charter]
+  - [plan, documents, conventions]
+  - [provenance, documents, design-doc]
+  - [project-guide, documents, simulation-pkg]
+  - [docs-img, documents, phase-0]
+  - [prompts, documents, design-doc]
+  - [decisions, documents, project-guide]
+
+  # Corrections (INT-001: fictional naming reversed across these artifacts)
+  - [design-doc, corrected-by, interventions]
+  - [calibration-spec, corrected-by, interventions]
+  - [readme, corrected-by, interventions]
+  - [project-guide, corrected-by, interventions]
+  - [auction-lake, corrected-by, interventions]
+  - [marketing-bq, corrected-by, interventions]
