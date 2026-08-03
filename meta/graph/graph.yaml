@@ -18,6 +18,7 @@ nodes:
   - {id: interventions,   type: log-entry, path: meta/logs/interventions.md, title: "Agent errors corrected + human guidance (INT-series)"}
   - {id: prompts,         type: log-entry, path: meta/logs/prompts.md,      title: "Significant prompts, verbatim minus redactions (P-series)"}
   - {id: decisions,       type: log-entry, path: meta/logs/decisions.md,    title: "ADR log (A/B/C/D/Q series)"}
+  - {id: session-log-phase0, type: log-entry, path: meta/logs/sessions/2026-07-30_phase0_session.md, title: "Verbatim session log: Phase 0 build (prompts + responses, redactions marked)"}
   - {id: graph-dir,       type: directory, path: meta/graph,                title: "This graph + validator"}
 
   # ── Local track: documents ──
@@ -124,6 +125,7 @@ edges:
   - [project-guide, documents, simulation-pkg]
   - [docs-img, documents, phase-0]
   - [prompts, documents, design-doc]
+  - [session-log-phase0, documents, phase-0]
   - [decisions, documents, project-guide]
 
   # Corrections (INT-001: fictional naming reversed across these artifacts)
