@@ -70,6 +70,13 @@ Proposals to be validated or revised in the Phase 1 profiling notebooks.
 - **Context:** Bucket and dataset carried the fictional name; both were empty, so recreation was cheap (the window the plan identified). Naming options: plan's suggestion (short dataset name, project provides context) versus prefixing everything.
 - **Decision:** Plan's suggestion — S3 bucket `tributary-auction-lake-jb`, BigQuery dataset `marketing` (in project `tributary-jb`, per D2). Old bucket and dataset deleted after verification; IAM policy for the `tributary` user re-scoped to the new bucket (B5).
 
+### D4 — iPinYou acquisition: Kaggle mirror, sampled days (resolves Q5)
+
+- **Date:** 2026-08-03 · **Decider:** human (source) + agent (sampling detail) · **Resolves:** Q5
+- **Context:** The academic mirror (data.computational-advertising.org) was unreachable; the human located the canonical `ipinyou.contest.dataset` tree mirrored on Kaggle (`lastsummer/ipinyou`, ~6.3 GB compressed). The calibration spec needs distribution shapes, not the full ~35 GB uncompressed corpus.
+- **Decision:** Download from the Kaggle mirror, sampled per day: season 2 (`training2nd`) gets a weekend day plus two weekdays (20130608, 20130610, 20130612); season 3 (`training3rd`) gets its weekend plus three weekdays (20131019–20131023, whose per-day files are much smaller). All four record types (bid/imp/clk/conv) per sampled day, plus README/checksums/lookup tables. ~1.5 GB compressed total. Encoded in `scripts/download_datasets.sh` so the sample is reproducible.
+- **Consequence:** If a profiling QA gate later shows the sample is unrepresentative (e.g., day-of-week price effects), widen the day list in the script — the fitting notebooks re-run unchanged.
+
 ## Q-series — Open questions (parked, non-blocking)
 
 | # | Question | Status |
@@ -78,4 +85,4 @@ Proposals to be validated or revised in the Phase 1 profiling notebooks.
 | Q2 | Repo visibility | **Resolved by D1** |
 | Q3 | All-AWS variant (A3) | Closed unless target roles shift |
 | Q4 | Demo a PR-based workflow for portfolio optics (A6) | Open |
-| Q5 | iPinYou sampling strategy — full seasons 2–3 (~35 GB) vs. a 3–5 day sample per season | Open; spec currently assumes a sample is sufficient |
+| Q5 | iPinYou sampling strategy — full seasons 2–3 (~35 GB) vs. a 3–5 day sample per season | **Resolved by D4** (Kaggle mirror, day sample) |
