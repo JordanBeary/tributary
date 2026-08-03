@@ -1,4 +1,4 @@
-"""Run the CLX simulation pipeline.
+"""Run the marketplace simulation pipeline.
 
 Usage:
     python -m simulation --scale 0.01 --seed 42

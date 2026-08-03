@@ -1,4 +1,4 @@
-"""CLX marketplace simulator.
+"""Lead-marketplace simulator.
 
 Pipeline (design.md §3.2):
     generate_consumers -> generate_leads -> run_waterfall

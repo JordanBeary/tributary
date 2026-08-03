@@ -4,14 +4,14 @@
 set -euo pipefail
 
 PROJECT="${GCP_PROJECT_ID:?Set GCP_PROJECT_ID}"
-DATASET="${BQ_MARKETING_DATASET:-clx_marketing}"
+DATASET="${BQ_MARKETING_DATASET:-marketing}"
 LOCATION="${BQ_LOCATION:-US}"
 
 gcloud config set project "$PROJECT"
 gcloud services enable bigquery.googleapis.com
 
 echo ">> Creating BigQuery dataset ${DATASET}"
-bq --location="$LOCATION" mk --dataset --description "CLX marketing silo (ESP exports)" "${PROJECT}:${DATASET}"
+bq --location="$LOCATION" mk --dataset --description "Marketing silo (ESP exports)" "${PROJECT}:${DATASET}"
 
 echo ">> Setting up application-default credentials for local clients"
 gcloud auth application-default login

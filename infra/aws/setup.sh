@@ -4,7 +4,7 @@
 # least-privilege user with iam_policy.json and use THAT for daily work.
 set -euo pipefail
 
-BUCKET="${TRIBUTARY_S3_BUCKET:?Set TRIBUTARY_S3_BUCKET (e.g. clx-auction-lake-jb42)}"
+BUCKET="${TRIBUTARY_S3_BUCKET:?Set TRIBUTARY_S3_BUCKET (e.g. tributary-auction-lake-jb42)}"
 REGION="${AWS_REGION:-us-east-1}"
 ALERT_EMAIL="${ALERT_EMAIL:?Set ALERT_EMAIL for budget notifications}"
 
