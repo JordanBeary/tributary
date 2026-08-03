@@ -3,12 +3,13 @@
 Agent errors corrected, with the specific human guidance that corrected them (conventions, instruction 3). Schema per entry: id, date, phase, what the agent did or proposed, classification, the human guidance, resolution, and the resulting doc change.
 
 Classification values:
+
 - `misread` — the agent misread a clear document
 - `ambiguity` — the document was ambiguous and got clarified
 - `overrule` — the human overruled a defensible agent choice
 - `en-route fix` — something off-topic found and fixed along the way (instruction 6)
 
-Entries INT-001 through INT-008 were seeded during the 2026-08-03 reorganization migration (`meta/plan.md` Section 8).
+Entries INT-001 through INT-008 were seeded during the 2026-08-03 reorganization migration (`meta/plan.md` Section 8); INT-009 was backfilled from the founding-session log when it was committed.
 
 ---
 
@@ -91,3 +92,13 @@ Entries INT-001 through INT-008 were seeded during the 2026-08-03 reorganization
 - **Human guidance:** Standing instructions 9 and 12; plan Section 8 item 7, human-adopted.
 - **Resolution:** Global exit criterion added to every phase (logs current, graph validates, provenance recorded — `meta/charter.md` Section 2). The harness build recorded as Phase 0.5 in the README status list, completed by this migration.
 - **Doc changes:** design.md v1.1 roadmap; README status list.
+
+## INT-009 — Design-doc tagline overweighted the silo problem `[backfill]`
+
+- **Date:** 2026-07 (founding chat, Turns 3–4; backfilled 2026-08-03 from `sessions/2026-07_founding_design_session.md`)
+- **Phase:** design (pre-Phase 0)
+- **What the agent did:** Led the freshly drafted design doc with the tagline "A unified lead-marketplace analytics & ML optimization platform, built to showcase the data silo problem end-to-end" — elevating one showcase element to the project's stated objective.
+- **Classification:** misread — the brief (P-002) named organize/store, analyze, and ML-strategy as the objective, with the silo problem as something to showcase "in some way".
+- **Human guidance:** "The objective is not to 'showcase the data silo problem end-to-end' - that is just one element I would like to showcase. The highest level objective is showcase my work." (Turn 3, verbatim)
+- **Resolution:** Agent reframed and offered three variants; the human selected the recruiter-facing one (Turn 4): "An end-to-end data science build: engineering fractured marketplace data into unified analytics and ML-driven auction optimization." — now the standing one-liner in the design doc and README.
+- **Doc changes:** design doc tagline (pre-repo; visible in the session log).

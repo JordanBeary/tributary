@@ -8,23 +8,33 @@ Entry status values: `verbatim` (exact text, redactions marked) or `summary — 
 
 ## P-001 — Dataset scouting (Stage 0 founding prompt)
 
-- **Date:** 2026-07 (founding chat: "Finding similar project datasets online")
-- **Status:** summary — verbatim pending human backfill from the founding chat
-- **Content (summary):** Asked for public datasets similar to the data the author works with professionally — lead-generation marketplace auctions. Materially shaped: the calibration triad (iPinYou RTB, LendingClub, Criteo Uplift) recommended in response.
-- **Shaped:** `docs/design.md` Section 3.1; `docs/calibration_spec.md`.
+- **Date:** 2026-07 (founding chat; verbatim log at `sessions/2026-07_founding_design_session.md`, Turn 1)
+- **Status:** verbatim (backfilled 2026-08-03 from the session log)
+- **Content:**
+  > Can you help me find a project dataset online that is similar to the data that I work with?
+  (In the logged session context, this question is preceded by the standing instruction set — see P-003 for that text and a note on how it was rendered.)
+- **Shaped:** the calibration triad (iPinYou RTB, LendingClub, Criteo Uplift) recommended in response; `docs/design.md` Section 3.1; `docs/calibration_spec.md`.
 
 ## P-002 — The full design brief (Stage 1 founding prompt)
 
-- **Date:** 2026-07 (same founding chat)
-- **Status:** summary — verbatim pending human backfill from the founding chat
-- **Content (summary):** Set the complete project brief: a portfolio project resembling the day job, covering data organization and storage, analytics, and ML optimization strategy; an explicit request to showcase the data silo problem via simulated data with imposed unifying keys; cloud storage/read/write cost analysis; a VS Code-to-cloud workflow explanation; a PM-voice roadmap; and a public site doubling as a professional profile. The "impose unifying keys on simulated data" idea is the human seed of the hidden-crosswalk mechanism.
-- **Shaped:** `docs/design.md` v1.0 in its entirety (provenance HD).
+- **Date:** 2026-07 (same founding chat, Turn 2 of the session log)
+- **Status:** verbatim (backfilled 2026-08-03 from the session log)
+- **Content:**
+  > Yes, my goal is a portfolio project that resembles my day job. Help me sketch out a project design where the objective is to organize and store data, analyze, and strategize machine learning optimization.
+  >
+  > If storing in a cloud environment, what would the costs associated with storage/read/write be? I would like to showcase the data silo problem in some way -  can we create simulated data based on the real data you suggested and impose/add unifying keys on the data to connect them all? I will be connect to the data via VS Code, how does that work if its hosted on cloud?
+  >
+  > Include a project roadmap as if I am a data science project manager.
+  >
+  > I would like to host the project on a public website. The site will act as a personal profile containing resume, cover letter style description of who I am/what I do/how I add value to any company, and show this project.
+- **Shaped:** `docs/design.md` v1.0 in its entirety (provenance HD). The "impose/add unifying keys" idea is the human seed of the hidden-crosswalk mechanism.
 
 ## P-003 — The standing instruction set (Stage 2 reframing)
 
 - **Date:** 2026-07/08 (project instructions in the chat environment where `meta/plan.md` was drafted)
-- **Status:** verbatim (restated in full in `meta/conventions.md` Section 1)
+- **Status:** verbatim — human-typed form in `sessions/2026-07_founding_design_session.md` Turn 1; normative numbered restatement in `meta/conventions.md` Section 1
 - **Content:** The twelve standing instructions — quality over development cost; contribution transparency; intervention log; no emojis; no fictional names; fix what looks off; organize and index for agents; comment code; the harness is the exhibit; honesty over flash; robust design document as the seed; living design doc with flagged interventions.
+- **Rendering note:** the session log displays the instruction set inside Turn 1 because Claude Projects inject the project instructions into the conversation context; the log's own closing note records that the no-fictional-names instruction postdates the Turn-2 design doc, consistent with the charter's Stage-2 timeline.
 - **Shaped:** The entire global track. This is the most impactful steering input the project has received: it redefined the working method as the primary exhibit and triggered the reorganization.
 
 ## P-004 — Plan adoption and conflict review (Stage 3)
