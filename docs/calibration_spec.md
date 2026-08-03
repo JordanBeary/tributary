@@ -1,6 +1,7 @@
 # Calibration Spec — Source Datasets → Simulator Parameters
 
-Status: Draft v0.1 · Companion to [design.md](design.md) §3
+Status: v0.1 · Written against design.md v1.1, Section 3 · Changes cite trigger ids per `../meta/plan.md` Section 7
+Provenance: A — agent-proposed quantitative assumptions (decision log C1–C8), to be validated in the Phase 1 profiling notebooks
 
 This spec defines, parameter by parameter, how the three public datasets drive the simulator. Every simulator parameter must trace to either (a) a fitted distribution from a source dataset, or (b) an explicitly declared design assumption. Calibration notebooks in `analysis/profiling/` must reproduce every fit and emit the side-by-side QA plots referenced in the design doc's risk register.
 
@@ -15,7 +16,7 @@ This spec defines, parameter by parameter, how the three public datasets drive t
 **Drives:** consumer credit features, application features, and the lead quality score that conditions the auction.
 
 | Simulator parameter | Source field(s) | Fitting method |
-|---|---|---|
+| --- | --- | --- |
 | Loan amount marginal | `loan_amnt` | Empirical quantiles (1000-point inverse-CDF lookup) |
 | Purpose mix | `purpose` | Categorical frequencies, top 8 + "other" |
 | Employment length | `emp_length` | Categorical frequencies (ordinal buckets) |
@@ -36,8 +37,8 @@ This spec defines, parameter by parameter, how the three public datasets drive t
 **Drives:** buyer valuation landscape, bid participation, win/censoring dynamics.
 
 | Simulator parameter | Source signal | Fitting method |
-|---|---|---|
-| Winning-price landscape | `paying_price` in impression logs | Fit lognormal (μ, σ) per advertiser-vertical group; map the *shape* (σ, tail behavior) to CLX tiers, rescaling μ to lead-market price points (tier-6 floor ≈ $2 … tier-1 clearing ≈ $120 — design assumption, documented) |
+| --- | --- | --- |
+| Winning-price landscape | `paying_price` in impression logs | Fit lognormal (μ, σ) per advertiser-vertical group; map the *shape* (σ, tail behavior) to the marketplace's tiers, rescaling μ to lead-market price points (tier-6 floor ≈ $2 … tier-1 clearing ≈ $120 — design assumption, documented) |
 | Valuation ~ quality coupling | `paying_price` vs. CTR-proxy features | Regress log price on predicted CTR decile; the fitted slope becomes the elasticity of buyer valuation w.r.t. lead quality `q` |
 | Bidders per auction (2–5 per tier) | bid density across season files | Empirical distribution of competing bids per auction, truncated to 2–5 |
 | Bid/no-bid participation rate | bid vs. impression volume ratios | Per-buyer participation probability ~ Beta fit to observed rates |
@@ -52,7 +53,7 @@ This spec defines, parameter by parameter, how the three public datasets drive t
 **Drives:** campaign treatment structure and the (small, realistic) causal effect on application probability.
 
 | Simulator parameter | Source signal | Fitting method |
-|---|---|---|
+| --- | --- | --- |
 | Treatment/holdout split | `treatment` flag | Match Criteo's ~85/15 treated/control ratio |
 | Baseline response rate | `conversion` in control | Control-group conversion rate → baseline application probability for messaged consumers |
 | True uplift effect | treated − control conversion | Absolute uplift ≈ +0.1–0.3pp (Criteo-scale, i.e. *small*); implemented as an additive shift on application probability, heterogeneous by consumer engagement segment |
@@ -67,7 +68,7 @@ This spec defines, parameter by parameter, how the three public datasets drive t
 Not calibrated to a dataset — these are the §2.3 design dials, listed here so they live in one place:
 
 | Dial | Default | Range to tune |
-|---|---|---|
+| --- | --- | --- |
 | Duplicate-consumer rate | 8% | 5–12% — tune until ER F1 lands in 0.85–0.95 |
 | Duplicate corruption mix | nickname 40% / email typo 30% / new phone 20% / all 10% | — |
 | Orphaned auction events | 5% | 3–8% |

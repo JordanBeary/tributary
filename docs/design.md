@@ -2,13 +2,14 @@
 
 **An end-to-end data science build: engineering fractured marketplace data into unified analytics and ML-driven auction optimization.**
 
-Author: [Your Name] · Role: Data Science Project Manager / Lead DS · Status: Design v1.0
+Author: Jordan Beary · Role: Data Science Project Manager / Lead DS · Status: v1.1 (changelog in Section 13) · Companion: calibration_spec.md v0.1
+Provenance: HD — drafted by the agent from the author's design brief (prompt P-002 in `../meta/logs/prompts.md`); the silo-simulation-with-hidden-crosswalk concept is jointly attributable (author's seed, agent's elaboration)
 
 ---
 
 ## 1. Executive Summary
 
-Tributary is a self-contained portfolio project that simulates the data environment of a fictional two-sided lead-generation marketplace — **Cascadia Lead Exchange (CLX)** — which sells personal-loan leads to lender networks through a sequential waterfall auction. The project demonstrates the full data science lifecycle:
+Tributary is a self-contained portfolio project that simulates the data environment of a fictional two-sided lead-generation marketplace — referred to throughout as *the simulated marketplace* or *the exchange* — which sells personal-loan leads to lender networks through a sequential waterfall auction. This document is the seed of the project's *local* track; the project's primary objective, the working method itself, is defined in [../meta/charter.md](../meta/charter.md). The project demonstrates the full data science lifecycle:
 
 1. **Simulate** realistic operational data grounded in three public datasets (iPinYou RTB, LendingClub loans, Criteo Uplift), deliberately fractured into three incompatible data silos.
 2. **Store** each silo in a different cloud system (object storage, transactional Postgres, analytical warehouse), mirroring how silos actually arise in companies.
@@ -19,22 +20,22 @@ Tributary is a self-contained portfolio project that simulates the data environm
 
 Total cash cost target: **under $5/month** during development, ~$15/year steady-state (domain name only), by designing around cloud free tiers.
 
-> **⚠️ Confidentiality note:** Because this project is public, everything is fictionalized. CLX is not your employer; all volumes, tier structures, buyer names, prices, and problem statements are invented or derived from public datasets. Do not reuse proprietary numbers, internal system names, or verbatim descriptions of your employer's auction mechanics. The scenario should be *inspired by* the industry, not a copy of your day job.
+> **Confidentiality note:** Because this project is public, everything is fictionalized. The simulated marketplace is not your employer; all volumes, tier structures, buyer identifiers, prices, and problem statements are invented or derived from public datasets. Do not reuse proprietary numbers, internal system names, or verbatim descriptions of your employer's auction mechanics. The scenario should be *inspired by* the industry, not a copy of your day job. Per the no-fictional-names convention, the marketplace is deliberately unnamed; simulated buyers use structured identifiers (e.g. `buyer_t2_004`).
 
 ---
 
 ## 2. The Scenario & The Silo Problem
 
-### 2.1 Fictional company
+### 2.1 The simulated marketplace
 
-**Cascadia Lead Exchange (CLX)** operates a marketplace for personal-loan leads. Consumers submit loan applications through CLX-owned landing pages; each application becomes a *lead* that is offered to lender networks through a 6-tier sequential waterfall auction. Buyers in higher tiers see the lead first at higher floor prices; unsold leads cascade downward.
+**The exchange** operates a marketplace for personal-loan leads. Consumers submit loan applications through marketplace-owned landing pages; each application becomes a *lead* that is offered to lender networks through a 6-tier sequential waterfall auction. Buyers in higher tiers see the lead first at higher floor prices; unsold leads cascade downward.
 
 ### 2.2 How the silos arose (the narrative you'll tell)
 
-Like most real companies, CLX's silos are an accident of organizational history:
+Like most real companies' silos, the exchange's are an accident of organizational history:
 
 | Silo | Owner (fictional) | System | Why it's separate |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | **Auction Platform** | Engineering | Event logs → S3 data lake (Parquet) | Built by platform engineers for operational logging, not analytics |
 | **Lead CRM** | Sales Ops | PostgreSQL (transactional) | Bought/configured by a different team; row-level CRUD workloads |
 | **Marketing Cloud** | Growth Marketing | Third-party ESP, data exported to BigQuery | SaaS vendor; data only available as scheduled exports |
@@ -63,7 +64,7 @@ The simulator generates every consumer with a true `consumer_key`, then **strips
 ### 3.1 Public datasets used as statistical ground truth
 
 | Dataset | What it contributes | Where |
-|---|---|---|
+| --- | --- | --- |
 | **iPinYou RTB** (seasons 2–3) | Bid/win-price distributions, auction event structure, CTR/CVR base rates, censoring dynamics (you only observe the winning price when you win) | data.computational-advertising.org |
 | **LendingClub accepted + rejected loans** | Personal-loan applicant features (amount, purpose, employment length, DTI, FICO band, state), accept/reject funnel shape | Kaggle: `wordsforthewise/lending-club` |
 | **Criteo Uplift** | Treatment/control response structure for the marketing silo (realistic uplift signal size — small!) | Criteo AI Lab |
@@ -87,12 +88,12 @@ generate_consumers → generate_leads → run_waterfall → generate_marketing �
 ### 3.3 Target volumes & sizes
 
 | Silo | Grain | Rows | On-disk size (compressed) |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Auction (Parquet on S3) | event | ~9M | ~3–5 GB |
 | CRM (Postgres) | lead | ~2.4M | ~0.4 GB (trimmed to fit free tier) |
 | Marketing (BigQuery) | message | ~4M | ~1 GB |
 | Unified warehouse (derived) | mixed | — | ~3–4 GB |
-| **Total cloud footprint** | | | **~8–10 GB** |
+| **Total cloud footprint** |  |  | **~8–10 GB** |
 
 Scale is a dial: the simulator takes `--scale` so you can develop at 1% locally and deploy at 100%.
 
@@ -160,7 +161,7 @@ Cloud data cost has four levers — this project touches all four, which itself 
 ### 5.2 Line-item estimates at project scale (~10 GB total)
 
 | Item | Unit price | Project usage | Monthly cost |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | S3 Standard storage | $0.023/GB-mo (first 50 TB) | ~6 GB (raw + lake) | **$0.14** |
 | S3 PUT/COPY/POST/LIST | $0.005 per 1,000 | ~5K writes (initial load + reruns) | **$0.03** |
 | S3 GET | $0.0004 per 1,000 | ~500K reads (DuckDB scans, dev) | **$0.20** |
@@ -169,7 +170,7 @@ Cloud data cost has four levers — this project touches all four, which itself 
 | BigQuery on-demand queries | ~$6.25/TB scanned, **first 1 TiB/mo free** | ~50–200 GB scanned | **$0.00** |
 | Neon/Supabase Postgres | Free tier (~0.5 GB storage) | CRM trimmed to fit | **$0.00** |
 | Optional: EC2 spot for ML training | ~$0.03–0.09/hr (t3/g4dn spot) | ~20 hrs/mo | **$1–2** (or $0: train locally/Colab) |
-| **Total (recommended path)** | | | **≈ $0.50–3/month** |
+| **Total (recommended path)** |  |  | **≈ $0.50–3/month** |
 
 Notes that make you sound like you've done this before:
 
@@ -196,7 +197,7 @@ Key mental model: **your code runs where you launch it; the cloud is reached ove
    - GCP: `gcloud auth application-default login` (browser OAuth flow; credentials cached locally). The BigQuery Python client picks it up automatically.
    - Postgres: a connection string (`postgresql://user:pass@host/db`) kept in a `.env` file (git-ignored) loaded with `python-dotenv`.
 2. **Query from anywhere in VS Code:**
-   - Notebooks (Jupyter extension) → `duckdb.sql("SELECT ... FROM read_parquet('s3://clx-auction-lake/events/date=*/**.parquet')")`
+   - Notebooks (Jupyter extension) → `duckdb.sql("SELECT ... FROM read_parquet('s3://tributary-auction-lake-jb/events/date=*/**.parquet')")`
    - SQL files → **SQLTools** extension with Postgres + BigQuery drivers gives you connection explorer, autocomplete, and result grids inside VS Code.
    - dbt → **dbt Power User** extension: compile, run, test, and view lineage without leaving the editor.
 3. **Recommended extensions:** Python, Jupyter, SQLTools (+ drivers), dbt Power User, AWS Toolkit, Rainbow CSV, GitLens.
@@ -246,7 +247,7 @@ Structure the analysis as **before vs. after unification** — this makes the si
 Ordered by increasing sophistication; each model gets a one-page model card on the site.
 
 | # | Model | Technique | Business question |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 1 | Sale propensity | Gradient boosting (LightGBM), calibrated | Which leads will sell, and at which tier? |
 | 2 | Winning-price landscape | **Censored regression** (Tobit / survival framing) — you only observe the clearing price on sales | What would buyers pay? (foundation for pricing) |
 | 3 | Reserve/floor optimization | Counterfactual simulation over the calibrated landscape; grid + Bayesian optimization of tier floors | What floor schedule maximizes expected EPL? |
@@ -256,7 +257,7 @@ Ordered by increasing sophistication; each model gets a one-page model card on t
 
 The censoring in #2 and the OPE in #6 mirror genuinely hard problems in auction data science — they signal senior-level judgment far more than another CTR model.
 
-Strategy deliverable: a **3-page "Optimization Strategy Memo"** written for a fictional CLX exec team — expected EPL lift, risk register, rollout/gating plan, and what you'd A/B test first. This is the artifact that shows DS *management*, not just modeling.
+Strategy deliverable: a **3-page "Optimization Strategy Memo"** written for the marketplace's (simulated) exec team — expected EPL lift, risk register, rollout/gating plan, and what you'd A/B test first. This is the artifact that shows DS *management*, not just modeling.
 
 ---
 
@@ -265,8 +266,9 @@ Strategy deliverable: a **3-page "Optimization Strategy Memo"** written for a fi
 Assumes ~8–10 focused hours/week; ~14 weeks total. Phases gate on exit criteria, not dates.
 
 | Phase | Wks | Focus | Key deliverables | Exit criteria |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | 0 | 1 | Setup & scoping | Repo + devcontainer; cloud accounts; IAM; budget alarms; this design doc committed | All clouds reachable from VS Code; $10 budget alerts live |
+| 0.5 | 1 | Harness build | `meta/` (charter, conventions, provenance, logs, knowledge graph); `CLAUDE.md`; naming and identifier corrections | Graph validates in CI; logs seeded; provenance backfilled |
 | 1 | 2–3 | Simulation engine | `simulation/` package; calibration notebooks vs. iPinYou/LendingClub/Criteo; hidden crosswalk | 1% and 100% scale runs reproducible from one seeded command; distribution QA passes |
 | 2 | 1 | Silo deployment | S3 lake (partitioned Parquet); Neon Postgres loaded; BigQuery marketing dataset | Each silo queryable from VS Code; silo audit memo drafted |
 | 3 | 2 | Unification | dbt staging models; Splink ER pipeline; reconciliation scorecard | ER F1 ≥ 0.9 vs. crosswalk; >95% auction events consumer-joinable |
@@ -275,10 +277,12 @@ Assumes ~8–10 focused hours/week; ~14 weeks total. Phases gate on exit criteri
 | 6 | 1–2 | Optimization & strategy | Floor-price simulation; bandit experiment; Strategy Memo | Simulated EPL lift quantified with uncertainty bands |
 | 7 | 2 | Website & launch | Site live: profile, resume, case study, dashboards, repo | Domain live; Lighthouse ≥ 90; case study reviewed by 2 peers |
 
+**Global exit criterion (every phase, in addition to the table above):** a phase is not done until `meta/logs/` is current for the phase, `meta/graph/graph.yaml` validates, and provenance is recorded for the phase's artifacts. See [../meta/charter.md](../meta/charter.md) Section 2.
+
 **Risk register (top 5):**
 
 | Risk | Likelihood | Mitigation |
-|---|---|---|
+| --- | --- | --- |
 | Scope creep (this doc is ambitious) | High | Phases 5–6 are cuttable to models 1–2 only; site ships after Phase 4 regardless |
 | Synthetic data too clean → trivial ER | Medium | Pathology injection is parameterized; tune until ER F1 lands in 0.85–0.95, not 1.0 |
 | Free-tier limits shift | Medium | Scale dial (§3.3); Postgres silo is deliberately the smallest |
@@ -308,6 +312,8 @@ yourname.com
 │   ├── Cost engineering: the $3/month architecture + 100× scale analysis
 │   ├── Dashboards (embedded)
 │   ├── ML & Strategy Memo
+│   ├── "How this was built": the human-directs-agents working method,
+│   │       generated from meta/ (charter, interventions, provenance)
 │   └── "Run it yourself": Codespaces badge + repo link
 └── /writing     (optional) short posts: censored price modeling, FinOps for DS, etc.
 ```
@@ -345,3 +351,14 @@ tributary/
 2. Download iPinYou (seasons 2–3), LendingClub (accepted + rejected), Criteo Uplift; run profiling notebooks (Phase 1 start).
 3. Write the calibration spec: which distributions from each source dataset drive which simulator parameters.
 4. Stand up the repo with devcontainer and this document as `docs/design.md`.
+
+---
+
+## 13. Changelog
+
+Per-document versioning (`../meta/plan.md` Section 7): every change cites the intervention or decision id that triggered it.
+
+| Version | Date | Changes | Trigger |
+| --- | --- | --- | --- |
+| v1.0 | 2026-07 | Initial design, drafted from the author's brief in the founding chat | P-002 |
+| v1.1 | 2026-08-03 | Fictional company name replaced with descriptive terms; confidentiality-note emoji removed; author placeholder resolved; example S3 path corrected to the real bucket; provenance front matter added; reframing sentence linking `meta/charter.md`; Phase 0.5 and the global exit criterion added to the roadmap; "How this was built" page added to the site plan; companion-version discipline adopted | INT-001, INT-003, INT-004, INT-007, INT-008; D1–D3 |
