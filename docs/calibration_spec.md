@@ -1,6 +1,6 @@
 # Calibration Spec — Source Datasets → Simulator Parameters
 
-Status: v0.3 · Written against design.md v1.1, Section 3 · Changes cite trigger ids per `../meta/plan.md` Section 7 (changelog in Section 6)
+Status: v0.4 · Written against design.md v1.1, Section 3 · Changes cite trigger ids per `../meta/plan.md` Section 7 (changelog in Section 6)
 Provenance: A — agent-proposed quantitative assumptions (decision log C1–C8), to be validated in the Phase 1 profiling notebooks
 
 This spec defines, parameter by parameter, how the three public datasets drive the simulator. Every simulator parameter must trace to either (a) a fitted distribution from a source dataset, or (b) an explicitly declared design assumption. Calibration notebooks in `analysis/profiling/` must reproduce every fit and emit the side-by-side QA plots referenced in the design doc's risk register.
@@ -11,6 +11,7 @@ This spec defines, parameter by parameter, how the three public datasets drive t
 - **QA gates**: each fitted distribution gets a quantitative acceptance check (KS distance, quantile table, or rate comparison) in its profiling notebook. Gates listed per section below.
 - Randomness: all sampling is driven by a single seed via `numpy.random.default_rng(seed)` threaded through `SimConfig`.
 - **Data-mutation ledger** (v0.2, INT-011): every profiling notebook records each operation that alters data — row drops, sentinel-to-NaN coercion, winsorization clips (with bounds), recategorization, imputation — with row counts, disposition, and rationale. The ledger is displayed in the executed notebook and embedded in the emitted params JSON under `metadata.data_mutations`, so each artifact carries its own cleaning provenance. Sentinel values (e.g., accepted `dti = 999`, the rejected file's negative DTI) are excluded from marginals, never winsorized into them; winsorized rows remain, clipped to stored bounds.
+- **Narrated EDA companion** (v0.4, INT-012): every source dataset gets a read-only `*_eda.ipynb` alongside its fitting notebook, written to teach a reader who has never seen the data: what the dataset is and how it was generated (mechanics, observability limits), sample rows, a data dictionary (column, type, distinct values, nulls, definition), descriptive statistics with their semantics, collinearity and categorical nesting structure, known data quirks, declared assumptions, and the business implications for this project. EDA notebooks emit no artifacts and mutate nothing; foundational facts they establish are cited by the fitting notebooks rather than re-derived.
 
 ## 1. LendingClub (accepted + rejected) → consumers & leads
 
@@ -81,6 +82,9 @@ Not calibrated to a dataset — these are the §2.3 design dials, listed here so
 - [x] `analysis/profiling/01_lendingclub.ipynb` — fits §1, writes `simulation/params/lendingclub_marginals.json` + copula matrix (all QA gates pass, 2026-08-03)
 - [x] `analysis/profiling/02_ipinyou.ipynb` — fits §2, writes `simulation/params/auction_landscape.json` (all QA gates pass, 2026-08-04)
 - [ ] `analysis/profiling/03_criteo.ipynb` — fits §3, writes `simulation/params/uplift_params.json`
+- [x] `analysis/profiling/02a_ipinyou_eda.ipynb` — narrated EDA companion (INT-012 convention; first instance, 2026-08-04)
+- [ ] `analysis/profiling/01a_lendingclub_eda.ipynb` — narrated EDA companion
+- [ ] `analysis/profiling/03a_criteo_eda.ipynb` — narrated EDA companion
 - [ ] Each notebook ends with the QA-gate cells and a simulated-vs-source overlay plot (these become the calibration exhibits on the site)
 
 ## 6. Changelog
@@ -90,3 +94,4 @@ Not calibrated to a dataset — these are the §2.3 design dials, listed here so
 | v0.1 | 2026-07 | Initial spec, written during Phase 0 | design.md Section 12 item 3 |
 | v0.2 | 2026-08-03 | Data-mutation ledger convention and sentinel policy added to Section 0; Section 5 checklist tracks gate status | INT-011, P-005 |
 | v0.3 | 2026-08-03 | Section 2 amended: empirical valuation shape replaces the lognormal (measured inadequacy), declared elasticity replaces the negative fitted slope, QA gates restated to separate landscape round-trip from reserve mechanics | C9, C10 |
+| v0.4 | 2026-08-04 | Narrated EDA companion convention added to Section 0; EDA notebooks added to the Section 5 checklist | INT-012, P-006 |

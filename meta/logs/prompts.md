@@ -53,3 +53,13 @@ Entry status values: `verbatim` (exact text, redactions marked) or `summary — 
 - **Content:** (reviewing the LendingClub notebook's `describe()` output — max DTI 999, max annual income $110M)
   > This looks suspicious - is this valid data or a sentinel record? In the data cleaning and QA pipeline can you take extra measures to highlight any processes that changes the data itself (row deletion for sentinel values or too many NA/null values, imputing values, etc). Are those rows included in computing the marginals?
 - **Shaped:** The data-mutation ledger convention (calibration_spec v0.2, Section 0) — now standing practice for every profiling notebook — plus the sentinel policy and the regenerated `lendingclub_marginals.json`, which carries the ledger in its metadata. Recorded with INT-011.
+
+## P-006 — Narrated EDA as a standing deliverable (Phase 1)
+
+- **Date:** 2026-08-04
+- **Status:** verbatim
+- **Content:** (after an in-chat exploratory walkthrough of the iPinYou data — sample, data dictionary, collinearity, advertiser counts, bidding mechanics — prompted by "I have never interacted with this data so assume I don't understand it all and you are teaching me all aspects of it")
+  > This information should always be surfaced - let's proceed with your plan. Keep both of the existing notebooks but add an addtional notebook (*_eda.ipynb) that investigates these foundational truths and narrates throughout.
+  >
+  > Log this to meet our global objectives.
+- **Shaped:** The EDA-companion convention (calibration_spec v0.4, Section 0): every source dataset gets a narrated `*_eda.ipynb` covering provenance and mechanics, a data dictionary, descriptive statistics with semantics, collinearity/nesting structure, and business implications — teaching-first, read-only. `02a_ipinyou_eda.ipynb` is the first instance; companions for LendingClub and Criteo added to the Section 5 checklist. Recorded with INT-012.
