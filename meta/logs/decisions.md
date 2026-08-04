@@ -42,6 +42,13 @@ Proposals to be validated or revised in the Phase 1 profiling notebooks.
 | C7 | Duplicate corruption mix | nickname 40% / email typo 30% / new phone 20% / all three 10% | Invented; tune until ER F1 lands in 0.85–0.95 (design's own target band) |
 | C8 | LendingClub rejected file used only for tail-widening + acceptance model | — | Its schema is far narrower than the accepted file |
 
+### C-series additions (Phase 1, agent-proposed, pending human review)
+
+| # | Assumption | Value | Status |
+| --- | --- | --- | --- |
+| C9 | Valuation-quality elasticity: the fitted iPinYou CTR-decile slope is **negative** (−0.149 — high-CTR display inventory clears cheaper, a remnant-inventory artifact with the wrong sign for a lead marketplace, where quality must drive price for the design's adverse-selection cascade to exist) | Empirical slope recorded in the artifact; simulator uses a **declared elasticity of +1.0** log-price units per unit `q` (same declared-assumption pattern as C1's price levels) | Proposed 2026-08-03; sanity-check the magnitude when Phase 3 ER and Phase 5 pricing models are live |
+| C10 | Winning-price distribution model: iPinYou's advertiser-standardized log prices deviate from lognormal by up to 24% pooled / 40% per advertiser at deciles 1–9 — the spec's original "lognormal + ±10% Q-Q gate" pair is unsatisfiable with its own model | Valuation noise drawn from the **empirical standardized log-price shape** (1000-point inverse-CDF table in the artifact, house style per A1/01); per-advertiser (mu, sigma) retained for location/scale; lognormal-adequacy measurements kept as a documented finding | Proposed 2026-08-03; spec amended v0.3 |
+
 ### Interpretations of ambiguous design points `[backfill, Phase 0]`
 
 - **"Conversion" semantics** are implemented as three genuinely different column definitions in the three silos (sold lead / funded loan / email click) — the semantic-drift pathology must be real enough to bite during unification, not just documented.
