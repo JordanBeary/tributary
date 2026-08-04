@@ -38,7 +38,7 @@ Proposals to be validated or revised in the Phase 1 profiling notebooks.
 | C3 | Applications per consumer | P(1)=0.75, P(2)=0.18, P(3)=0.07 → ~1.6 leads/consumer | Chosen to hit design's 1.5M consumers → 2.4M leads |
 | C4 | Marginal-fit QA gates | KS < 0.05 numeric; ±1pp categorical; copula max corr error < 0.1 | Agent-proposed thresholds; tighten/loosen with evidence |
 | C5 | Message funnel | send→open 35%, open→click 8%; Poisson(λ≈3) messages/contact, cap 10 | Industry-plausible inventions — Criteo has no email funnel |
-| C6 | Uplift | ~85/15 treated/control; +0.1–0.3pp absolute; top-decile ≈ 3–5× average uplift | Criteo-derived scale |
+| C6 | Uplift | ~85/15 treated/control; +0.1–0.3pp absolute; top-decile ≈ 3–5× average uplift | **Measured 2026-08-04** (`03_criteo`): ratio 0.850 and ATE +0.115pp confirm the declared values, but the top-decile/average ratio is **7.04** — heterogeneity is far more concentrated than the declared 3–5× (the top quintile carries ~4.5× the average; the bottom four are near zero). The simulator uses the measured quintile multipliers from `uplift_params.json`. |
 | C7 | Duplicate corruption mix | nickname 40% / email typo 30% / new phone 20% / all three 10% | Invented; tune until ER F1 lands in 0.85–0.95 (design's own target band) |
 | C8 | LendingClub rejected file used only for tail-widening + acceptance model | — | Its schema is far narrower than the accepted file |
 

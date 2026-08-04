@@ -81,10 +81,10 @@ Not calibrated to a dataset — these are the §2.3 design dials, listed here so
 
 - [x] `analysis/profiling/01_lendingclub.ipynb` — fits §1, writes `simulation/params/lendingclub_marginals.json` + copula matrix (all QA gates pass, 2026-08-03)
 - [x] `analysis/profiling/02_ipinyou.ipynb` — fits §2, writes `simulation/params/auction_landscape.json` (all QA gates pass, 2026-08-04)
-- [ ] `analysis/profiling/03_criteo.ipynb` — fits §3, writes `simulation/params/uplift_params.json`
+- [x] `analysis/profiling/03_criteo.ipynb` — fits §3, writes `simulation/params/uplift_params.json` (all QA gates pass, 2026-08-04; measured top-decile/average = 7.04, see C6)
 - [x] `analysis/profiling/02a_ipinyou_eda.ipynb` — narrated EDA companion (INT-012 convention; first instance, 2026-08-04)
 - [ ] `analysis/profiling/01a_lendingclub_eda.ipynb` — narrated EDA companion
-- [ ] `analysis/profiling/03a_criteo_eda.ipynb` — narrated EDA companion
+- [x] `analysis/profiling/03a_criteo_eda.ipynb` — narrated EDA companion (2026-08-04)
 - [ ] Each notebook ends with the QA-gate cells and a simulated-vs-source overlay plot (these become the calibration exhibits on the site)
 
 ## 6. Changelog

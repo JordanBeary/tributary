@@ -1,0 +1,48 @@
+{
+  "metadata": {
+    "artifact": "uplift_params",
+    "generated_utc": "2026-08-04T19:25:25+00:00",
+    "seed": 42,
+    "spec": "docs/calibration_spec.md Section 3 (v0.4)",
+    "sources": {
+      "file": "criteo-uplift-v2.1.csv.gz",
+      "rows": 13979592
+    },
+    "data_mutations": [
+      {
+        "step": "heterogeneity fit",
+        "column": "all rows",
+        "rows_affected": 13979592,
+        "disposition": "split 60/40 fit/evaluate (seeded)",
+        "rationale": "spread must be measured out-of-sample; no rows altered or dropped"
+      }
+    ]
+  },
+  "treatment_ratio": 0.8500001287591226,
+  "baseline_conversion_control": 0.0019375880152813366,
+  "ate": {
+    "absolute": 0.0011518730521316279,
+    "ci95_halfwidth": 6.736851296838576e-05,
+    "relative": 0.594488117725262,
+    "decision": "C6"
+  },
+  "heterogeneity": {
+    "segment_multipliers": [
+      0.11251370815103325,
+      0.07731436420288557,
+      0.12655419539214438,
+      0.16143120321083546,
+      4.522186529043101
+    ],
+    "top_decile_over_average": 7.0424672126966525,
+    "method": "T-learner (logistic per arm), spread measured out-of-sample on actual treated-minus-control gaps per score bucket"
+  },
+  "message_funnel": {
+    "send_to_open": 0.35,
+    "open_to_click": 0.08,
+    "messages_per_contact_poisson_lambda": 3,
+    "messages_cap": 10,
+    "click_correlated_with_engagement_segment": true,
+    "decision": "C5 \u2014 declared; Criteo has no email funnel"
+  }
+}
