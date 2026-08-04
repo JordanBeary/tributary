@@ -21,6 +21,7 @@ dependencies = [
 dev = [
     "jupyter",
     "plotly>=5.20",
+    "matplotlib>=3.8",
     "dbt-duckdb>=1.8",
     "splink>=4.0",
     "boto3>=1.34",

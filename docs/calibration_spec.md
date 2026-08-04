@@ -77,7 +77,7 @@ Not calibrated to a dataset — these are the §2.3 design dials, listed here so
 
 ## 5. Deliverables checklist (Phase 1 gate)
 
-- [ ] `analysis/profiling/01_lendingclub.ipynb` — fits §1, writes `simulation/params/lendingclub_marginals.json` + copula matrix
+- [x] `analysis/profiling/01_lendingclub.ipynb` — fits §1, writes `simulation/params/lendingclub_marginals.json` + copula matrix (all QA gates pass, 2026-08-03)
 - [ ] `analysis/profiling/02_ipinyou.ipynb` — fits §2, writes `simulation/params/auction_landscape.json`
 - [ ] `analysis/profiling/03_criteo.ipynb` — fits §3, writes `simulation/params/uplift_params.json`
 - [ ] Each notebook ends with the QA-gate cells and a simulated-vs-source overlay plot (these become the calibration exhibits on the site)
