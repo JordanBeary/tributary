@@ -112,3 +112,13 @@ Entries INT-001 through INT-008 were seeded during the 2026-08-03 reorganization
 - **Human guidance:** "I do not want the Co-Authored by Claude Fable 5 signature on any work ever." (verbatim)
 - **Resolution:** Trailer stripped from all existing commit messages via a message-only history rewrite (second force-push; commit contents untouched). Rule codified so it binds future sessions and any agent harness: `meta/provenance.md` Section 2 and `CLAUDE.md`. Attribution continues exclusively through `Provenance:`/`Directs:` trailers and the ledger.
 - **Doc changes:** `meta/provenance.md`; `CLAUDE.md`.
+
+## INT-011 — Sentinel values winsorized into a shipped marginal; data mutations were invisible
+
+- **Date:** 2026-08-03
+- **Phase:** 1 (LendingClub profiling)
+- **What the agent did:** Shipped `lendingclub_marginals.json` with accepted-file `dti = 999` sentinel records (135 rows at the exact cap value) winsorized *into* the DTI marginal rather than excluded, and with all data-altering operations (drops, NaN-coercion, clipping, imputation) performed without a visible accounting. The agent had caught the rejected file's negative-DTI sentinel on its own but missed the accepted file's 999 twin.
+- **Classification:** ambiguity — the calibration spec prescribed 1%/99% winsorization but was silent on sentinel policy and on mutation transparency; the human's review of `describe()` output (max DTI 999, max income $110M) forced an explicit policy.
+- **Human guidance:** "This looks suspicious - is this valid data or a sentinel record? In the data cleaning and QA pipeline can you take extra measures to highlight any processes that changes the data itself (row deletion for sentinel values or too many NA/null values, imputing values, etc). Are those rows included in computing the marginals?" (verbatim, P-005)
+- **Resolution:** Empirical triage of each extreme (loan cap and FICO cap valid; dti 999 a hard sentinel, set NaN; $110M income implausible but structureless, winsorized with counts reported). A **data-mutation ledger** added to the notebook: every altering operation recorded with row counts, disposition, and rationale, printed in the executed notebook and embedded in the params JSON metadata. The ledger immediately revealed the negative-DTI sentinel covers 180k sampled rows (~4.3%) — previously clipped to the winsor floor. Convention codified in `docs/calibration_spec.md` v0.2 for all profiling notebooks.
+- **Doc changes:** `docs/calibration_spec.md` v0.2 (Section 0 ledger convention + changelog); notebook and params regenerated (commit `a2f4329`).

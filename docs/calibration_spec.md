@@ -1,6 +1,6 @@
 # Calibration Spec — Source Datasets → Simulator Parameters
 
-Status: v0.1 · Written against design.md v1.1, Section 3 · Changes cite trigger ids per `../meta/plan.md` Section 7
+Status: v0.2 · Written against design.md v1.1, Section 3 · Changes cite trigger ids per `../meta/plan.md` Section 7 (changelog in Section 6)
 Provenance: A — agent-proposed quantitative assumptions (decision log C1–C8), to be validated in the Phase 1 profiling notebooks
 
 This spec defines, parameter by parameter, how the three public datasets drive the simulator. Every simulator parameter must trace to either (a) a fitted distribution from a source dataset, or (b) an explicitly declared design assumption. Calibration notebooks in `analysis/profiling/` must reproduce every fit and emit the side-by-side QA plots referenced in the design doc's risk register.
@@ -10,6 +10,7 @@ This spec defines, parameter by parameter, how the three public datasets drive t
 - **Fit artifacts** are JSON files written to `simulation/params/` (e.g. `lendingclub_marginals.json`), versioned in git — the simulator reads *only* these artifacts, never the raw datasets. This keeps the simulator runnable without the multi-GB downloads.
 - **QA gates**: each fitted distribution gets a quantitative acceptance check (KS distance, quantile table, or rate comparison) in its profiling notebook. Gates listed per section below.
 - Randomness: all sampling is driven by a single seed via `numpy.random.default_rng(seed)` threaded through `SimConfig`.
+- **Data-mutation ledger** (v0.2, INT-011): every profiling notebook records each operation that alters data — row drops, sentinel-to-NaN coercion, winsorization clips (with bounds), recategorization, imputation — with row counts, disposition, and rationale. The ledger is displayed in the executed notebook and embedded in the emitted params JSON under `metadata.data_mutations`, so each artifact carries its own cleaning provenance. Sentinel values (e.g., accepted `dti = 999`, the rejected file's negative DTI) are excluded from marginals, never winsorized into them; winsorized rows remain, clipped to stored bounds.
 
 ## 1. LendingClub (accepted + rejected) → consumers & leads
 
@@ -81,3 +82,10 @@ Not calibrated to a dataset — these are the §2.3 design dials, listed here so
 - [ ] `analysis/profiling/02_ipinyou.ipynb` — fits §2, writes `simulation/params/auction_landscape.json`
 - [ ] `analysis/profiling/03_criteo.ipynb` — fits §3, writes `simulation/params/uplift_params.json`
 - [ ] Each notebook ends with the QA-gate cells and a simulated-vs-source overlay plot (these become the calibration exhibits on the site)
+
+## 6. Changelog
+
+| Version | Date | Changes | Trigger |
+| --- | --- | --- | --- |
+| v0.1 | 2026-07 | Initial spec, written during Phase 0 | design.md Section 12 item 3 |
+| v0.2 | 2026-08-03 | Data-mutation ledger convention and sentinel policy added to Section 0; Section 5 checklist tracks gate status | INT-011, P-005 |

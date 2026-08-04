@@ -45,3 +45,11 @@ Entry status values: `verbatim` (exact text, redactions marked) or `summary — 
   > Read this thoroughly in its entirety. Adopt the plan and begin working on reorganizing the project and repository. Are there any significant conflicts with what has already been completed? Bring these conflicts to my attention and prompt me to make decisions about the direction.
   (Accompanied by `meta/plan.md` v0.3 as an attachment.)
 - **Shaped:** The 2026-08-03 migration: the `meta/` scaffold, the cloud resource recreation, and decisions D1–D3 (made by the human in the resulting conflict review).
+
+## P-005 — Sentinel triage and the data-mutation ledger (Phase 1)
+
+- **Date:** 2026-08-03
+- **Status:** verbatim
+- **Content:** (reviewing the LendingClub notebook's `describe()` output — max DTI 999, max annual income $110M)
+  > This looks suspicious - is this valid data or a sentinel record? In the data cleaning and QA pipeline can you take extra measures to highlight any processes that changes the data itself (row deletion for sentinel values or too many NA/null values, imputing values, etc). Are those rows included in computing the marginals?
+- **Shaped:** The data-mutation ledger convention (calibration_spec v0.2, Section 0) — now standing practice for every profiling notebook — plus the sentinel policy and the regenerated `lendingclub_marginals.json`, which carries the ledger in its metadata. Recorded with INT-011.
