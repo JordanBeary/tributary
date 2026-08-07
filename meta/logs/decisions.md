@@ -42,12 +42,31 @@ Proposals to be validated or revised in the Phase 1 profiling notebooks.
 | C7 | Duplicate corruption mix | nickname 40% / email typo 30% / new phone 20% / all three 10% | Invented; tune until ER F1 lands in 0.85–0.95 (design's own target band) |
 | C8 | LendingClub rejected file used only for tail-widening + acceptance model | — | Its schema is far narrower than the accepted file |
 
-### C-series additions (Phase 1, agent-proposed, pending human review)
+### C-series additions (Phase 1)
 
 | # | Assumption | Value | Status |
 | --- | --- | --- | --- |
-| C9 | Valuation-quality elasticity: the fitted iPinYou CTR-decile slope is **negative** (−0.149 — high-CTR display inventory clears cheaper, a remnant-inventory artifact with the wrong sign for a lead marketplace, where quality must drive price for the design's adverse-selection cascade to exist) | Empirical slope recorded in the artifact; simulator uses a **declared elasticity of +1.0** log-price units per unit `q` (same declared-assumption pattern as C1's price levels) | Proposed 2026-08-03; sanity-check the magnitude when Phase 3 ER and Phase 5 pricing models are live |
-| C10 | Winning-price distribution model: iPinYou's advertiser-standardized log prices deviate from lognormal by up to 24% pooled / 40% per advertiser at deciles 1–9 — the spec's original "lognormal + ±10% Q-Q gate" pair is unsatisfiable with its own model | Valuation noise drawn from the **empirical standardized log-price shape** (1000-point inverse-CDF table in the artifact, house style per A1/01); per-advertiser (mu, sigma) retained for location/scale; lognormal-adequacy measurements kept as a documented finding | Proposed 2026-08-03; spec amended v0.3 |
+| C9 | iPinYou CTR-price elasticity: **valid estimate, non-transferable** to the lead marketplace (expanded record below) | Empirical −0.149 recorded in the artifact as a correct in-domain estimate; simulator uses a **declared elasticity of +1.0** log-price units per unit `q` — a full parameter override, sign and level | **Ratified 2026-08-07** with human reframing (INT-013); end-to-end QA gate added |
+| C10 | Winning-price distribution model: iPinYou's advertiser-standardized log prices deviate from lognormal by up to 24% pooled / 40% per advertiser at deciles 1–9 — the spec's original "lognormal + ±10% Q-Q gate" pair is unsatisfiable with its own model | Valuation noise drawn from the **empirical standardized log-price shape** (1000-point inverse-CDF table in the artifact, house style per A1/01); per-advertiser (mu, sigma) retained for location/scale; lognormal-adequacy measurements kept as a documented finding | Proposed 2026-08-03; spec amended v0.3; pending human review |
+
+#### C9 — expanded record: iPinYou CTR-price elasticity, valid estimate, non-transferable
+
+*Ratified 2026-08-07. Human-drafted in a review session (as `D-007`, merged here with ids mapped); category: declared-assumption override; initiated by human decision, agent-assisted analysis. Cross-ref: INT-013 (the framing of this finding was itself corrected).*
+
+**Finding.** The calibration spec (Section 2, valuation-quality coupling) sources the elasticity of buyer valuation w.r.t. lead quality `q` from a regression of log winning price on CTR decile in iPinYou. The fitted slope is **−0.149**. This estimate is *correct in-domain*: in display RTB, high-CTR inventory skews toward cheap remnant/performance placements while premium brand inventory carries high CPMs with unremarkable CTR, so price and the CTR proxy genuinely anticorrelate in that market.
+
+**Why it does not transfer.** The regression answers "how does price relate to a CTR-based quality proxy in display RTB?"; the simulator needs "how does buyer valuation relate to lead quality in a loan-lead marketplace?" The price-quality mechanism differs structurally between the two markets (remnant-inventory dynamics vs. underwriting economics), flipping the sign. The target market requires positive coupling: the waterfall's tier ordering, the adverse-selection cascade, and the downstream ML workstream (censored price model, floor optimization, sale propensity) all presuppose it. Importing the fitted slope would produce an inverted economy in which routing the best leads to the cheapest tier maximizes revenue.
+
+**Resolution.** Per the spec's rule that every parameter is either a fitted distribution or a declared assumption:
+
+- The empirical −0.149 is executed and **recorded in `simulation/params/auction_landscape.json`** as a correct in-domain estimate — not suppressed, not labeled anomalous.
+- The simulator **uses a declared elasticity of +1.0** log-price units per unit `q` (q: 0 to 1 multiplies expected valuation by e, roughly 2.7x). This is a full parameter override — sign and level — documented as a design assumption, same pattern as the price-level rescaling in Section 2 (iPinYou contributes distributional shape; declared assumptions supply level/sign where the source market structurally diverges from the target).
+
+**Follow-on QA gate.** Section 2 gates did not previously validate this parameter end-to-end. Added: Spearman correlation between `q` and realized clearing price on sold leads must exceed 0.3 in simulated output, so the declared elasticity is verified rather than trusted.
+
+**Artifacts touched.** `docs/calibration_spec.md` Section 2 (row rewritten, gate added, v0.5); `analysis/profiling/02_ipinyou.ipynb` (records both values with this rationale; gate implemented).
+
+**Follow-up note (2026-08-07).** The gate did its job immediately: on first verification the current calibration **fails it** (Spearman ~0.00). Diagnosis: with EL=+1.0 and the fitted q distribution (mean 0.787, sd 0.164), quality's effect on clearing decisions is ~0.18 standard deviations of the valuation noise — tier assignment is decided by participation luck, mean q per tier is flat, and floor-pinned prices therefore carry no q signal. Neither raising elasticity alone (EL=5 → 0.265) nor q-dependent participation alone (0.09) passes. Candidate resolutions (agent-proposed, pending human decision, would become C11): rescale `q` to its percentile rank (spread 0.164 → 0.289) combined with a larger declared elasticity and/or per-tier valuation noise below the pooled 0.912. The +1.0 declared value and the >0.3 gate are, as currently constituted, incompatible — one of them must move, and that is a human call.
 
 ### Interpretations of ambiguous design points `[backfill, Phase 0]`
 
