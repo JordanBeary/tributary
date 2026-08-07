@@ -109,6 +109,18 @@ Proposals to be validated or revised in the Phase 1 profiling notebooks.
 
 **Engineering consequence.** The mechanism ships in the artifact (`participation.cherry_picking`) and is consumed by the production engine (`simulation/auction.py`); `run_waterfall` in `simulation/stages.py` is now implemented against it, and `tests/test_waterfall.py` asserts the Section 2 gates are reproduced from the artifact alone — the notebook's stated exit condition for the simulator.
 
+### C13 — Consumer engine interpretation choices (record grain, Faker sampling, derived FICO band)
+
+*2026-08-07. Category: engine semantics for `generate_consumers`, resolved while implementing the frozen stage contract. Proposed by the agent, pending human review. Alternatives were real in each case; the artifact and gates were the tiebreakers.*
+
+**(a) `n_consumers` counts records, duplicates included.** The stage emits exactly `cfg.n_consumers` rows, of which ~`duplicate_rate` are duplicate records of another row's person (`consumer_key` shared, credit profile copied verbatim, identity corrupted per C7). Alternative rejected: n base persons plus 8% extra rows, which would inflate every downstream volume past the design's Section 3.3 table (1.5M records × 1.6 apps = 2.4M leads holds exactly under the chosen reading). Duplicate sources are drawn with replacement, so some persons carry 3+ records — duplicate flooding is not pairwise-only.
+
+**(b) Faker as vocabulary, stage RNG as sampler.** Identity fields draw from Faker's en_US frequency-weighted name/street/city/domain data (and per-state zip ranges), but through vectorized numpy sampling on the stage's seeded stream rather than per-row Faker calls. Rationale: single-seed determinism stays in the one RNG-stream family the pipeline already uses ([seed, stage]), and full scale runs in ~11 s instead of minutes. Frequency-weighted names are load-bearing for ER difficulty: common names collide across distinct persons, as in real CRM data.
+
+**(c) `fico_band` derived from `fico_mid`,** not drawn independently as in the notebook's QA sampler. Every row is internally coherent (band always contains the score), which downstream silos and models can rely on; the derived band mix stays within the ±1pp categorical gate with an order of magnitude to spare (max deviation 0.08pp at 500k draws). The notebook's independent draw was fine for gate-checking marginals but would have produced rows where band contradicts score.
+
+**Engineering consequence.** The engine ships as `simulation/consumers.py` (artifact-only, per A1: consumes `lendingclub_marginals.json` and Faker vocabularies, never raw data); `generate_consumers` in `simulation/stages.py` is implemented against it, and `tests/test_consumers.py` reproduces the Section 1 QA gates from the artifact alone plus the duplicate-structure invariants the ER pipeline will be scored against. A per-record `consumer_record_id` (independent of `consumer_key`) keys leads to a specific identity record without leaking the hidden person key.
+
 ### Interpretations of ambiguous design points `[backfill, Phase 0]`
 
 - **"Conversion" semantics** are implemented as three genuinely different column definitions in the three silos (sold lead / funded loan / email click) — the semantic-drift pathology must be real enough to bite during unification, not just documented.

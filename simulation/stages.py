@@ -13,20 +13,29 @@ import pandas as pd
 
 from simulation.auction import AuctionLandscape, run_auctions
 from simulation.config import SimConfig
+from simulation.consumers import CreditModel, IdentityVocab, build_population
 
 
 def generate_consumers(cfg: SimConfig) -> None:
-    """Sample cfg.n_consumers consumers with credit features + identity.
+    """Sample cfg.n_consumers consumer records with credit features + identity.
 
     - Credit/demographic features from the LendingClub Gaussian copula
       (params: lendingclub_marginals.json).
-    - Identity attributes (name, email, phone, address) via Faker.
-    - Injects ~cfg.duplicate_rate duplicate consumers with corrupted identity
-      fields (nickname, typo'd email, new phone).
+    - Identity attributes (name, email, phone, address) via Faker's en_US
+      vocabularies, sampled through the stage RNG stream.
+    - ~cfg.duplicate_rate of the records are duplicates: the same person
+      (shared consumer_key) with corrupted identity fields per the C7 mix
+      (nickname, typo'd email, new phone). Record count includes duplicates,
+      so Section 3.3 volumes hold exactly.
     - Writes consumers.parquet WITH consumer_key, which only the fracture
       stage may strip; the crosswalk goes to cfg.private_dir.
     """
-    raise NotImplementedError("Phase 1: see docs/calibration_spec.md §1")
+    model = CreditModel.from_params_dir(cfg.params_dir)
+    vocab = IdentityVocab.from_faker()
+    # Stage-scoped RNG stream: independent of other stages, reproducible per seed
+    rng = np.random.default_rng(np.random.SeedSequence([cfg.seed, 1]))
+    pop = build_population(model, vocab, cfg.n_consumers, cfg.duplicate_rate, rng)
+    pop.to_parquet(cfg.out_dir / "consumers.parquet", index=False)
 
 
 def generate_leads(cfg: SimConfig) -> None:
