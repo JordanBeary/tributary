@@ -31,7 +31,7 @@ EDGE_TYPES = {"implements", "calibrates", "gates", "depends-on", "documents", "c
 # Top-level entries that legitimately live outside the graph (tooling, local state).
 UNINDEXED_OK = {
     ".git", ".venv", ".gitignore", ".env", ".env.example", ".DS_Store",
-    "tributary.egg-info", "pyproject.toml", "data",
+    "tributary.egg-info", "pyproject.toml", "data", ".pytest_cache",
 }
 
 
