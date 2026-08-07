@@ -53,6 +53,8 @@ Proposals to be validated or revised in the Phase 1 profiling notebooks.
 
 *Ratified 2026-08-07. Human-drafted in a review session (as `D-007`, merged here with ids mapped); category: declared-assumption override; initiated by human decision, agent-assisted analysis. Cross-ref: INT-013 (the framing of this finding was itself corrected).*
 
+***Status (2026-08-07, same day): parameter values superseded by C11.*** *The +1.0 declared elasticity failed this record's own end-to-end gate on first verification. This record is preserved unedited below — the falsification is part of the project's story (INT-014): the override-then-verify pattern worked exactly as designed, against its own author.*
+
 **Finding.** The calibration spec (Section 2, valuation-quality coupling) sources the elasticity of buyer valuation w.r.t. lead quality `q` from a regression of log winning price on CTR decile in iPinYou. The fitted slope is **−0.149**. This estimate is *correct in-domain*: in display RTB, high-CTR inventory skews toward cheap remnant/performance placements while premium brand inventory carries high CPMs with unremarkable CTR, so price and the CTR proxy genuinely anticorrelate in that market.
 
 **Why it does not transfer.** The regression answers "how does price relate to a CTR-based quality proxy in display RTB?"; the simulator needs "how does buyer valuation relate to lead quality in a loan-lead marketplace?" The price-quality mechanism differs structurally between the two markets (remnant-inventory dynamics vs. underwriting economics), flipping the sign. The target market requires positive coupling: the waterfall's tier ordering, the adverse-selection cascade, and the downstream ML workstream (censored price model, floor optimization, sale propensity) all presuppose it. Importing the fitted slope would produce an inverted economy in which routing the best leads to the cheapest tier maximizes revenue.
@@ -66,7 +68,27 @@ Proposals to be validated or revised in the Phase 1 profiling notebooks.
 
 **Artifacts touched.** `docs/calibration_spec.md` Section 2 (row rewritten, gate added, v0.5); `analysis/profiling/02_ipinyou.ipynb` (records both values with this rationale; gate implemented).
 
-**Follow-up note (2026-08-07).** The gate did its job immediately: on first verification the current calibration **fails it** (Spearman ~0.00). Diagnosis: with EL=+1.0 and the fitted q distribution (mean 0.787, sd 0.164), quality's effect on clearing decisions is ~0.18 standard deviations of the valuation noise — tier assignment is decided by participation luck, mean q per tier is flat, and floor-pinned prices therefore carry no q signal. Neither raising elasticity alone (EL=5 → 0.265) nor q-dependent participation alone (0.09) passes. Candidate resolutions (agent-proposed, pending human decision, would become C11): rescale `q` to its percentile rank (spread 0.164 → 0.289) combined with a larger declared elasticity and/or per-tier valuation noise below the pooled 0.912. The +1.0 declared value and the >0.3 gate are, as currently constituted, incompatible — one of them must move, and that is a human call.
+**Follow-up note (2026-08-07).** The gate did its job immediately: on first verification the current calibration **fails it** (Spearman ~0.00). Diagnosis: with EL=+1.0 and the fitted q distribution (mean 0.787, sd 0.164), quality's effect on clearing decisions is ~0.18 standard deviations of the valuation noise — tier assignment is decided by participation luck, mean q per tier is flat, and floor-pinned prices therefore carry no q signal. Neither raising elasticity alone (EL=5 → 0.265) nor q-dependent participation alone (0.09) passes. Resolved by **C11**.
+
+### C11 — Quality-price transmission repaired: rank-q, elasticity 3.0, within-vertical sigma
+
+*2026-08-07. Category: declared-assumption revision + q-scale repair. Initiated by the C9 gate falsification (INT-013/INT-014); component selection by human decision, verification by agent harness. Supersedes C9's parameter values; C9's transferability rationale stands.*
+
+**Finding (from the falsification diagnosis).** Three compounding causes kept lead quality out of realized prices: (1) the Section 1 quality score was nominally in [0,1] but practically squashed into 0.6–1.0 (mean 0.787, sd 0.164) — the logistic rescaling wasted the range; (2) the declared elasticity (+1.0) was too small relative to valuation noise (signal ratio ~0.18); (3) the pooled sigma (0.912) conflates between-vertical dispersion with within-auction dispersion, overstating the noise each tier's buyers exhibit.
+
+**Decision — the triple:**
+
+1. **`q` is redefined as the within-cohort percentile rank** of the Section 1 quality score (ordering preserved exactly; sd 0.164 → 0.289; a repair, not a tuning trick — elasticity semantics become log-price units per percentile of quality).
+2. **Declared elasticity = 3.0** on rank-q. Plausibility: the p10–p90 quality spread implies e^(3×0.8) ≈ 11x in valuation, comfortably inside the design's ~60x tier-6-floor-to-tier-1-clearing price geography.
+3. **Per-tier valuation noise uses the within-vertical sigma** — the median of per-advertiser sigmas, **0.860** (range 0.83–1.11) — with the pooled 0.912 recorded alongside it in the artifact for auditability.
+
+**Verification (harness, all Section 2 gates jointly, floors re-bisected to the 60% target).** Censored 0.401; per-tier sell rates monotone (0.329 → 0.030); noise-shape round-trip max deviation 0.016; **Spearman(q, price) on sold = 0.348** (> 0.3). Diagnostics (reported, not gated): mean-q-by-tier now descends **0.72 → 0.54** — the adverse-selection cascade exists where it previously did not; floor-pinned sale share **0.768**, below the 85% flag but retained as a Model-2 watch item.
+
+**Prediction outcome, recorded honestly.** The human's harness-anchored prediction was that the sigma reduction would be load-bearing (ratio ≥ 1.1 needed, sigma ≤ 0.75). It was not: rank-q + EL=3 passes at the pooled sigma (0.348), because the rank transform restored *tier sorting* — a mechanism the EL=5-on-squashed-q anchor could not exhibit. The within-vertical sigma is adopted on its independent principled ground (and it improves pinning and shape fidelity), at its fitted value 0.860 rather than a forced 0.75.
+
+**Gate restatement owned by this decision.** The C10 shape gate now applies to the valuation **noise component** (the empirical shape table round-trip); with strong quality coupling the *marginal* valuation distribution legitimately widens, and quality transmission is tested by its own gate. Separation of concerns: C10 verifies the noise model, C9/C11 verifies the coupling.
+
+**Artifacts touched.** `docs/calibration_spec.md` v0.6 (Section 1 q-scale note, Section 2 sigma and elasticity rows, gates restated, diagnostics added); `analysis/profiling/02_ipinyou.ipynb` rebuilt and re-executed; `simulation/params/auction_landscape.json` regenerated with both sigmas, the q-scale definition, and elasticity 3.0.
 
 ### Interpretations of ambiguous design points `[backfill, Phase 0]`
 

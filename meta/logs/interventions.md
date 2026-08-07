@@ -8,6 +8,7 @@ Classification values:
 - `ambiguity` — the document was ambiguous and got clarified
 - `overrule` — the human overruled a defensible agent choice
 - `en-route fix` — something off-topic found and fixed along the way (instruction 6)
+- `omission` — the agent failed to run a check that available information already supported (added with INT-014)
 
 Entries INT-001 through INT-008 were seeded during the 2026-08-03 reorganization migration (`meta/plan.md` Section 8); INT-009 was backfilled from the founding-session log when it was committed.
 
@@ -145,3 +146,13 @@ Entries INT-001 through INT-008 were seeded during the 2026-08-03 reorganization
 - **Resolution:** C9 rewritten under the transferability framing (expanded record in `decisions.md`); notebook rationale text reframed to "correct in-domain, non-transferable"; a follow-on QA gate added so the declared elasticity is verified end-to-end rather than trusted (Spearman of `q` vs realized clearing price on sold leads > 0.3).
 - **Doc changes:** `meta/logs/decisions.md` C9 (ratified with reframing); `docs/calibration_spec.md` v0.5 (Section 2 row and gate); gate implemented in the `02_ipinyou` builder.
 - **Follow-up (same day):** the newly implemented gate **falsified the current parameterization** — Spearman(q, price) on sold leads is ~0.00 against the >0.3 threshold, because tier assignment is dominated by q-independent participation and 93% of prices sit at tier floors. Elasticity magnitude alone cannot pass it (EL=5 reaches only 0.265); q-dependent participation alone is also insufficient (0.09 at strong settings). The Section 5 checklist item for `02_ipinyou` is reopened; resolution options are before the human (see C9 expanded record, follow-up note).
+
+## INT-014 — Agent ratified a parameter and its verification gate without a feasibility check
+
+- **Date:** 2026-08-07 (human-drafted as `AE-002`; merged with ids mapped)
+- **Phase:** 1 (calibration) · **Severity:** moderate (process failure; caught before any downstream consumer of the parameter)
+- **What the agent did:** Proposed and wired in, in the same breath, the declared elasticity of +1.0 and the Spearman(q, price) > 0.3 verification gate — without checking whether the pair was jointly satisfiable. The incompatibility was **computable at ratification time**: sd(q) ≈ 0.164 was knowable from the fitted score being squashed into 0.6–1.0, and σ ≈ 0.912 was already sitting in the iPinYou artifact. The signal-to-noise ratio of 0.18 was one line of arithmetic that was never run.
+- **Classification:** omission — no new computation was required, only the application of numbers already in committed artifacts.
+- **Human guidance:** "This incompatibility was computable at ratification time. ... That's [an agent error]: agent ratified a parameter and its verification gate without a feasibility check that required no new computation. Your harness caught in one run what should have been caught on paper." (verbatim, condensed)
+- **Resolution:** The falsification stands as part of the record (C9 superseded by C11, not edited in place). Standing practice going forward: a declared parameter proposed together with its verification gate must ship with the back-of-envelope feasibility arithmetic in the proposal itself.
+- **Doc changes:** `meta/logs/decisions.md` C9 supersession line + C11; this entry.

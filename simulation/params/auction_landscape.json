@@ -1,9 +1,9 @@
 {
   "metadata": {
     "artifact": "auction_landscape",
-    "generated_utc": "2026-08-04T08:19:32+00:00",
+    "generated_utc": "2026-08-07T17:54:23+00:00",
     "seed": 42,
-    "spec": "docs/calibration_spec.md Section 2 (v0.3)",
+    "spec": "docs/calibration_spec.md Section 2 (v0.6)",
     "sources": {
       "days": {
         "training2nd": [
@@ -38,8 +38,8 @@
       "decision": "C2"
     },
     "realized": {
-      "sell_through": 0.60052,
-      "floor_bound_sale_share": 0.925514554053154
+      "sell_through": 0.59858,
+      "floor_bound_sale_share": 0.767950816933409
     },
     "data_mutations": [
       {
@@ -81,6 +81,7 @@
   },
   "price_shape": {
     "pooled_sigma": 0.91209581078293,
+    "sigma_within_vertical": 0.8600131530990488,
     "valuation_shape_z": [
       -4.9418894514834175,
       -3.9271387564397746,
@@ -1152,8 +1153,10 @@
   },
   "valuation_quality_elasticity": {
     "empirical_ctr_decile_slope": -0.14916737542867842,
-    "elasticity_used": 1.0,
-    "decision": "C9 \u2014 fitted display-ad slope is negative (remnant-inventory artifact); lead marketplaces price quality positively"
+    "empirical_status": "correct in-domain (display-RTB remnant-inventory dynamics); non-transferable to the target market",
+    "elasticity_used": 3.0,
+    "q_scale": "within-cohort percentile rank of the Section 1 quality score (C11)",
+    "decision": "C9 established the override pattern (INT-013); its +1.0 was falsified by its own end-to-end gate (INT-014); C11's verified triple \u2014 rank-q, elasticity 3.0, within-vertical sigma \u2014 is what passes Spearman(q, price) > 0.3"
   },
   "participation": {
     "win_rate_beta": [
@@ -1190,50 +1193,50 @@
     }
   },
   "tier_scale": {
-    "floor_multiplier": 2.3425428088524254,
+    "floor_multiplier": 1.7579581630733763,
     "floor_slope": 1.1,
     "tiers": [
       {
         "tier": 1,
         "clearing_anchor": 120.0,
-        "floor": 255.55012460208278,
+        "floor": 191.77725415345924,
         "mu": 4.787491742782046,
-        "sigma": 0.91209581078293
+        "sigma": 0.8600131530990488
       },
       {
         "tier": 2,
         "clearing_anchor": 53.92988981839128,
-        "floor": 126.33307557627613,
+        "floor": 94.80649003988871,
         "mu": 3.987684866298491,
-        "sigma": 0.91209581078293
+        "sigma": 0.8600131530990488
       },
       {
         "tier": 3,
         "clearing_anchor": 24.236941798531856,
-        "floor": 62.45368109059813,
+        "floor": 46.868282650929736,
         "mu": 3.1878779898149356,
-        "sigma": 0.91209581078293
+        "sigma": 0.8600131530990488
       },
       {
         "tier": 4,
         "clearing_anchor": 10.892463339413213,
-        "floor": 30.874434616381638,
+        "floor": 23.169678760633733,
         "mu": 2.388071113331381,
-        "sigma": 0.91209581078293
+        "sigma": 0.8600131530990488
       },
       {
         "tier": 5,
         "clearing_anchor": 4.895244564545172,
-        "floor": 15.263002856443709,
+        "floor": 11.454100374644558,
         "mu": 1.588264236847825,
-        "sigma": 0.91209581078293
+        "sigma": 0.8600131530990488
       },
       {
         "tier": 6,
         "clearing_anchor": 2.2,
-        "floor": 7.545377238169841,
+        "floor": 5.662418402422609,
         "mu": 0.7884573603642703,
-        "sigma": 0.91209581078293
+        "sigma": 0.8600131530990488
       }
     ]
   }
