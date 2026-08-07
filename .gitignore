@@ -30,3 +30,6 @@ warehouse/logs/
 .DS_Store
 .duckdb
 *.duckdb.wal
+
+# Test tooling
+.pytest_cache/

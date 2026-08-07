@@ -1,6 +1,6 @@
 # Calibration Spec — Source Datasets → Simulator Parameters
 
-Status: v0.6 · Written against design.md v1.1, Section 3 · Changes cite trigger ids per `../meta/plan.md` Section 7 (changelog in Section 6)
+Status: v0.7 · Written against design.md v1.1, Section 3 · Changes cite trigger ids per `../meta/plan.md` Section 7 (changelog in Section 6)
 Provenance: A — agent-proposed quantitative assumptions (decision log C1–C8), to be validated in the Phase 1 profiling notebooks
 
 This spec defines, parameter by parameter, how the three public datasets drive the simulator. Every simulator parameter must trace to either (a) a fitted distribution from a source dataset, or (b) an explicitly declared design assumption. Calibration notebooks in `analysis/profiling/` must reproduce every fit and emit the side-by-side QA plots referenced in the design doc's risk register.
@@ -43,7 +43,7 @@ This spec defines, parameter by parameter, how the three public datasets drive t
 | Winning-price landscape | `paying_price` in impression logs | Per-advertiser (μ, σ) for location/scale, plus the **empirical standardized log-price shape** as a 1000-point inverse-CDF table (v0.3, C10: measured lognormal deviation is up to 24% pooled / 40% per advertiser at deciles 1–9, so valuation noise samples the empirical shape; the adequacy measurements are retained as a documented finding). Levels rescale to lead-market price points (tier-6 floor ≈ $2 … tier-1 clearing ≈ $120 — C1) |
 | Valuation ~ quality coupling | `paying_price` vs. CTR-proxy features | Regress log price on predicted CTR decile and **record** the fitted slope as a correct in-domain estimate (−0.149: in display RTB, high-CTR inventory skews toward cheap remnant placements, so price and the CTR proxy genuinely anticorrelate). The estimate is **non-transferable** — the target market's price-quality mechanism is underwriting economics, not remnant-inventory dynamics — so the simulator uses a **declared elasticity of 3.0 log-price units per percentile of quality (rank-q)** — C9 established the override pattern with +1.0; its own end-to-end gate falsified that value on first verification, and C11's verified triple superseded it (v0.6; C9, C11, INT-013, INT-014). Empirical −0.149 preserved in the artifact throughout |
 | Bidders per auction (2–5 per tier) | bid density across season files | Empirical distribution of competing bids per auction, truncated to 2–5 |
-| Bid/no-bid participation rate | bid vs. impression volume ratios | Per-buyer participation probability ~ Beta fit to observed rates |
+| Bid/no-bid participation rate | bid vs. impression volume ratios | Per-buyer participation probability ~ Beta fit to observed rates; each seat's odds shift with lead quality — logit(p) + 2.0·(q − 0.5) — the C12 cherry-picking layer (v0.7): buyers bid more often on better leads, with tier floors calibrated under the mechanism |
 | Floor-price dynamics | `floor_price` field | Distribution of floor-to-clearing ratios → sets tier floor schedule so sell-through cascades realistically (target: ~60% overall sell-through, declining by tier) |
 | Censoring structure | second-price win logs | Structural: only the winning tier's clearing price is observed; losing tiers emit bids without prices. Validate that simulated censoring fraction (~40% unsold) matches the design target |
 | CTR/CVR base rates | click/conversion logs | Base rates for the marketing silo's click model and the post-sale funded-loan rate (CRM `funded` flag ≈ CVR-scaled) |
@@ -80,7 +80,7 @@ Not calibrated to a dataset — these are the §2.3 design dials, listed here so
 ## 5. Deliverables checklist (Phase 1 gate)
 
 - [x] `analysis/profiling/01_lendingclub.ipynb` — fits §1, writes `simulation/params/lendingclub_marginals.json` + copula matrix (all QA gates pass, 2026-08-03)
-- [x] `analysis/profiling/02_ipinyou.ipynb` — fits §2, writes `simulation/params/auction_landscape.json` (reopened 2026-08-07 when the new elasticity gate falsified C9's value; **re-closed same day under C11** — all four gates pass, Spearman(q, price) = 0.351)
+- [x] `analysis/profiling/02_ipinyou.ipynb` — fits §2, writes `simulation/params/auction_landscape.json` (reopened 2026-08-07 when the new elasticity gate falsified C9's value; re-closed same day under C11, then re-executed with the C12 cherry-picking layer — all four gates pass, Spearman(q, price) = 0.513, floor-pinning 0.693; gates independently reproduced from the artifact by `tests/test_waterfall.py`)
 - [x] `analysis/profiling/03_criteo.ipynb` — fits §3, writes `simulation/params/uplift_params.json` (all QA gates pass, 2026-08-04; measured top-decile/average = 7.04, see C6)
 - [x] `analysis/profiling/02a_ipinyou_eda.ipynb` — narrated EDA companion (INT-012 convention; first instance, 2026-08-04)
 - [x] `analysis/profiling/01a_lendingclub_eda.ipynb` — narrated EDA companion (2026-08-06)
@@ -97,3 +97,4 @@ Not calibrated to a dataset — these are the §2.3 design dials, listed here so
 | v0.4 | 2026-08-04 | Narrated EDA companion convention added to Section 0; EDA notebooks added to the Section 5 checklist | INT-012, P-006 |
 | v0.5 | 2026-08-07 | Section 2 elasticity row reframed: valid in-domain estimate, non-transferable (human ratification of C9 with corrected framing); end-to-end elasticity gate added (Spearman q-price > 0.3 on sold leads) | C9, INT-013 |
 | v0.6 | 2026-08-07 | C11 triple after the gate falsified C9's value: q consumed as percentile rank (Section 1), elasticity 3.0 on rank-q, within-vertical sigma 0.860 (both sigmas recorded); shape gate restated onto the noise component; mean-q-by-tier and floor-pinning diagnostics added | C11, INT-014 |
+| v0.7 | 2026-08-07 | C12 cherry-picking participation layer (kappa 2.0) added to the Section 2 participation row; floors calibrated with it active; engine + artifact-only gate tests land in simulation/ and tests/ | C12 |

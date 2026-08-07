@@ -90,6 +90,25 @@ Proposals to be validated or revised in the Phase 1 profiling notebooks.
 
 **Artifacts touched.** `docs/calibration_spec.md` v0.6 (Section 1 q-scale note, Section 2 sigma and elasticity rows, gates restated, diagnostics added); `analysis/profiling/02_ipinyou.ipynb` rebuilt and re-executed; `simulation/params/auction_landscape.json` regenerated with both sigmas, the q-scale definition, and elasticity 3.0.
 
+### C12 — Cherry-picking participation: quality-dependent bid odds (kappa = 2.0)
+
+*2026-08-07. Category: realism mechanism, layered after the C11 repair per the human's standing direction ("it can't carry the gate but it's the mechanism real marketplaces actually exhibit"). Agent-selected strength from a gate-verified dose-response grid; floors recalibrated with the mechanism active.*
+
+**Mechanism.** Real buyers see quality signals and choose what to bid on. Each seated buyer's participation odds shift with lead quality: logit(p_seat) + kappa (q − 0.5). At kappa = 2.0 the odds swing is e^(±1) ≈ 2.7x across the quality range — substantial selection without the aggressive end of the grid.
+
+**Dose-response (harness, floors re-bisected per kappa, all gates passing at every point):**
+
+| kappa | Spearman(q, price) | floor-pinned share | mean bids on sold | mean-q tier 1 → 6 |
+| --- | --- | --- | --- | --- |
+| 0.0 | 0.348 | 0.768 | 1.69 | 0.72 → 0.54 |
+| 1.0 | 0.440 | 0.733 | 1.75 | 0.73 → 0.52 |
+| **2.0** | **0.513** | **0.696** | **1.83** | **0.74 → 0.50** |
+| 3.0 | 0.568 | 0.661 | 1.90 | 0.74 → 0.49 |
+
+**Selection rationale.** kappa = 2.0 takes the middle of the verified range: it materially eases the Model-2 floor-pinning watch item (0.768 → 0.696) and steepens the adverse-selection cascade, while keeping the participation story defensible (a 2.7x odds swing, not an order of magnitude). The floor calibration barely moves (multiplier 1.75 → 1.73), confirming the mechanism reshapes *who* sells rather than *how much* sells.
+
+**Engineering consequence.** The mechanism ships in the artifact (`participation.cherry_picking`) and is consumed by the production engine (`simulation/auction.py`); `run_waterfall` in `simulation/stages.py` is now implemented against it, and `tests/test_waterfall.py` asserts the Section 2 gates are reproduced from the artifact alone — the notebook's stated exit condition for the simulator.
+
 ### Interpretations of ambiguous design points `[backfill, Phase 0]`
 
 - **"Conversion" semantics** are implemented as three genuinely different column definitions in the three silos (sold lead / funded loan / email click) — the semantic-drift pathology must be real enough to bite during unification, not just documented.

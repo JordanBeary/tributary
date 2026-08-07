@@ -38,6 +38,7 @@ nodes:
   - {id: models-dir,      type: directory, path: models,                    title: "ML training, model cards, strategy memo (Phases 5-6)"}
   - {id: site,            type: directory, path: site,                      title: "Quarto site (Phase 7)"}
   - {id: scripts,         type: directory, path: scripts,                   title: "Dataset download helpers"}
+  - {id: tests-dir,       type: directory, path: tests,                     title: "Engine tests: Section 2 gates reproduced from artifacts alone"}
   - {id: devcontainer,    type: directory, path: .devcontainer,             title: "One-click reproducible environment"}
   - {id: ci,              type: directory, path: .github,                   title: "CI workflows (graph validation)"}
 
@@ -89,6 +90,8 @@ edges:
   - [ci, implements, phase-0.5]
   - [simulation-pkg, implements, phase-1]
   - [scripts, implements, phase-1]
+  - [tests-dir, implements, phase-1]
+  - [tests-dir, depends-on, simulation-pkg]
   - [silos-dir, implements, phase-2]
   - [warehouse, implements, phase-3]
   - [er-dir, implements, phase-3]

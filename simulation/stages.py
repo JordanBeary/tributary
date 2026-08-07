@@ -8,6 +8,10 @@ built against them. Fitting details: docs/calibration_spec.md.
 
 from __future__ import annotations
 
+import numpy as np
+import pandas as pd
+
+from simulation.auction import AuctionLandscape, run_auctions
 from simulation.config import SimConfig
 
 
@@ -37,12 +41,42 @@ def generate_leads(cfg: SimConfig) -> None:
 def run_waterfall(cfg: SimConfig) -> None:
     """6-tier sequential waterfall auction per lead (~9M events at scale=1).
 
-    Buyer valuations ~ lognormal landscape (auction_landscape.json),
-    conditioned on q. Emits event-grain bid_request/bid/win/no_sale rows with
-    naturally censored prices: clearing price observed only on sales.
-    Writes auction_events.parquet.
+    Buyer valuations from the calibrated landscape (auction_landscape.json),
+    conditioned on q per C11 with C12 cherry-picking participation. Emits
+    event-grain bid_request/bid/win/no_sale rows with naturally censored
+    prices: clearing price observed only on sales. Writes
+    auction_events.parquet and lead_outcomes.parquet.
+
+    Expects leads.parquet (from generate_leads) with at least: lead_uuid,
+    q (within-cohort percentile rank), submitted_at (optional — event
+    timestamps are derived from it when present).
     """
-    raise NotImplementedError("Phase 1: see docs/calibration_spec.md §2")
+    leads = pd.read_parquet(cfg.out_dir / "leads.parquet")
+    land = AuctionLandscape.from_params_dir(cfg.params_dir)
+    # Stage-scoped RNG stream: independent of other stages, reproducible per seed
+    rng = np.random.default_rng(np.random.SeedSequence([cfg.seed, 3]))
+
+    result = run_auctions(leads["q"].to_numpy(), land, rng,
+                          lead_uuid=leads["lead_uuid"].to_numpy(), emit_events=True)
+
+    events = result.events
+    if "submitted_at" in leads.columns:
+        # Tier rounds happen minutes apart, after submission; seeded jitter
+        base = leads.set_index("lead_uuid")["submitted_at"]
+        offset_min = events["tier"] * 5 + rng.uniform(0, 4, size=len(events))
+        events["event_at"] = (base.reindex(events["lead_uuid"]).to_numpy()
+                              + pd.to_timedelta(offset_min, unit="m"))
+    events.to_parquet(cfg.out_dir / "auction_events.parquet", index=False)
+
+    # Lead-level outcomes (sold tier, censored flag, clearing price) for the
+    # CRM silo and the analytics marts
+    pd.DataFrame({
+        "lead_uuid": leads["lead_uuid"],
+        "sold_tier": np.where(result.sold_tier >= 0, result.sold_tier + 1, pd.NA),
+        "sold": result.sold_tier >= 0,
+        "clearing_price": np.where(result.sold_tier >= 0, result.clearing_price, np.nan),
+        "floor_bound": result.floor_bound,
+    }).to_parquet(cfg.out_dir / "lead_outcomes.parquet", index=False)
 
 
 def generate_marketing(cfg: SimConfig) -> None:

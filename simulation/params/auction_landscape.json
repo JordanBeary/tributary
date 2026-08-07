@@ -1,7 +1,7 @@
 {
   "metadata": {
     "artifact": "auction_landscape",
-    "generated_utc": "2026-08-07T17:54:23+00:00",
+    "generated_utc": "2026-08-07T18:03:56+00:00",
     "seed": 42,
     "spec": "docs/calibration_spec.md Section 2 (v0.6)",
     "sources": {
@@ -38,8 +38,8 @@
       "decision": "C2"
     },
     "realized": {
-      "sell_through": 0.59858,
-      "floor_bound_sale_share": 0.767950816933409
+      "sell_through": 0.60033,
+      "floor_bound_sale_share": 0.6927523195575767
     },
     "data_mutations": [
       {
@@ -1170,6 +1170,11 @@
       "4": 0.17391304347826086,
       "5": 0.043478260869565216
     },
+    "cherry_picking": {
+      "kappa": 2.0,
+      "mechanism": "per-seat logit(p) + kappa*(q - 0.5)",
+      "decision": "C12 \u2014 realism layer after C11; floors calibrated with it active"
+    },
     "assumption": "competitor counts unobservable; n ~ 1/win_rate under symmetric competition, truncated to 2-5 (design Section 3.2)"
   },
   "funnel": {
@@ -1193,48 +1198,48 @@
     }
   },
   "tier_scale": {
-    "floor_multiplier": 1.7579581630733763,
+    "floor_multiplier": 1.7151555997284018,
     "floor_slope": 1.1,
     "tiers": [
       {
         "tier": 1,
         "clearing_anchor": 120.0,
-        "floor": 191.77725415345924,
+        "floor": 187.10788360673476,
         "mu": 4.787491742782046,
         "sigma": 0.8600131530990488
       },
       {
         "tier": 2,
         "clearing_anchor": 53.92988981839128,
-        "floor": 94.80649003988871,
+        "floor": 92.49815251474952,
         "mu": 3.987684866298491,
         "sigma": 0.8600131530990488
       },
       {
         "tier": 3,
         "clearing_anchor": 24.236941798531856,
-        "floor": 46.868282650929736,
+        "floor": 45.727139090647604,
         "mu": 3.1878779898149356,
         "sigma": 0.8600131530990488
       },
       {
         "tier": 4,
         "clearing_anchor": 10.892463339413213,
-        "floor": 23.169678760633733,
+        "floor": 22.605546084631396,
         "mu": 2.388071113331381,
         "sigma": 0.8600131530990488
       },
       {
         "tier": 5,
         "clearing_anchor": 4.895244564545172,
-        "floor": 11.454100374644558,
+        "floor": 11.17521725493009,
         "mu": 1.588264236847825,
         "sigma": 0.8600131530990488
       },
       {
         "tier": 6,
         "clearing_anchor": 2.2,
-        "floor": 5.662418402422609,
+        "floor": 5.5245504898371784,
         "mu": 0.7884573603642703,
         "sigma": 0.8600131530990488
       }
