@@ -11,6 +11,10 @@ class SimConfig:
     seed: int = 42
     scale: float = 1.0  # 0.01 = 1% dev runs; 1.0 = full deploy
     months: int = 12  # application window
+    # Window epoch: submissions span [window_start, window_start + months).
+    # Fixed date so timestamps are reproducible; silo timezone pathologies
+    # are applied at the fracture stage, so pipeline timestamps are UTC-naive.
+    window_start: str = "2025-07-01"
     out_dir: Path = Path("data/generated")
     params_dir: Path = Path("simulation/params")
     # The crosswalk is the hidden ground truth: local only, git-ignored,

@@ -77,7 +77,7 @@ A single reproducible Python package (seeded) with five stages:
 generate_consumers → generate_leads → run_waterfall → generate_marketing → fracture_into_silos
 ```
 
-1. **`generate_consumers(n=1_500_000)`** — samples demographic + credit features by fitting marginal distributions and a correlation structure (Gaussian copula, e.g., via the SDV library or hand-rolled with scipy) to LendingClub accepted+rejected data. Emits the hidden `consumer_key` and identity attributes (name, email, phone, address) via Faker, with duplicate-injection.
+1. **`generate_consumers(n=1_500_000)`** — samples demographic + credit features by fitting marginal distributions and a correlation structure (Gaussian copula, e.g., via the SDV library or hand-rolled with scipy) to LendingClub accepted+rejected data. Emits the hidden `consumer_key` and synthetic identity attributes (name, email, phone, address), with duplicate-injection.
 2. **`generate_leads`** — consumers submit 1–3 applications over a 12-month window; application features drawn conditioned on consumer credit profile. ~2.4M leads.
 3. **`run_waterfall`** — the heart of the simulator. For each lead: 6 tiers, each with 2–5 fictional buyers whose private valuations come from a lognormal landscape calibrated to iPinYou winning-price distributions, conditioned on lead quality score. Buyers bid; if max bid ≥ tier floor, the lead sells and the cascade stops; otherwise it falls to the next tier. Emits event-grain logs: `bid_request`, `bid`, `win`, `no_sale`. ~9M events. This produces *naturally censored* price data — the exact structure needed for the ML workstream.
 4. **`generate_marketing`** — pre-submission nurture campaigns (email/SMS sends, opens, clicks) with a randomized holdout flag and a small true uplift effect on application probability, calibrated to Criteo Uplift effect sizes. ~4M messages.
@@ -362,3 +362,4 @@ Per-document versioning (`../meta/plan.md` Section 7): every change cites the in
 | --- | --- | --- | --- |
 | v1.0 | 2026-07 | Initial design, drafted from the author's brief in the founding chat | P-002 |
 | v1.1 | 2026-08-03 | Fictional company name replaced with descriptive terms; confidentiality-note emoji removed; author placeholder resolved; example S3 path corrected to the real bucket; provenance front matter added; reframing sentence linking `meta/charter.md`; Phase 0.5 and the global exit criterion added to the roadmap; "How this was built" page added to the site plan; companion-version discipline adopted | INT-001, INT-003, INT-004, INT-007, INT-008; D1–D3 |
+| v1.2 | 2026-08-07 | Section 3.2: identity attributes described as synthetic data — the narrative names the data, not the generating library (ratification amendment to C13b) | C13, P-007 |

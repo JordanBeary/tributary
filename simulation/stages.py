@@ -14,6 +14,7 @@ import pandas as pd
 from simulation.auction import AuctionLandscape, run_auctions
 from simulation.config import SimConfig
 from simulation.consumers import CreditModel, IdentityVocab, build_population
+from simulation.leads import QualityModel, build_leads
 
 
 def generate_consumers(cfg: SimConfig) -> None:
@@ -21,8 +22,8 @@ def generate_consumers(cfg: SimConfig) -> None:
 
     - Credit/demographic features from the LendingClub Gaussian copula
       (params: lendingclub_marginals.json).
-    - Identity attributes (name, email, phone, address) via Faker's en_US
-      vocabularies, sampled through the stage RNG stream.
+    - Synthetic identity attributes (name, email, phone, address), sampled
+      from en_US vocabularies through the stage RNG stream (C13b).
     - ~cfg.duplicate_rate of the records are duplicates: the same person
       (shared consumer_key) with corrupted identity fields per the C7 mix
       (nickname, typo'd email, new phone). Record count includes duplicates,
@@ -39,12 +40,20 @@ def generate_consumers(cfg: SimConfig) -> None:
 
 
 def generate_leads(cfg: SimConfig) -> None:
-    """1-3 applications per consumer over cfg.months; ~1.6x consumers total.
+    """1-3 applications per consumer over cfg.months; 1.6x consumers in
+    expectation (C14 mix).
 
-    Application features conditioned on the consumer credit profile; quality
-    score q from the fitted acceptance model. Writes leads.parquet.
+    Application features conditioned on the consumer credit profile (repeat
+    applications re-request upward-jittered amounts); quality score q from the
+    fitted acceptance model, consumed as within-cohort percentile rank (C11).
+    Writes leads.parquet sorted by submitted_at.
     """
-    raise NotImplementedError("Phase 1: see docs/calibration_spec.md §1")
+    consumers = pd.read_parquet(cfg.out_dir / "consumers.parquet")
+    qm = QualityModel.from_params_dir(cfg.params_dir)
+    # Stage-scoped RNG stream: independent of other stages, reproducible per seed
+    rng = np.random.default_rng(np.random.SeedSequence([cfg.seed, 2]))
+    leads = build_leads(consumers, qm, cfg.months, cfg.window_start, rng)
+    leads.to_parquet(cfg.out_dir / "leads.parquet", index=False)
 
 
 def run_waterfall(cfg: SimConfig) -> None:

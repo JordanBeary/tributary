@@ -28,7 +28,7 @@ This spec defines, parameter by parameter, how the three public datasets drive t
 | Annual income marginal | `annual_inc` | Log-space empirical quantiles, winsorized |
 | Feature correlation structure | all numeric above | Gaussian copula: Spearman correlation matrix on accepted+rejected pooled sample, sampled via scipy multivariate normal + inverse-CDF marginals |
 | Lead quality score `q` | accept/reject label | Logistic regression of acceptance on features above; the fitted linear score (rescaled to [0,1]) is the raw score. **The simulator consumes `q` as the within-cohort percentile rank of that score** (v0.6, C11: ordering preserved exactly; the linear rescaling squashed the score into 0.6–1.0, wasting the range). The accepted/rejected *shape* is the realism anchor — not reused as an outcome |
-| Applications per consumer (1–3) | — (assumption) | Zipf-ish: P(1)=0.75, P(2)=0.18, P(3)=0.07 — tuned so total leads ≈ 1.6× consumers |
+| Applications per consumer (1–3) | — (assumption) | P(1)=0.55, P(2)=0.30, P(3)=0.15 → mean 1.60, so total leads = 1.6× consumer records exactly (v0.9, C14: the original mix had mean 1.32 and never met its own target) |
 
 **QA gates:** KS distance < 0.05 on each numeric marginal (simulated vs. source sample); categorical mixes within ±1pp; correlation matrix max absolute error < 0.1; simulated `q` distribution visually matches the accept-score histogram.
 
@@ -99,3 +99,4 @@ Not calibrated to a dataset — these are the §2.3 design dials, listed here so
 | v0.6 | 2026-08-07 | C11 triple after the gate falsified C9's value: q consumed as percentile rank (Section 1), elasticity 3.0 on rank-q, within-vertical sigma 0.860 (both sigmas recorded); shape gate restated onto the noise component; mean-q-by-tier and floor-pinning diagnostics added | C11, INT-014 |
 | v0.7 | 2026-08-07 | C12 cherry-picking participation layer (kappa 2.0) added to the Section 2 participation row; floors calibrated with it active; engine + artifact-only gate tests land in simulation/ and tests/ | C12 |
 | v0.8 | 2026-08-07 | Consumer engine (`simulation/consumers.py`) implements Section 1 in production: copula sampling per the notebook's gated sampler, `fico_band` derived from `fico_mid` (coherence; gate margin verified), Faker vocabularies sampled through the stage RNG, C7 duplicate injection; Section 1 + Section 4 gates reproduced from the artifact alone by `tests/test_consumers.py` | C13 |
+| v0.9 | 2026-08-07 | Applications-per-consumer mix corrected to P(1)=0.55/P(2)=0.30/P(3)=0.15 (the C3 mix had mean 1.32 against its own 1.6× target); identity attributes described as synthetic data per the C13b ratification amendment | C14, C13, P-007 |

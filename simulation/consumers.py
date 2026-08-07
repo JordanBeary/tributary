@@ -11,12 +11,12 @@ One deliberate divergence: ``fico_band`` is derived from the sampled ``fico_mid`
 rather than drawn independently, so each row is internally coherent; the derived
 band mix still lands within the ±1pp categorical gate (verified in tests).
 
-Identity attributes (name, email, phone, address) sample Faker's en_US
-frequency-weighted vocabularies through the stage RNG stream — vectorized numpy
-draws over Faker's own name/street/city/domain data rather than per-row Faker
-calls, keeping full-scale generation fast and every byte reproducible from one
-seed. Zip codes are drawn from Faker's per-state ranges so they agree with the
-LendingClub-calibrated ``addr_state``.
+Identity attributes (name, email, phone, address) are synthetic data (C13b):
+frequency-weighted en_US name/street/city/domain vocabularies — the ``faker``
+package is the vocabulary source — sampled through the stage RNG stream as
+vectorized numpy draws rather than per-row library calls, keeping full-scale
+generation fast and every byte reproducible from one seed. Zip codes come from
+per-state ranges so they agree with the LendingClub-calibrated ``addr_state``.
 
 Duplicate records (design Section 2.3, ~8% of rows) share a person's hidden
 ``consumer_key`` with corrupted identity fields per the C7 mix: nickname 40% /

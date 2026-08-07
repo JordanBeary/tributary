@@ -63,3 +63,17 @@ Entry status values: `verbatim` (exact text, redactions marked) or `summary — 
   >
   > Log this to meet our global objectives.
 - **Shaped:** The EDA-companion convention (calibration_spec v0.4, Section 0): every source dataset gets a narrated `*_eda.ipynb` covering provenance and mechanics, a data dictionary, descriptive statistics with semantics, collinearity/nesting structure, and business implications — teaching-first, read-only. `02a_ipinyou_eda.ipynb` is the first instance; companions for LendingClub and Criteo added to the Section 5 checklist. Recorded with INT-012.
+
+## P-007 — C13 ratification with domain confirmation and a terminology amendment (Phase 1)
+
+- **Date:** 2026-08-07
+- **Status:** verbatim
+- **Content:** (reviewing the C13 candidate record after the consumer engine landed)
+  > including duplicates in n_consumers is good - my company also has a 1:many contact to lead ratio because with small loans consumers often return for more.
+  >
+  > instead of Faker i would rather just call it synthetic data.
+  >
+  > fico_band is good
+  >
+  > continue with pipeline.
+- **Shaped:** C13 ratified — (a) and (c) as proposed, (b) amended so the narrative term is "synthetic identity data" rather than the library's name (design.md v1.2, spec v0.9, docstrings reworded; the `faker` dependency itself is unchanged — the amendment is about how the artifact is described). The domain note (returning small-loan borrowers make person-to-lead 1:many) also supplied the realism grounding for C14, the applications-per-consumer mix correction discovered while implementing `generate_leads`.
