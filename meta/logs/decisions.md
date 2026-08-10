@@ -129,6 +129,24 @@ Proposals to be validated or revised in the Phase 1 profiling notebooks.
 
 **The correction.** P(1)=0.55, P(2)=0.30, P(3)=0.15 → mean exactly 1.60, so 1.5M records × 1.60 = 2.4M leads. The heavier reapplication tail is independently supported by the human's domain confirmation (P-007): person-to-lead is 1:many in real small-loan marketplaces because borrowers return for more. The 1–3 range from the frozen stage contract is unchanged.
 
+### C15 — Marketing experiment structure: inverse construction, contact pool, ITT semantics
+
+*2026-08-10. Category: engine semantics for `generate_marketing`, resolved while implementing the stage against already-fixed application outcomes. Proposed by the agent, pending human review.*
+
+**The structural problem.** The pipeline generates applications (leads) before marketing, so the stage cannot forward-simulate "treatment raises application probability" — outcomes already exist. And since every consumer record carries at least one lead, a pool of consumer contacts alone has conversion rate 1.0: no non-converters, no measurable uplift.
+
+**(a) The nurture pool is built at the marketing stage and includes never-applier prospects.** Contact grain is unique email. Consumer records contribute their emails; fresh synthetic identities sized by `cfg.marketing_only_rate` (10% of contacts) contribute the non-converters the experiment requires. These prospects double as the design Section 2.3 "marketing contacts who never converted" orphan pathology — the dial is consumed here rather than at fracture, because the experiment needs them causally, not just cosmetically.
+
+**(b) The causal effect is injected by exact inverse construction.** Within each engagement segment (quintiles, uniform), the number of converters assigned to treatment is solved so that treated-minus-holdout conversion equals the injected per-segment uplift: with T treated and C holdout among N contacts of whom A converted, T_a = round(T(A + tau·C)/N) treated converters gives conv_T − conv_C = tau exactly. A naive analyst recovers the artifact's ATE because it is arithmetically present. Feasibility (INT-014 discipline, run on paper this time): tau ≤ ATE × 4.52 ≈ 0.52pp shifts T_a by under 1% of either arm at any scale ≥ 0.01; rounding error is 0.5/min(arm) ≈ 0.01pp at test scale, an order of magnitude under the asserted tolerances. Full-scale verification: naive estimate +0.001153 vs injected +0.001152.
+
+**(c) Intention-to-treat semantics.** Holdout contacts receive no messages (that is what a holdout is); ~5% of treated contacts draw zero messages from Poisson(3) and remain silently enrolled. The uplift attaches to assignment, not exposure — the standard ITT frame, and the one the Phase 4/5 analyses should use.
+
+**(d) Second stage output.** The frozen contract named only `messages.parquet`, but the holdout flag must be visible somewhere for any analysis to exist — a real ESP would hold an audience export. The stage therefore writes `marketing_contacts.parquet` (email, holdout flag, engagement segment, marketing-only flag) alongside `messages.parquet`. No downstream consumer existed yet; the silo loaders (Phase 2) build against the amended contract.
+
+**(e) Baseline conversion is structural, not Criteo's.** The artifact records Criteo's control conversion (0.19%), but this pool's baseline is ~90% by construction (converters dominate because only 10% of contacts are prospects). The Criteo calibration governs the *size* (ATE +0.115pp) and *spread* (segment multipliers, C6) of the effect — the baseline level is non-transferable, same epistemics as C9. Funnel heterogeneity uses mean-preserving segment factors 0.6–1.4 on the C5 rates (declared).
+
+**Engineering consequence.** Engine in `simulation/marketing.py` (artifact-only per A1); `generate_marketing` implemented against it; `tests/test_marketing.py` asserts the Section 3 gate sharply (realized uplift within rounding of the ATE, overall and per segment) plus ITT, pre-submission timing, funnel, and orphan-share invariants. Full scale: 1.59M contacts, 4.05M messages (design target ~4M) in ~37 s.
+
 ### Interpretations of ambiguous design points `[backfill, Phase 0]`
 
 - **"Conversion" semantics** are implemented as three genuinely different column definitions in the three silos (sold lead / funded loan / email click) — the semantic-drift pathology must be real enough to bite during unification, not just documented.

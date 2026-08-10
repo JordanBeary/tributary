@@ -15,6 +15,7 @@ from simulation.auction import AuctionLandscape, run_auctions
 from simulation.config import SimConfig
 from simulation.consumers import CreditModel, IdentityVocab, build_population
 from simulation.leads import QualityModel, build_leads
+from simulation.marketing import UpliftModel, build_marketing
 
 
 def generate_consumers(cfg: SimConfig) -> None:
@@ -100,9 +101,26 @@ def run_waterfall(cfg: SimConfig) -> None:
 def generate_marketing(cfg: SimConfig) -> None:
     """Pre-submission nurture messages (~4M at scale=1) with randomized
     holdout and a small true uplift on application probability
-    (uplift_params.json). Writes messages.parquet.
+    (uplift_params.json).
+
+    Contact grain is unique email: consumer records plus never-applier
+    prospects (cfg.marketing_only_rate of contacts — the experiment needs
+    non-converters, and they double as the marketing-only orphan pathology).
+    Holdout contacts receive no messages (intention-to-treat). Writes
+    marketing_contacts.parquet (audience: holdout flag, engagement segment)
+    and messages.parquet (sends + funnel events), per C15.
     """
-    raise NotImplementedError("Phase 1: see docs/calibration_spec.md §3")
+    consumers = pd.read_parquet(cfg.out_dir / "consumers.parquet")
+    leads = pd.read_parquet(cfg.out_dir / "leads.parquet")
+    um = UpliftModel.from_params_dir(cfg.params_dir)
+    vocab = IdentityVocab.from_faker()
+    # Stage-scoped RNG stream: independent of other stages, reproducible per seed
+    rng = np.random.default_rng(np.random.SeedSequence([cfg.seed, 4]))
+    contacts, messages = build_marketing(
+        consumers, leads, um, vocab, cfg.months, cfg.window_start,
+        cfg.marketing_only_rate, rng)
+    contacts.to_parquet(cfg.out_dir / "marketing_contacts.parquet", index=False)
+    messages.to_parquet(cfg.out_dir / "messages.parquet", index=False)
 
 
 def fracture_into_silos(cfg: SimConfig) -> None:
