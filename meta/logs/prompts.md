@@ -77,3 +77,13 @@ Entry status values: `verbatim` (exact text, redactions marked) or `summary — 
   >
   > continue with pipeline.
 - **Shaped:** C13 ratified — (a) and (c) as proposed, (b) amended so the narrative term is "synthetic identity data" rather than the library's name (design.md v1.2, spec v0.9, docstrings reworded; the `faker` dependency itself is unchanged — the amendment is about how the artifact is described). The domain note (returning small-loan borrowers make person-to-lead 1:many) also supplied the realism grounding for C14, the applications-per-consumer mix correction discovered while implementing `generate_leads`.
+
+## P-008 — Acquisition channels with full-funnel economics (Phase 1)
+
+- **Date:** 2026-08-10
+- **Status:** verbatim
+- **Content:** (reviewing the C15 marketing-experiment record, where never-applier prospects entered the contact pool unexplained)
+  > Lets highlight where these never-applier prospects are coming from - create a hypothetical natural mix of organic traffic, PPC, search advertising, etc. each of which has variable full funnel conversion, ROAS, profitability, etc.
+  >
+  > Ensure that the various marketing channels follow realistic conversion and KPIs expectations. For example, PPC likely has low intent and conversion - organic has higher intent and conversion.
+- **Shaped:** C16 and the acquisition-channel layer of the marketing engine: a seven-channel declared mix (direct/organic/referral/paid search/affiliate/paid social/display) with an intent ladder driving per-channel contact->application conversion, engagement-segment tilt, lead-quality tilt among converters, and unit economics (CPC/CPL, click->contact, CTR) that feed a monthly `channel_spend.parquet` ledger. Realized full-scale ROAS spans 0.78x (display) to 2.7x (affiliate) plus zero-cost owned channels — giving the Phase 4 unified-ROAS analysis a genuine cross-silo finding. Spec v0.11, design.md v1.3.

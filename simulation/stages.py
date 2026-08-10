@@ -106,9 +106,12 @@ def generate_marketing(cfg: SimConfig) -> None:
     Contact grain is unique email: consumer records plus never-applier
     prospects (cfg.marketing_only_rate of contacts — the experiment needs
     non-converters, and they double as the marketing-only orphan pathology).
-    Holdout contacts receive no messages (intention-to-treat). Writes
-    marketing_contacts.parquet (audience: holdout flag, engagement segment)
-    and messages.parquet (sends + funnel events), per C15.
+    Every contact enters through an acquisition channel with declared
+    full-funnel economics (C16); holdout contacts receive no messages
+    (intention-to-treat). Writes marketing_contacts.parquet (audience:
+    holdout flag, engagement segment, acquisition channel), messages.parquet
+    (sends + funnel events), and channel_spend.parquet (monthly media
+    ledger), per C15/C16.
     """
     consumers = pd.read_parquet(cfg.out_dir / "consumers.parquet")
     leads = pd.read_parquet(cfg.out_dir / "leads.parquet")
@@ -116,11 +119,12 @@ def generate_marketing(cfg: SimConfig) -> None:
     vocab = IdentityVocab.from_faker()
     # Stage-scoped RNG stream: independent of other stages, reproducible per seed
     rng = np.random.default_rng(np.random.SeedSequence([cfg.seed, 4]))
-    contacts, messages = build_marketing(
+    contacts, messages, spend = build_marketing(
         consumers, leads, um, vocab, cfg.months, cfg.window_start,
         cfg.marketing_only_rate, rng)
     contacts.to_parquet(cfg.out_dir / "marketing_contacts.parquet", index=False)
     messages.to_parquet(cfg.out_dir / "messages.parquet", index=False)
+    spend.to_parquet(cfg.out_dir / "channel_spend.parquet", index=False)
 
 
 def fracture_into_silos(cfg: SimConfig) -> None:

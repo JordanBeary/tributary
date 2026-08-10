@@ -1,3 +1,4 @@
+
 # Decision Log (ADR)
 
 Covers both tracks. Series: **A** (architecture and workflow), **B** (naming and configuration), **C** (calibration assumptions), **D** (post-reframing decisions), **Q** (open questions). A/B/C entries were migrated 2026-08-03 from `project_guide.md` Section 5 with their original ids preserved; they predate the id/citation discipline and are marked `[backfill]`.
@@ -33,7 +34,7 @@ Proposals to be validated or revised in the Phase 1 profiling notebooks.
 
 | # | Assumption | Value | Status |
 | --- | --- | --- | --- |
-| C1 | Tier price scale: iPinYou provides price *shapes*; absolute lead prices are invented | tier-6 floor ~ $2 ... tier-1 clearing ~ $120 | Declared design assumption — sanity-check against public lead-gen pricing anecdotes before publishing |
+| C1 | Tier price scale: iPinYou provides price *shapes*; absolute lead prices are invented | tier-6 floor ~ $2 ... tier-1 clearing ~ $120 | Declared design assumption — sanity-check against public lead-gen pricing anecdotes before publishing. **Watch item (2026-08-10, C16):** full-scale mean clearing price on sold leads is $198 — the C11 elasticity's right tail pulls the mean above the anchor |
 | C2 | Overall sell-through target | ~60%, monotone declining by tier; censored (unsold) fraction 35–45% | Tunable dial |
 | C3 | Applications per consumer | P(1)=0.75, P(2)=0.18, P(3)=0.07 → ~1.6 leads/consumer | **Superseded by C14** — the stated mix has mean 1.32 and never met its own 1.6× target |
 | C4 | Marginal-fit QA gates | KS < 0.05 numeric; ±1pp categorical; copula max corr error < 0.1 | Agent-proposed thresholds; tighten/loosen with evidence |
@@ -146,6 +147,38 @@ Proposals to be validated or revised in the Phase 1 profiling notebooks.
 **(e) Baseline conversion is structural, not Criteo's.** The artifact records Criteo's control conversion (0.19%), but this pool's baseline is ~90% by construction (converters dominate because only 10% of contacts are prospects). The Criteo calibration governs the *size* (ATE +0.115pp) and *spread* (segment multipliers, C6) of the effect — the baseline level is non-transferable, same epistemics as C9. Funnel heterogeneity uses mean-preserving segment factors 0.6–1.4 on the C5 rates (declared).
 
 **Engineering consequence.** Engine in `simulation/marketing.py` (artifact-only per A1); `generate_marketing` implemented against it; `tests/test_marketing.py` asserts the Section 3 gate sharply (realized uplift within rounding of the ATE, overall and per segment) plus ITT, pre-submission timing, funnel, and orphan-share invariants. Full scale: 1.59M contacts, 4.05M messages (design target ~4M) in ~37 s.
+
+### C16 — Acquisition channels: declared full-funnel economics (human-directed, P-008)
+
+*2026-08-10. Category: marketing-silo realism extension, directed by the human (P-008): surface where the never-applier prospects come from via a natural channel mix with realistic per-channel conversion, KPIs, ROAS, and profitability — "PPC likely has low intent and conversion - organic has higher intent and conversion."*
+
+**Structure.** Every contact enters the pool through one of seven acquisition channels; intent drives the whole funnel. The declared table (`ACQ_CHANNELS` in `simulation/marketing.py`):
+
+| Channel | Mix | Contact→app target | Seg tier | q tilt | Click→contact | Unit cost |
+| --- | --- | --- | --- | --- | --- | --- |
+| direct | 8% | 0.97 | high | +0.30 | 0.35 | — |
+| organic_search | 24% | 0.95 | high | +0.40 | 0.12 | — |
+| referral | 8% | 0.93 | mid | +0.20 | 0.10 | — |
+| paid_search | 26% | 0.90 | mid | 0.00 | 0.08 | $10.00 CPC |
+| affiliate | 12% | 0.85 | low | −0.20 | — | $60.00 CPL |
+| paid_social | 14% | 0.82 | low | −0.30 | 0.025 | $1.60 CPC |
+| display | 8% | 0.72 | low | −0.40 | 0.005 | $0.80 CPC |
+
+Conversion targets are rescaled by one factor so the pool-weighted rate matches the structural rate implied by the marketing-only dial (the *ladder* carries the realism; the level is structural, C15e). Converter/prospect channel mixes follow by Bayes — prospects concentrate in low-intent paid channels, which is exactly "where the never-appliers come from." Three correlation surfaces make the channels real end to end: engagement-segment tilt (high-intent channels open/click more, and respond more to nurture via the segment-uplift multipliers), lead-quality tilt among converters (organic delivers better leads, so revenue per contact varies by channel), and the declared unit economics feeding a monthly spend ledger (`channel_spend.parquet`: month × channel — contacts, visits, impressions, spend; visits back-derived so traffic always covers contacts).
+
+**Realized full-scale economics** (seed 42, revenue joined through to auction clearing prices):
+
+| Channel | Contacts | Spend | Revenue | CAC | ROAS |
+| --- | --- | --- | --- | --- | --- |
+| display | 127k | $20.9M | $16.3M | $164 | **0.78x** |
+| paid_search | 414k | $48.8M | $74.7M | $118 | 1.53x |
+| paid_social | 223k | $14.2M | $33.5M | $64 | 2.36x |
+| affiliate | 190k | $11.4M | $30.8M | $60 | 2.69x |
+| organic_search / referral / direct | 633k | $0 | $131M | $0 | owned |
+
+The spread is the point: an unprofitable channel (display), a thin one (paid search at loan-keyword CPCs), healthy paid channels, and free owned traffic — the Phase 4 unified-ROAS dashboard has a real finding to surface, and it is only computable *after* silo unification (spend lives in marketing, revenue in the auction silo, joined through ER).
+
+**En-route observation (C1 watch item).** Calibrating CPCs required measuring revenue: full-scale mean clearing price on sold leads is **$198**, above C1's "tier-1 clearing ≈ $120" anchor — the C11 elasticity's right tail pulls the mean. Logged on C1's status; revisit against public lead-pricing anecdotes before publishing, per C1's own caveat.
 
 ### Interpretations of ambiguous design points `[backfill, Phase 0]`
 

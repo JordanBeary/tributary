@@ -50,6 +50,40 @@ CHANNEL_PROBS = np.array([0.85, 0.15])
 OPEN_DELAY_MEAN_S = 6 * 3600.0     # send -> open lag (declared)
 CLICK_DELAY_MEAN_S = 15 * 60.0     # open -> click lag (declared)
 
+# ── Acquisition channels (C16): declared full-funnel economics ──
+# Each contact enters the pool through an acquisition channel with its own
+# intent level, and intent drives the whole funnel: contact->application
+# conversion (conv_target, rescaled so the pool-weighted rate matches the
+# structural rate implied by cfg.marketing_only_rate), engagement-segment mix
+# (seg_tier), and lead quality among converters (q_tilt). Unit economics
+# (click_to_contact, cpc/cpl, ctr) drive the monthly spend table so Phase 4
+# can compute true per-channel CAC and ROAS through to auction revenue.
+# Values are declared assumptions calibrated to lead-gen industry shape:
+# personal-loan paid-search clicks are expensive ($10 CPC at 8% click->contact
+# ~ $125 CAC), affiliates sell leads at ~$60 CPL, display retargeting buys
+# cheap low-intent clicks that convert worst — by construction the channel mix
+# spans clearly-profitable to unprofitable.
+ACQ_CHANNELS = pd.DataFrame({
+    "mix":              [0.08,   0.24,   0.08,   0.26,   0.12,   0.14,   0.08],
+    "conv_target":      [0.97,   0.95,   0.93,   0.90,   0.85,   0.82,   0.72],
+    "seg_tier":         ["high", "high", "mid",  "mid",  "low",  "low",  "low"],
+    "q_tilt":           [0.30,   0.40,   0.20,   0.00,   -0.20,  -0.30,  -0.40],
+    "click_to_contact": [0.35,   0.12,   0.10,   0.08,   np.nan, 0.025,  0.005],
+    "cpc":              [0.0,    0.0,    0.0,    10.00,  np.nan, 1.60,   0.80],
+    "cpl":              [np.nan, np.nan, np.nan, np.nan, 60.00,  np.nan, np.nan],
+    "ctr":              [np.nan, np.nan, np.nan, 0.045,  np.nan, 0.009,  0.0025],
+}, index=pd.Index(["direct", "organic_search", "referral", "paid_search",
+                   "affiliate", "paid_social", "display"], name="channel"))
+
+# Engagement-segment mix per intent tier (means 3.4 / 3.0 / 2.6)
+SEG_TIER_PROBS = {
+    "high": np.array([0.12, 0.16, 0.20, 0.24, 0.28]),
+    "mid":  np.array([0.20, 0.20, 0.20, 0.20, 0.20]),
+    "low":  np.array([0.28, 0.24, 0.20, 0.16, 0.12]),
+}
+ACQ_LAG_MEAN_S = 2 * 86_400.0      # acquisition -> first nurture send (declared)
+SPEND_JITTER = 0.10                # monthly unit-cost wobble (declared)
+
 
 @dataclass(frozen=True)
 class UpliftModel:
@@ -85,14 +119,17 @@ def _contact_pool(consumers: pd.DataFrame, leads: pd.DataFrame,
     """Contact grain = unique email. Consumer contacts carry their earliest
     application time; marketing-only prospects (fresh synthetic identities)
     never applied and have none."""
-    first_sub = leads.groupby("consumer_record_id")["submitted_at"].min()
+    by_rec = leads.groupby("consumer_record_id").agg(
+        first_sub=("submitted_at", "min"), mean_q=("q", "mean"))
     cons = consumers[["email", "first_name", "last_name"]].copy()
-    cons["first_sub"] = consumers["consumer_record_id"].map(first_sub)
+    cons["first_sub"] = consumers["consumer_record_id"].map(by_rec["first_sub"])
+    cons["_mean_q"] = consumers["consumer_record_id"].map(by_rec["mean_q"])
     contacts = (cons.sort_values("first_sub", kind="stable")
                 .groupby("email", as_index=False)
                 .agg(first_name=("first_name", "first"),
                      last_name=("last_name", "first"),
-                     first_sub=("first_sub", "min")))
+                     first_sub=("first_sub", "min"),
+                     _mean_q=("_mean_q", "mean")))
     contacts["is_marketing_only"] = False
 
     # Prospects sized so they are marketing_only_rate of the total pool
@@ -110,10 +147,56 @@ def _contact_pool(consumers: pd.DataFrame, leads: pd.DataFrame,
     extras = pd.DataFrame({
         "email": ident["email"], "first_name": ident["first_name"],
         "last_name": ident["last_name"], "first_sub": pd.NaT,
-        "is_marketing_only": True,
+        "_mean_q": np.nan, "is_marketing_only": True,
     })
     pool = pd.concat([contacts, extras], ignore_index=True)
     return pool.iloc[rng.permutation(len(pool))].reset_index(drop=True)
+
+
+def _assign_channels(pool: pd.DataFrame, marketing_only_rate: float,
+                     rng: np.random.Generator) -> pd.DataFrame:
+    """Acquisition channel per contact (C16), with the declared full funnel.
+
+    Per-channel contact->application conversion targets are rescaled by one
+    factor so the pool-weighted rate matches the structural rate implied by
+    the marketing-only dial; the intent ordering is what carries the realism.
+    Converter/prospect channel mixes follow by Bayes from (mix, conversion).
+    Among converters, assignment tilts with realized mean lead quality
+    (q_tilt), so high-intent channels also deliver better leads downstream.
+    """
+    a = ACQ_CHANNELS
+    scale = (1 - marketing_only_rate) / (a["mix"] * a["conv_target"]).sum()
+    conv_rate = (a["conv_target"] * scale).clip(upper=0.995)
+    p_conv = (a["mix"] * conv_rate).to_numpy()
+    p_conv = p_conv / p_conv.sum()
+    p_pros = (a["mix"] * (1 - conv_rate)).to_numpy()
+    p_pros = p_pros / p_pros.sum()
+
+    channel = np.empty(len(pool), dtype=object)
+    is_pros = pool["is_marketing_only"].to_numpy()
+
+    # Prospects: plain mix draw (dominated by low-intent paid channels)
+    channel[is_pros] = rng.choice(a.index.to_numpy(), size=int(is_pros.sum()),
+                                  p=p_pros)
+    # Converters: mix draw tilted by the contact's lead-quality percentile
+    conv_idx = np.flatnonzero(~is_pros)
+    q_pct = stats_rank(pool["_mean_q"].to_numpy()[conv_idx])
+    probs = p_conv[None, :] * (1 + a["q_tilt"].to_numpy()[None, :]
+                               * (q_pct[:, None] - 0.5))
+    probs /= probs.sum(axis=1, keepdims=True)
+    cum = np.cumsum(probs, axis=1)
+    draw = rng.uniform(size=len(conv_idx))[:, None]
+    pick = np.minimum((draw >= cum).sum(axis=1), len(a) - 1)  # float-sum guard
+    channel[conv_idx] = a.index.to_numpy()[pick]
+    return pool.assign(acquisition_channel=channel)
+
+
+def stats_rank(x: np.ndarray) -> np.ndarray:
+    """Percentile rank in (0,1); ties broken by stable order (x is continuous)."""
+    order = np.argsort(x, kind="stable")
+    ranks = np.empty(len(x))
+    ranks[order] = np.arange(1, len(x) + 1)
+    return ranks / (len(x) + 1)
 
 
 def _assign_holdout(pool: pd.DataFrame, um: UpliftModel,
@@ -124,8 +207,18 @@ def _assign_holdout(pool: pd.DataFrame, um: UpliftModel,
     With T treated and C holdout in a segment of N with A converters, setting
     T_a = round(T * (A + tau*C) / N) treated converters gives
     conv_T - conv_C = tau exactly (up to integer rounding).
+
+    Segments draw from the acquisition channel's intent tier (C16), so
+    engagement — and through it the funnel and the uplift response — is
+    correlated with how the contact was acquired.
     """
-    seg = rng.integers(1, N_SEGMENTS + 1, size=len(pool))
+    tier_matrix = np.stack([SEG_TIER_PROBS["high"], SEG_TIER_PROBS["mid"],
+                            SEG_TIER_PROBS["low"]])
+    tier_idx = (pool["acquisition_channel"].map(ACQ_CHANNELS["seg_tier"])
+                .map({"high": 0, "mid": 1, "low": 2}).to_numpy())
+    cum = np.cumsum(tier_matrix[tier_idx], axis=1)
+    seg = 1 + (rng.uniform(size=(len(pool), 1)) >= cum).sum(axis=1)
+    seg = np.minimum(seg, N_SEGMENTS)  # float-sum guard
     converted = ~pool["is_marketing_only"].to_numpy()
     treated = np.zeros(len(pool), dtype=bool)
     for s in range(1, N_SEGMENTS + 1):
@@ -190,19 +283,83 @@ def _messages(pool: pd.DataFrame, um: UpliftModel, months: int,
     return msgs.sort_values("sent_at", kind="stable").reset_index(drop=True)
 
 
+def _acquired_at(pool: pd.DataFrame, msgs: pd.DataFrame, months: int,
+                 window_start: str, rng: np.random.Generator) -> np.ndarray:
+    """When each contact entered the pool. Messaged contacts were acquired a
+    short lag before their first send; unmessaged contacts draw uniformly over
+    their own horizon (pre-application for converters, the window for
+    prospects). Always before the first send and never after first_sub."""
+    start = pd.Timestamp(window_start)
+    window_s = int(months * 365.25 / 12) * 86_400.0
+    fs = pool["first_sub"].to_numpy()
+    horizon = np.where(np.isnat(fs), window_s,
+                       (fs - start.to_numpy()) / np.timedelta64(1, "s"))
+    t = rng.uniform(size=len(pool)) * horizon  # fallback: uniform on horizon
+
+    first_send = msgs.groupby("email")["sent_at"].min()
+    fsend = pool["email"].map(first_send).to_numpy()
+    has_send = ~np.isnat(fsend)
+    lag = rng.exponential(ACQ_LAG_MEAN_S, size=len(pool))
+    send_s = (fsend - start.to_numpy()) / np.timedelta64(1, "s")
+    t[has_send] = np.maximum(send_s[has_send] - lag[has_send], 0.0)
+    return (start + pd.to_timedelta(t, unit="s")).to_numpy()
+
+
+def _channel_spend(pool: pd.DataFrame, rng: np.random.Generator) -> pd.DataFrame:
+    """Monthly per-channel acquisition funnel and spend (C16).
+
+    Traffic is back-derived from realized contacts: visits ~ contacts +
+    Poisson slack at the declared click->contact rate (so visits >= contacts),
+    impressions from the declared CTR for media channels. Spend is visits x
+    CPC (with a monthly unit-cost wobble) for media, contacts x CPL for
+    affiliate, zero for owned channels. Phase 4 joins this to auction revenue
+    for true per-channel CAC and ROAS.
+    """
+    month = (pd.DatetimeIndex(pool["acquired_at"]).to_period("M").astype(str)
+             .str.replace("-", "", regex=False))
+    grp = (pd.DataFrame({"channel": pool["acquisition_channel"], "month": month})
+           .groupby(["month", "channel"], as_index=False).size()
+           .rename(columns={"size": "new_contacts"}))
+    a = ACQ_CHANNELS.loc[grp["channel"]]
+    n = grp["new_contacts"].to_numpy()
+
+    rate = a["click_to_contact"].to_numpy()
+    with np.errstate(invalid="ignore"):
+        visits = np.where(np.isnan(rate), np.nan,
+                          n + rng.poisson(np.nan_to_num(n * (1 - rate) / rate)))
+        impressions = np.round(visits / a["ctr"].to_numpy())
+    jitter = rng.uniform(1 - SPEND_JITTER, 1 + SPEND_JITTER, size=len(grp))
+    cpc = a["cpc"].to_numpy()
+    cpl = a["cpl"].to_numpy()
+    spend = np.where(~np.isnan(cpl), n * cpl,
+                     np.nan_to_num(visits * cpc * jitter))
+    grp["visits"] = visits
+    grp["impressions"] = impressions
+    grp["spend_usd"] = np.round(spend, 2)
+    return grp.sort_values(["month", "channel"]).reset_index(drop=True)
+
+
 def build_marketing(consumers: pd.DataFrame, leads: pd.DataFrame,
                     um: UpliftModel, vocab: IdentityVocab, months: int,
                     window_start: str, marketing_only_rate: float,
-                    rng: np.random.Generator) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """The full marketing world: (contacts, messages).
+                    rng: np.random.Generator,
+                    ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """The full marketing world: (contacts, messages, channel_spend).
 
-    Contacts carry the experiment design (holdout flag, engagement segment) —
-    the audience export a real ESP would hold; messages carry the sends and
-    funnel events. Both are keyed by email; the fracture stage derives
-    contact_id = md5(lower(email)) and never sees consumer_key.
+    Contacts carry the experiment design (holdout flag, engagement segment)
+    and acquisition provenance (channel, acquired_at) — the audience export a
+    real ESP/CDP would hold; messages carry the sends and funnel events;
+    channel_spend is the monthly media ledger. All keyed by email; the
+    fracture stage derives contact_id = md5(lower(email)) and never sees
+    consumer_key. The internal lead-quality column used for channel tilting
+    is dropped — no silo may know underwriting quality directly.
     """
     pool = _contact_pool(consumers, leads, vocab, marketing_only_rate, rng)
+    pool = _assign_channels(pool, marketing_only_rate, rng)
     pool = _assign_holdout(pool, um, rng)
     msgs = _messages(pool, um, months, window_start, rng)
-    contacts = pool.sort_values("email", kind="stable").reset_index(drop=True)
-    return contacts, msgs
+    pool["acquired_at"] = _acquired_at(pool, msgs, months, window_start, rng)
+    spend = _channel_spend(pool, rng)
+    contacts = (pool.drop(columns="_mean_q")
+                .sort_values("email", kind="stable").reset_index(drop=True))
+    return contacts, msgs, spend
