@@ -180,6 +180,26 @@ The spread is the point: an unprofitable channel (display), a thin one (paid sea
 
 **En-route observation (C1 watch item).** Calibrating CPCs required measuring revenue: full-scale mean clearing price on sold leads is **$198**, above C1's "tier-1 clearing ≈ $120" anchor — the C11 elasticity's right tail pulls the mean. Logged on C1's status; revisit against public lead-pricing anecdotes before publishing, per C1's own caveat.
 
+### C17 — Fracture semantics: payload, migration orphans, funded flag, hash isolation
+
+*2026-08-10. Category: engine semantics for `fracture_into_silos`, resolved while implementing the Section 2.3 pathologies. Proposed by the agent, pending human review. Closes the five-stage engine.*
+
+**(a) Auction bid_request rows carry the offer payload** (state, loan amount, purpose, FICO band). Real lead auctions transmit the lead to buyers, and the feasibility argument is structural: by design no key survives between the auction silo and the CRM, so without the payload the two silos would be unlinkable *in principle* and the north-star question (marketing ROI through auction revenue) unanswerable. With it, auction↔CRM linkage is fuzzy-but-feasible (state + amount + submission-time proximity), which is the intended difficulty.
+
+**(b) CRM ships as `leads.csv` + `schema.sql`** (DDL + copy instructions) rather than literal INSERT statements — 2.4M INSERTs would be a ~1 GB SQL file with no realism gain. The design's "CSV + SQL inserts" is read as data + loader.
+
+**(c) Migration orphans come from the early window.** The ~5% orphan budget is drawn entirely from the first three months (~20% of that period's rows) — a migration that lost a slice of legacy records, not row-lottery noise — and the surviving CRM renumbers `lead_id` densely in submission order, so the id sequence gives no hint of the gap. Their auction events remain, orphaned.
+
+**(d) `funded` = the artifact's conversions/clicks rate** (847/6329 ≈ 13.4%) drawn among sold leads, per the spec's "CVR-scaled funded flag" row — artifact-driven, not declared. CRM status is current-state ({funded, sold, closed_lost}) with a single overwritten `updated_at` (funded reports back 7–45 days after sale) — the entity-grain mutability pathology.
+
+**(e) Both email hashes ship, raw email ships nowhere.** CRM carries sha256, marketing carries md5 — different algorithms, so the silos cannot be joined cryptographically; if either silo shipped raw email the CRM↔marketing join would be a trivial hash computation and ER would collapse to F1 ≈ 1.0. The fuzzy signal rides on names, phones, and zips instead — marketing contacts now retain phone/state/zip (plausible: signup forms + SMS reachability), because name-only matching at 1.4M contacts would be infeasible in the other direction. This name/phone/zip ladder plus the C7 corruptions is the ER difficulty dial.
+
+**(f) Observed: DST makes naive CRM timestamps non-monotonic.** `lead_id` follows UTC submission order, but Pacific wall-clock inverts inside the November fall-back hour — the timezone pathology biting exactly as intended; asserted as a feature in `tests/test_fracture.py`.
+
+**Watch items (Phase 2).** Full-scale CRM CSV is **561 MB against the design's ~0.4 GB Neon free-tier target** — the silo loader will need trimming (column subset or scale dial), per the design's own "free-tier limits take precedence" rule. Fracture peaks at ~22 GB RSS at scale 1.0 (whole-frame event transforms); acceptable on the dev machine, chunk by partition if it ever isn't. Marketing JSONL is 1.2 GB — comfortably inside BigQuery's free tier.
+
+**Engineering consequence.** Engine in `simulation/fracture.py`; the full five-stage pipeline now runs from one seeded command — 1.8 s at scale 0.01, 2m28s at scale 1.0 — and `tests/test_fracture.py` asserts every pathology from the outside (key isolation, crosswalk completeness, orphan mechanics, CRM semantics and timezone round-trips, semantic drift, crosswalk confinement to `data/private/`). Phase 1's local exit criteria (design Section 9: reproducible 1%/100% runs from one command; distribution QA passing) are met.
+
 ### Interpretations of ambiguous design points `[backfill, Phase 0]`
 
 - **"Conversion" semantics** are implemented as three genuinely different column definitions in the three silos (sold lead / funded loan / email click) — the semantic-drift pathology must be real enough to bite during unification, not just documented.

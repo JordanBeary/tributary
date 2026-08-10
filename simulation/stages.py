@@ -16,6 +16,10 @@ from simulation.config import SimConfig
 from simulation.consumers import CreditModel, IdentityVocab, build_population
 from simulation.leads import QualityModel, build_leads
 from simulation.marketing import UpliftModel, build_marketing
+from simulation.fracture import (
+    CRM_SCHEMA_SQL, build_auction_export, build_crm, build_crosswalk,
+    build_marketing_export, funded_rate_from_artifact,
+)
 
 
 def generate_consumers(cfg: SimConfig) -> None:
@@ -130,11 +134,45 @@ def generate_marketing(cfg: SimConfig) -> None:
 def fracture_into_silos(cfg: SimConfig) -> None:
     """Apply §2.3 pathologies and write each silo in its native format:
 
-    - auction/  : Parquet partitioned by event date, lead_uuid keys, UTC
-    - crm/      : CSV + SQL inserts, integer lead_id + email_sha256,
-                  US/Pacific naive timestamps, entity-grain (mutable)
-    - marketing/: newline-JSON exports, contact_id = md5(lower(email)),
-                  US/Eastern timestamps
+    - auction/  : Parquet partitioned by event date, lead_uuid keys, UTC;
+                  bid_request rows carry the offer payload (C17)
+    - crm/      : leads.csv + schema.sql (DDL + copy), integer lead_id +
+                  email_sha256, US/Pacific naive timestamps, entity-grain
+                  (mutable); ~cfg.orphan_rate of leads lost to the migration
+    - marketing/: newline-JSON exports (contacts, messages, channel_spend),
+                  contact_id = md5(lower(email)), US/Eastern timestamps
     - crosswalk.parquet -> cfg.private_dir (NEVER uploaded; git-ignored)
     """
-    raise NotImplementedError("Phase 1: see design.md §2.3")
+    consumers = pd.read_parquet(cfg.out_dir / "consumers.parquet")
+    leads = pd.read_parquet(cfg.out_dir / "leads.parquet")
+    outcomes = pd.read_parquet(cfg.out_dir / "lead_outcomes.parquet")
+    events = pd.read_parquet(cfg.out_dir / "auction_events.parquet")
+    contacts = pd.read_parquet(cfg.out_dir / "marketing_contacts.parquet")
+    messages = pd.read_parquet(cfg.out_dir / "messages.parquet")
+    spend = pd.read_parquet(cfg.out_dir / "channel_spend.parquet")
+    # Stage-scoped RNG stream: independent of other stages, reproducible per seed
+    rng = np.random.default_rng(np.random.SeedSequence([cfg.seed, 5]))
+
+    crm, crm_id_map = build_crm(
+        leads, consumers, outcomes, cfg.window_start, cfg.orphan_rate,
+        funded_rate_from_artifact(cfg.params_dir), rng)
+    crm_dir = cfg.out_dir / "crm"
+    crm_dir.mkdir(parents=True, exist_ok=True)
+    crm.to_csv(crm_dir / "leads.csv", index=False)
+    (crm_dir / "schema.sql").write_text(CRM_SCHEMA_SQL)
+
+    auction = build_auction_export(events, leads)
+    auction.to_parquet(cfg.out_dir / "auction", partition_cols=["event_date"],
+                       index=False)
+
+    mkt_contacts, mkt_msgs, mkt_spend = build_marketing_export(
+        contacts, messages, spend)
+    mkt_dir = cfg.out_dir / "marketing"
+    mkt_dir.mkdir(parents=True, exist_ok=True)
+    for name, df in (("contacts", mkt_contacts), ("messages", mkt_msgs),
+                     ("channel_spend", mkt_spend)):
+        df.to_json(mkt_dir / f"{name}.jsonl", orient="records", lines=True)
+
+    # The hidden ground truth stays local (design §2.4)
+    build_crosswalk(consumers, leads, crm_id_map).to_parquet(
+        cfg.private_dir / "crosswalk.parquet", index=False)

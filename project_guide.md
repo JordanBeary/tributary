@@ -4,9 +4,9 @@ Working companion to [docs/design.md](docs/design.md): the local workload's curr
 
 What the project *is* — including the global/local split and the precedence rule — lives in [meta/charter.md](meta/charter.md). Decision tables formerly in this guide live in [meta/logs/decisions.md](meta/logs/decisions.md) (ids preserved); machine and environment quirks live in [CLAUDE.md](CLAUDE.md).
 
-Status: v2.0, 2026-08-03 (reconciled per `meta/plan.md` Section 6; supersedes the Phase-0 v1) · Written against design.md v1.1
-Provenance: A (original), HD (this reconciliation)
-Project status: **Phases 0 and 0.5 complete, Phase 1 (simulation engine) next**
+Status: v2.1, 2026-08-10 (Phase 1 engine complete) · Written against design.md v1.3
+Provenance: A (original), HD (v2.0 reconciliation), A (v2.1)
+Project status: **Phases 0–0.5 complete; Phase 1 engine complete (records C10, C15–C17 pending human ratification); Phase 2 (silo deployment) next after sign-off**
 
 ---
 
@@ -25,9 +25,11 @@ Project status: **Phases 0 and 0.5 complete, Phase 1 (simulation engine) next**
 - **The crosswalk never enters the cloud** — `data/private/` is git-ignored and stays on the author's machine only.
 - **Free-tier fit**: CRM silo trimmed to Neon's ~0.5 GB; BigQuery within 10 GiB storage / 1 TiB query free tier; few-large-files Parquet layout on S3 (writes cost ~12x reads).
 
-## 3. Current state (end of Phase 0.5)
+## 3. Current state (end of Phase 1 build)
 
-**Repo**: scaffold per design Section 11, devcontainer, `pyproject.toml` (Python >= 3.11), simulation package skeleton with a working CLI (`python -m simulation --scale 0.01`) and fixed stage contracts (bodies are Phase 1), infra scripts, calibration spec, and the `meta/` harness (charter, conventions, provenance, logs, knowledge graph).
+**Simulation engine (Phase 1, complete 2026-08-10)**: all five stages implemented and artifact-driven (A1) — consumers (C13), leads (C14), waterfall (C11/C12), marketing with the uplift experiment and acquisition channels (C15/C16), and fracture with the Section 2.3 pathologies (C17). One seeded command (`python -m simulation --scale X`) regenerates everything: 1.8 s at 1%, ~2.5 min at 100% (1.5M consumer records, 2.4M leads, 24.5M auction events, 4.05M messages, three native-format silos, crosswalk in `data/private/`). 42 tests reproduce the calibration QA gates from the params artifacts alone. Phase 2 watch items in C17: CRM CSV is 561 MB vs the ~0.4 GB Neon target; fracture peaks ~22 GB RSS at full scale.
+
+**Repo**: scaffold per design Section 11, devcontainer, `pyproject.toml` (Python >= 3.11), simulation package with a working CLI (`python -m simulation --scale 0.01`), infra scripts, calibration spec, and the `meta/` harness (charter, conventions, provenance, logs, knowledge graph).
 
 **Cloud, provisioned and verified reachable from local Python/CLI** (renamed 2026-08-03 per decisions D2/D3):
 

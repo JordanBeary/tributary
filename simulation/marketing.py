@@ -121,13 +121,19 @@ def _contact_pool(consumers: pd.DataFrame, leads: pd.DataFrame,
     never applied and have none."""
     by_rec = leads.groupby("consumer_record_id").agg(
         first_sub=("submitted_at", "min"), mean_q=("q", "mean"))
-    cons = consumers[["email", "first_name", "last_name"]].copy()
+    # Phone/state/zip ride along: the ESP knows them from signup forms and SMS
+    # reachability, and they are the cross-silo fuzzy-match signal for ER
+    cons = consumers[["email", "first_name", "last_name", "phone",
+                      "addr_state", "zip_code"]].copy()
     cons["first_sub"] = consumers["consumer_record_id"].map(by_rec["first_sub"])
     cons["_mean_q"] = consumers["consumer_record_id"].map(by_rec["mean_q"])
     contacts = (cons.sort_values("first_sub", kind="stable")
                 .groupby("email", as_index=False)
                 .agg(first_name=("first_name", "first"),
                      last_name=("last_name", "first"),
+                     phone=("phone", "first"),
+                     state=("addr_state", "first"),
+                     zip_code=("zip_code", "first"),
                      first_sub=("first_sub", "min"),
                      _mean_q=("_mean_q", "mean")))
     contacts["is_marketing_only"] = False
@@ -146,8 +152,9 @@ def _contact_pool(consumers: pd.DataFrame, leads: pd.DataFrame,
         clash = ident["email"].isin(taken) | ident["email"].duplicated()
     extras = pd.DataFrame({
         "email": ident["email"], "first_name": ident["first_name"],
-        "last_name": ident["last_name"], "first_sub": pd.NaT,
-        "_mean_q": np.nan, "is_marketing_only": True,
+        "last_name": ident["last_name"], "phone": ident["phone"],
+        "state": states, "zip_code": ident["zip_code"],
+        "first_sub": pd.NaT, "_mean_q": np.nan, "is_marketing_only": True,
     })
     pool = pd.concat([contacts, extras], ignore_index=True)
     return pool.iloc[rng.permutation(len(pool))].reset_index(drop=True)
