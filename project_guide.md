@@ -54,5 +54,6 @@ Project status: **Phases 0–0.5 complete; Phase 1 engine complete (records C10,
 - **Phase 1 order**: profiling notebooks first (they produce the param artifacts), then stages in pipeline order (consumers → leads → waterfall → marketing → fracture), each validated at `--scale 0.01` before scaling. The waterfall stage is the heart — budget the most care there, since models 1–3 and 5–6 all depend on its censoring structure being right.
 - **Realism check that matters most**: ER difficulty. If Splink hits F1 ~ 1.0, the pathologies are too clean — turn the dials (C7) up. Target band 0.85–0.95.
 - **Cost artifacts as you go**: screenshot budgets, note bytes-scanned before/after partitioning, keep the receipts — Section 5.3's 100x-scale analysis and the FinOps write-up need them.
+- **Mart shape (Phase 4)**: prefer wide, denormalized fact tables — event grain carrying consumer/demographic attributes row-wise — over narrow facts requiring joins (the author's stated OLAP preference, P-009/C17).
 - **When adding dependencies**, they go in `pyproject.toml` (runtime) or `[dev]`/`[ml]` extras — the devcontainer and Codespaces flow depend on `pip install -e '.[dev]'` being sufficient.
 - **Session records**: follow the trigger table in [meta/conventions.md](meta/conventions.md) Section 3 — interventions, decisions, prompt candidates, graph diffs.

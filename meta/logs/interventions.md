@@ -156,3 +156,13 @@ Entries INT-001 through INT-008 were seeded during the 2026-08-03 reorganization
 - **Human guidance:** "This incompatibility was computable at ratification time. ... That's [an agent error]: agent ratified a parameter and its verification gate without a feasibility check that required no new computation. Your harness caught in one run what should have been caught on paper." (verbatim, condensed)
 - **Resolution:** The falsification stands as part of the record (C9 superseded by C11, not edited in place). Standing practice going forward: a declared parameter proposed together with its verification gate must ship with the back-of-envelope feasibility arithmetic in the proposal itself.
 - **Doc changes:** `meta/logs/decisions.md` C9 supersession line + C11; this entry.
+
+## INT-015 — Vague decision requests; explicit-ask protocol adopted
+
+- **Date:** 2026-08-12
+- **Phase:** 1 (wrap) · **Severity:** low (communication; no artifacts affected)
+- **What the agent did:** Ended a session summary with "Pending your ratification: C10, C15, C16, C17" — a bare list of decision ids with no statement of what each decision was, what ratifying would mean, what to examine before deciding, or what would happen on rejection. The human had to ask what was actually being requested.
+- **Classification:** omission — the harness's propose-then-ratify loop (conventions Section 3 session protocol) presumes the human can act on a proposal, and a proposal whose ask is implicit is not actionable.
+- **Human guidance:** "Make a note to be very clear and direct about what decisions you want me to make. For example, what specifically do you mean by saying 'Pending your ratification'?" (verbatim, P-009)
+- **Resolution:** Standing protocol for decision requests, effective immediately: each open decision is presented as (1) a one-sentence statement of what was decided and why, (2) the concrete question — usually accept / amend / reject, (3) what each answer entails downstream, and (4) the agent's recommendation. Bare id lists are not decision requests. Applied in the same session to the still-open C10 and C15.
+- **Doc changes:** none (process only); this entry.

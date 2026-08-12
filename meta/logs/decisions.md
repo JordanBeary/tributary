@@ -182,9 +182,9 @@ The spread is the point: an unprofitable channel (display), a thin one (paid sea
 
 ### C17 — Fracture semantics: payload, migration orphans, funded flag, hash isolation
 
-*2026-08-10. Category: engine semantics for `fracture_into_silos`, resolved while implementing the Section 2.3 pathologies. Proposed by the agent, pending human review. Closes the five-stage engine.*
+*2026-08-10. Category: engine semantics for `fracture_into_silos`, resolved while implementing the Section 2.3 pathologies. Proposed by the agent; **ratified 2026-08-12 (P-009)**. Closes the five-stage engine.*
 
-**(a) Auction bid_request rows carry the offer payload** (state, loan amount, purpose, FICO band). Real lead auctions transmit the lead to buyers, and the feasibility argument is structural: by design no key survives between the auction silo and the CRM, so without the payload the two silos would be unlinkable *in principle* and the north-star question (marketing ROI through auction revenue) unanswerable. With it, auction↔CRM linkage is fuzzy-but-feasible (state + amount + submission-time proximity), which is the intended difficulty.
+**(a) Auction bid_request rows carry the offer payload** (state, loan amount, purpose, FICO band). Real lead auctions transmit the lead to buyers, and the feasibility argument is structural: by design no key survives between the auction silo and the CRM, so without the payload the two silos would be unlinkable *in principle* and the north-star question (marketing ROI through auction revenue) unanswerable. With it, auction↔CRM linkage is fuzzy-but-feasible (state + amount + submission-time proximity), which is the intended difficulty. *Ratification added a second rationale (P-009): from an OLAP perspective, wide event-grain fact rows carrying consumer attributes row-wise are the analytically preferred shape — a preference that also informs the Phase 4 mart design.*
 
 **(b) CRM ships as `leads.csv` + `schema.sql`** (DDL + copy instructions) rather than literal INSERT statements — 2.4M INSERTs would be a ~1 GB SQL file with no realism gain. The design's "CSV + SQL inserts" is read as data + loader.
 

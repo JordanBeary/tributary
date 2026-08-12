@@ -87,3 +87,13 @@ Entry status values: `verbatim` (exact text, redactions marked) or `summary — 
   >
   > Ensure that the various marketing channels follow realistic conversion and KPIs expectations. For example, PPC likely has low intent and conversion - organic has higher intent and conversion.
 - **Shaped:** C16 and the acquisition-channel layer of the marketing engine: a seven-channel declared mix (direct/organic/referral/paid search/affiliate/paid social/display) with an intent ladder driving per-channel contact->application conversion, engagement-segment tilt, lead-quality tilt among converters, and unit economics (CPC/CPL, click->contact, CTR) that feed a monthly `channel_spend.parquet` ledger. Realized full-scale ROAS spans 0.78x (display) to 2.7x (affiliate) plus zero-cost owned channels — giving the Phase 4 unified-ROAS analysis a genuine cross-silo finding. Spec v0.11, design.md v1.3.
+
+## P-009 — C17 ratification with OLAP rationale; decision-request clarity directive (Phase 1)
+
+- **Date:** 2026-08-12
+- **Status:** verbatim
+- **Content:** (reviewing the C17 record after the fracture stage landed)
+  > C17 is good - from an OLAP analytics perspective it is better to have a wide fact table where I can access both auction events and consumer demographics row-wise.
+  >
+  > Make a note to be very clear and direct about what decisions you want me to make. For example, what specifically do you mean by saying "Pending your ratification" ?
+- **Shaped:** C17 ratified, with the OLAP wide-fact-table rationale added to its record (and noted as a Phase 4 mart-design preference). The second paragraph is a standing process correction, logged as INT-015: decision requests to the human must state concretely what is being decided, what accepting or rejecting entails, and what the agent recommends — "pending your ratification" without that context is insufficient.
