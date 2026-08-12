@@ -48,7 +48,7 @@ Proposals to be validated or revised in the Phase 1 profiling notebooks.
 | # | Assumption | Value | Status |
 | --- | --- | --- | --- |
 | C9 | iPinYou CTR-price elasticity: **valid estimate, non-transferable** to the lead marketplace (expanded record below) | Empirical −0.149 recorded in the artifact as a correct in-domain estimate; simulator uses a **declared elasticity of +1.0** log-price units per unit `q` — a full parameter override, sign and level | **Ratified 2026-08-07** with human reframing (INT-013); end-to-end QA gate added |
-| C10 | Winning-price distribution model: iPinYou's advertiser-standardized log prices deviate from lognormal by up to 24% pooled / 40% per advertiser at deciles 1–9 — the spec's original "lognormal + ±10% Q-Q gate" pair is unsatisfiable with its own model | Valuation noise drawn from the **empirical standardized log-price shape** (1000-point inverse-CDF table in the artifact, house style per A1/01); per-advertiser (mu, sigma) retained for location/scale; lognormal-adequacy measurements kept as a documented finding | Proposed 2026-08-03; spec amended v0.3; pending human review |
+| C10 | Winning-price distribution model: iPinYou's advertiser-standardized log prices deviate from lognormal by up to 24% pooled / 40% per advertiser at deciles 1–9 — the spec's original "lognormal + ±10% Q-Q gate" pair is unsatisfiable with its own model | Valuation noise drawn from the **empirical standardized log-price shape** (1000-point inverse-CDF table in the artifact, house style per A1/01); per-advertiser (mu, sigma) retained for location/scale; lognormal-adequacy measurements kept as a documented finding | **Ratified 2026-08-12**, accepted as proposed (all downstream calibration — C11, C12, the waterfall engine and its gates — was built on the empirical shape) |
 
 #### C9 — expanded record: iPinYou CTR-price elasticity, valid estimate, non-transferable
 
@@ -132,7 +132,7 @@ Proposals to be validated or revised in the Phase 1 profiling notebooks.
 
 ### C15 — Marketing experiment structure: inverse construction, contact pool, ITT semantics
 
-*2026-08-10. Category: engine semantics for `generate_marketing`, resolved while implementing the stage against already-fixed application outcomes. Proposed by the agent, pending human review.*
+*2026-08-10. Category: engine semantics for `generate_marketing`, resolved while implementing the stage against already-fixed application outcomes. Proposed by the agent; **ratified 2026-08-12**, accepted as proposed (the C16 channel layer, human-directed, was built on this structure).*
 
 **The structural problem.** The pipeline generates applications (leads) before marketing, so the stage cannot forward-simulate "treatment raises application probability" — outcomes already exist. And since every consumer record carries at least one lead, a pool of consumer contacts alone has conversion rate 1.0: no non-converters, no measurable uplift.
 

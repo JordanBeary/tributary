@@ -4,9 +4,9 @@ Working companion to [docs/design.md](docs/design.md): the local workload's curr
 
 What the project *is* — including the global/local split and the precedence rule — lives in [meta/charter.md](meta/charter.md). Decision tables formerly in this guide live in [meta/logs/decisions.md](meta/logs/decisions.md) (ids preserved); machine and environment quirks live in [CLAUDE.md](CLAUDE.md).
 
-Status: v2.1, 2026-08-10 (Phase 1 engine complete) · Written against design.md v1.3
-Provenance: A (original), HD (v2.0 reconciliation), A (v2.1)
-Project status: **Phases 0–0.5 complete; Phase 1 engine complete (records C10, C15–C17 pending human ratification); Phase 2 (silo deployment) next after sign-off**
+Status: v2.2, 2026-08-12 (Phase 1 closed) · Written against design.md v1.3
+Provenance: A (original), HD (v2.0 reconciliation), A (v2.1–v2.2)
+Project status: **Phases 0–1 complete (all Phase 1 records ratified); Phase 2 (silo deployment) next — session-start context in [meta/logs/sessions/2026-08-12_phase2_handoff.md](meta/logs/sessions/2026-08-12_phase2_handoff.md)**
 
 ---
 
