@@ -1,0 +1,16 @@
+{
+  "benchmark_sql": "SELECT campaign_id,\n       COUNT(*) AS sent,\n       COUNTIF(opened_at IS NOT NULL) AS opened,\n       COUNTIF(clicked_at IS NOT NULL) AS clicked\nFROM `{table}`\nWHERE channel = 'sms'\n  AND sent_at >= DATETIME '2025-10-01'\n  AND sent_at <  DATETIME '2025-11-01'\nGROUP BY campaign_id\nORDER BY campaign_id",
+  "before": {
+    "table": "tributary-jb.marketing.messages",
+    "bytes_processed": 124325982,
+    "bytes_billed": 124780544,
+    "result_rows": 2
+  },
+  "after": {
+    "table": "tributary-jb.marketing.messages",
+    "bytes_processed": 11430092,
+    "bytes_billed": 11534336,
+    "result_rows": 2
+  },
+  "reduction_factor": 10.9
+}

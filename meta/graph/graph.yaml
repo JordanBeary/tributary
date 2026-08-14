@@ -27,6 +27,7 @@ nodes:
   - {id: design-doc,      type: document, path: docs/design.md,             title: "Local seed: what to build (v1.1)"}
   - {id: calibration-spec, type: document, path: docs/calibration_spec.md,  title: "Source datasets -> simulator parameters (v0.1)"}
   - {id: project-guide,   type: document, path: project_guide.md,           title: "Local working companion: current state + guidance (v2.0)"}
+  - {id: silo-audit,      type: document, path: docs/silo_audit.md,         title: "Silo audit memo: as-deployed state, per-silo limits, cost receipts (Phase 2)"}
   - {id: docs-img,        type: directory, path: docs/img,                  title: "Doc assets (budget screenshots)"}
 
   # ── Local track: code and infrastructure ──
@@ -132,6 +133,10 @@ edges:
   - [prompts, documents, design-doc]
   - [session-log-phase0, documents, phase-0]
   - [phase2-handoff, documents, phase-2]
+  - [silo-audit, documents, phase-2]
+  - [silo-audit, documents, auction-lake]
+  - [silo-audit, documents, crm-postgres]
+  - [silo-audit, documents, marketing-bq]
   - [phase2-handoff, documents, phase-1]
   - [session-log-founding, documents, design-doc]
   - [session-log-founding, documents, prompts]
