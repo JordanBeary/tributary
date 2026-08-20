@@ -261,7 +261,7 @@ The spread is the point: an unprofitable channel (display), a thin one (paid sea
 
 ### D7 — Warehouse staging wiring: silo access patterns and staging conventions
 
-*2026-08-20. Category: Phase 3 architecture, resolved while standing up the dbt staging layer. Proposed by the agent; pending ratification.*
+*2026-08-20. Category: Phase 3 architecture, resolved while standing up the dbt staging layer. Proposed by the agent; **ratified 2026-08-20, accepted as recorded**.*
 
 **(a) Marketing silo reads from local Parquet exports** (`warehouse/export_marketing.py`, BigQuery Storage read into git-ignored `data/silo_exports/marketing/`), refreshed only when the silo itself is reloaded. Design 4.1 names this pattern ("DuckDB reads local exports from BigQuery"); the rejected alternatives were the DuckDB BigQuery community extension (an unvetted dependency in the critical path) and per-run live queries (dbt-duckdb has no BigQuery transport, and re-scanning a static silo every run buys nothing). Adds `google-cloud-bigquery-storage` to `[dev]`.
 

@@ -6,7 +6,7 @@ What the project *is* — including the global/local split and the precedence ru
 
 Status: v2.4, 2026-08-20 (Phase 3 started) · Written against design.md v1.3
 Provenance: A (original), HD (v2.0 reconciliation), A (v2.1–v2.4)
-Project status: **Phases 0–2 complete (Phase 2 closed 2026-08-14: three silos live, audit memo, cost receipts). Phase 3 in progress — dbt staging layer over all three silos built and green (5 models, 17 tests, `warehouse/`; D7 pending ratification); next: Splink ER pipeline in `er/`, scored against the crosswalk (F1 target band 0.85–0.95).**
+Project status: **Phases 0–2 complete (Phase 2 closed 2026-08-14: three silos live, audit memo, cost receipts). Phase 3 in progress — dbt staging layer over all three silos built and green (5 models, 17 tests, `warehouse/`; D7 ratified); next: Splink ER pipeline in `er/`, scored against the crosswalk (F1 target band 0.85–0.95).**
 
 ---
 
@@ -54,6 +54,7 @@ Project status: **Phases 0–2 complete (Phase 2 closed 2026-08-14: three silos 
 - **Phase 1 order**: profiling notebooks first (they produce the param artifacts), then stages in pipeline order (consumers → leads → waterfall → marketing → fracture), each validated at `--scale 0.01` before scaling. The waterfall stage is the heart — budget the most care there, since models 1–3 and 5–6 all depend on its censoring structure being right.
 - **Realism check that matters most**: ER difficulty. If Splink hits F1 ~ 1.0, the pathologies are too clean — turn the dials (C7) up. Target band 0.85–0.95.
 - **Cost artifacts as you go**: screenshot budgets, note bytes-scanned before/after partitioning, keep the receipts — Section 5.3's 100x-scale analysis and the FinOps write-up need them.
+- **Site (Phase 7) is a presentation layer only** (human directive, 2026-08-20): analysis, modeling, and DS products surface as *static cached artifacts* on the public site once complete — no live compute or backends behind it. This sharpens design Section 10's $0-hosting stance: build every deliverable so its presentation form is a cacheable static export.
 - **Mart shape (Phase 4)**: prefer wide, denormalized fact tables — event grain carrying consumer/demographic attributes row-wise — over narrow facts requiring joins (the author's stated OLAP preference, P-009/C17).
 - **When adding dependencies**, they go in `pyproject.toml` (runtime) or `[dev]`/`[ml]` extras — the devcontainer and Codespaces flow depend on `pip install -e '.[dev]'` being sufficient.
 - **Session records**: follow the trigger table in [meta/conventions.md](meta/conventions.md) Section 3 — interventions, decisions, prompt candidates, graph diffs.
