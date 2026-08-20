@@ -310,6 +310,18 @@ Both exceed the band's 0.95 ceiling. The design's exit criterion (F1 >= 0.9) is 
 
 - **Decision (human, 2026-08-20): option (a), with amendments (P-010)** — the author supplied a one-year leads-per-contact distribution from industry experience and the drift-by-channel mechanism, and moved the target band to **F1 0.8-0.9** (superseding the design's 0.85-0.95). Implemented as C18; first full-scale run landed both tasks in the amended band.
 
+### D9 — Auction linkage deterministic; cluster operating point; intermediate layer
+
+*2026-08-20. Category: Phase 3 unification architecture, resolved while completing the ER pipeline. Proposed by the agent; pending ratification.*
+
+**(a) The auction-CRM linkage is deterministic SQL, not a Splink model** (`er/link_auction_crm.py`). The C17a payload (state, loan amount, purpose, FICO band) agrees exactly for 100% of true pairs, and the submission-to-auction lag is 0-540 s (shifted -3600 s inside the DST fall-back hour, which the window accommodates rather than repairs) -- with an exact composite key and a nine-minute window, nearest-to-center-in-time is the honest tool; a probabilistic model would only obscure that the residual failures are payload doppelgangers inside the window, which no model can separate. Measured: lead precision 0.995, non-orphan recall 0.998, orphan specificity 0.934.
+
+**(b) Consumer clusters are connected components over dedupe pairs at threshold 0.9** (`er/build_clusters.py`), where pairwise precision is 0.9998 -- transitive closure amplifies any false edge, so clustering runs at the high-precision operating point rather than the F1-optimal 0.5. The node universe is every CRM lead, so match-less leads form singleton entities. Measured: 636,164 clusters vs 623,470 true persons-with-CRM-presence, weighted purity 0.9998, 98.1% of persons unsplit.
+
+**(c) The dbt intermediate layer is two thin spine models** (`int_consumer_entities`: lead -> consumer entity + best-match contact; `int_auction_consumer_map`: lead_uuid -> entity), materialized over a declared `main_er` source -- the ER scripts write tables, dbt consumes them, marts join through the spine. Kept deliberately narrow: wide denormalized shapes are the Phase 4 mart layer's job (P-009), not the spine's.
+
+**Phase 3 exit measurement.** ER F1: link 0.879 / dedupe 0.873, both in the D8 band (0.8-0.9). Auction events consumer-joinable: **95.3%** against the >95% criterion (94.8% correctly joined; the 4.7% gap is almost entirely the ~5% migration-orphan events, unjoinable by construction -- the linkage recovers 99.8% of what is recoverable). Before ER: 0% (no shared key exists anywhere).
+
 ## Q-series — Open questions (parked, non-blocking)
 
 | # | Question | Status |

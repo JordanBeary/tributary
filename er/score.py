@@ -8,14 +8,19 @@ private crosswalk (data/private/ -- local only, never committed or
 uploaded), and writes aggregate metrics to er/scorecard.json. The scorecard
 contains counts and rates only; no identity data leaves data/private/.
 
-Two tasks:
+Four tasks:
   - crm_marketing_link: every CRM lead maps to exactly one marketing
     contact; a predicted (lead, contact) pair is correct iff the crosswalk
     contains it. Selection: best match per lead.
   - crm_dedupe: pairs of CRM leads sharing a consumer_key. Recall is
-    reported separately for corrupted pairs (at least one side is a C7
-    duplicate -- the intended difficulty) and clean repeat-application
-    pairs (same identity verbatim; easy by construction).
+    reported separately for corrupted pairs (at least one side is a
+    drifted variant, C18) and clean same-identity pairs.
+  - auction_link: lead_uuid -> crm_lead_id from payload + time proximity;
+    scored per lead and per event (the design's >95% consumer-joinable
+    criterion), with orphan specificity (migration-orphan uuids correctly
+    left unmatched).
+  - clusters: connected-component consumer entities vs. true persons --
+    weighted purity, exact-partition rate, and cluster/person counts.
 """
 
 from __future__ import annotations
@@ -111,6 +116,108 @@ def score_dedupe(con: duckdb.DuckDBPyConnection) -> dict:
             "by_threshold": results}
 
 
+def score_auction_link(con: duckdb.DuckDBPyConnection) -> dict:
+    con.execute(f"""
+        CREATE OR REPLACE TEMP VIEW truth_auction AS
+        SELECT lead_uuid, crm_lead_id
+        FROM read_parquet('{CROSSWALK}')
+    """)
+    lead_tp, lead_pred = con.sql("""
+        SELECT sum((t.crm_lead_id IS NOT NULL
+                AND t.crm_lead_id = p.crm_lead_id)::int), count(*)
+        FROM main_er.auction_crm_matches p
+        JOIN truth_auction t USING (lead_uuid)
+    """).fetchone()
+    n_uuids, n_orphan = con.sql("""
+        SELECT count(*), sum((crm_lead_id IS NULL)::int) FROM truth_auction
+    """).fetchone()
+    orphan_matched = con.sql("""
+        SELECT count(*) FROM main_er.auction_crm_matches p
+        JOIN truth_auction t USING (lead_uuid)
+        WHERE t.crm_lead_id IS NULL
+    """).fetchone()[0]
+
+    # Event grain: the exit criterion counts events, not leads
+    ev_total, ev_joined, ev_correct = con.sql("""
+        SELECT count(*),
+               sum((p.crm_lead_id IS NOT NULL)::int),
+               sum((p.crm_lead_id = t.crm_lead_id)::int)
+        FROM main_staging.stg_auction__events e
+        LEFT JOIN main_er.auction_crm_matches p USING (lead_uuid)
+        LEFT JOIN truth_auction t ON t.lead_uuid = e.lead_uuid
+    """).fetchone()
+
+    res = {
+        "task": "auction_link",
+        "lead_uuids": int(n_uuids), "orphan_uuids": int(n_orphan),
+        "lead_precision": round(lead_tp / lead_pred, 4),
+        "lead_recall_nonorphan": round(lead_tp / (n_uuids - n_orphan), 4),
+        "orphan_specificity": round(1 - orphan_matched / n_orphan, 4),
+        "events_total": int(ev_total),
+        "events_joinable_pct": round(ev_joined / ev_total, 4),
+        "events_correctly_joined_pct": round(ev_correct / ev_total, 4),
+        "events_joinable_before_er_pct": 0.0,
+    }
+    print(f"auction lead P={res['lead_precision']} "
+          f"R={res['lead_recall_nonorphan']} "
+          f"orphan_spec={res['orphan_specificity']} | events joinable "
+          f"{res['events_joinable_pct']:.1%} correct "
+          f"{res['events_correctly_joined_pct']:.1%}")
+    return res
+
+
+def score_clusters(con: duckdb.DuckDBPyConnection) -> dict:
+    # Weighted purity: for each predicted cluster, the share of its leads
+    # belonging to its majority person, weighted by cluster size.
+    purity, n_clusters, n_leads = con.sql(f"""
+        WITH truth AS (
+            SELECT crm_lead_id, consumer_key FROM read_parquet('{CROSSWALK}')
+            WHERE crm_lead_id IS NOT NULL),
+        joined AS (
+            SELECT c.cluster_id, t.consumer_key
+            FROM main_er.consumer_clusters c JOIN truth t USING (crm_lead_id)),
+        per_cluster AS (
+            SELECT cluster_id, max(cnt) AS majority, sum(cnt) AS size
+            FROM (SELECT cluster_id, consumer_key, count(*) AS cnt
+                  FROM joined GROUP BY 1, 2)
+            GROUP BY 1)
+        SELECT sum(majority)::float / sum(size), count(*), sum(size)
+        FROM per_cluster
+    """).fetchone()
+    n_persons = con.sql(f"""
+        SELECT count(DISTINCT consumer_key) FROM read_parquet('{CROSSWALK}')
+        WHERE crm_lead_id IS NOT NULL
+    """).fetchone()[0]
+    exact = con.sql(f"""
+        WITH truth AS (
+            SELECT crm_lead_id, consumer_key FROM read_parquet('{CROSSWALK}')
+            WHERE crm_lead_id IS NOT NULL),
+        joined AS (
+            SELECT c.cluster_id, t.consumer_key
+            FROM main_er.consumer_clusters c JOIN truth t USING (crm_lead_id)),
+        cluster_person AS (
+            SELECT cluster_id, count(DISTINCT consumer_key) AS persons_in
+            FROM joined GROUP BY 1),
+        person_cluster AS (
+            SELECT consumer_key, count(DISTINCT cluster_id) AS clusters_of
+            FROM joined GROUP BY 1)
+        SELECT (SELECT count(*) FROM cluster_person WHERE persons_in = 1),
+               (SELECT count(*) FROM person_cluster WHERE clusters_of = 1)
+    """).fetchone()
+    res = {
+        "task": "clusters",
+        "clusters": int(n_clusters), "true_persons": int(n_persons),
+        "clustered_leads": int(n_leads),
+        "weighted_purity": round(purity, 4),
+        "pure_cluster_share": round(exact[0] / n_clusters, 4),
+        "unsplit_person_share": round(exact[1] / n_persons, 4),
+    }
+    print(f"clusters {res['clusters']:,} vs persons {res['true_persons']:,} | "
+          f"purity={res['weighted_purity']} pure={res['pure_cluster_share']:.1%} "
+          f"unsplit={res['unsplit_person_share']:.1%}")
+    return res
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--local", action="store_true",
@@ -125,6 +232,12 @@ def main() -> None:
     """).fetchone()[0]
     if have_dedupe:
         tasks.append(score_dedupe(con))
+    for tbl, fn in (("auction_crm_matches", score_auction_link),
+                    ("consumer_clusters", score_clusters)):
+        if con.sql(f"""SELECT count(*) FROM information_schema.tables
+                       WHERE table_schema = 'main_er'
+                       AND table_name = '{tbl}'""").fetchone()[0]:
+            tasks.append(fn(con))
     OUT_PATH.write_text(json.dumps({"tasks": tasks}, indent=2) + "\n")
     print(f"scorecard written to {OUT_PATH}")
 

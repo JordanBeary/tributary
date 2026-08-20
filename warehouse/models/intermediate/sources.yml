@@ -1,0 +1,12 @@
+version: 2
+
+sources:
+  # ER pipeline outputs (er/ scripts write into this database's main_er
+  # schema). The intermediate layer is where silo rows acquire a consumer
+  # entity (design 4.1: staging -> intermediate (ER) -> marts).
+  - name: er
+    schema: main_er
+    tables:
+      - name: crm_contact_best_match
+      - name: auction_crm_matches
+      - name: consumer_clusters

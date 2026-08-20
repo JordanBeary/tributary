@@ -15,6 +15,8 @@ set -a; . ../.env; set +a
 ../.venv/bin/dbt build          # models + tests
 ```
 
+The intermediate layer (`models/intermediate/`) consumes the ER pipeline's outputs (declared as the `main_er` source; written by the `er/` scripts) into the unification spine: `int_consumer_entities` (CRM lead -> consumer entity + best-match marketing contact) and `int_auction_consumer_map` (auction lead_uuid -> consumer entity). Marts (Phase 4) join through the spine.
+
 Staging conventions: all timestamps land as naive UTC (`*_utc` columns) — the auction silo logs UTC natively, CRM naive US/Pacific and marketing naive US/Eastern are localized via ICU; the CRM's DST fall-back ambiguity is inherent to the silo and documented in `stg_crm__leads`. Tests encode the *intended* pathologies (duplicate consumers stay duplicated; `lead_id` is unique, consumers are not) — a test that "fixes" a pathology is wrong.
 
 The local database file (`warehouse/tributary.duckdb`) is a build artifact, git-ignored; `dbt build` regenerates it from the live silos.

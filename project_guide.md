@@ -6,7 +6,7 @@ What the project *is* — including the global/local split and the precedence ru
 
 Status: v2.4, 2026-08-20 (Phase 3 started) · Written against design.md v1.3
 Provenance: A (original), HD (v2.0 reconciliation), A (v2.1–v2.4)
-Project status: **Phases 0–2 complete (Phase 2 closed 2026-08-14: three silos live, audit memo, cost receipts). Phase 3 in progress — dbt staging layer over all three silos built and green (5 models, 17 tests, `warehouse/`; D7 ratified); Splink ER pipeline built; D8 resolved via C18 (heavy-tailed repeats + channel-dependent identity drift, P-010): link F1 0.879 / dedupe F1 0.873, both in the amended 0.8–0.9 band. Silo re-deploy + official cloud-path scorecard in progress.**
+Project status: **Phases 0–2 complete. Phase 3 exit criteria measured and met (2026-08-20): ER F1 in band (link 0.879 / dedupe 0.873, D8 band 0.8–0.9); auction events 95.3% consumer-joinable (>95% criterion; 0% before ER). Full stack: dbt staging (22 tests) + intermediate spine (8 tests) + four-task ER pipeline scored against the crosswalk (`er/scorecard.json`). Phase close awaits D9 ratification.**
 
 ---
 

@@ -99,6 +99,27 @@
           "recall_corrupted_pairs": 0.7189
         }
       ]
+    },
+    {
+      "task": "auction_link",
+      "lead_uuids": 2399526,
+      "orphan_uuids": 119976,
+      "lead_precision": 0.9949,
+      "lead_recall_nonorphan": 0.9984,
+      "orphan_specificity": 0.9338,
+      "events_total": 24543377,
+      "events_joinable_pct": 0.9532,
+      "events_correctly_joined_pct": 0.9485,
+      "events_joinable_before_er_pct": 0.0
+    },
+    {
+      "task": "clusters",
+      "clusters": 636164,
+      "true_persons": 623470,
+      "clustered_leads": 2279550,
+      "weighted_purity": 0.9998,
+      "pure_cluster_share": 0.9997,
+      "unsplit_person_share": 0.9807
     }
   ]
 }

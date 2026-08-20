@@ -7,6 +7,9 @@ model-paths: ["models"]
 
 models:
   tributary_warehouse:
+    intermediate:
+      +materialized: table
+      +schema: intermediate
     staging:
       # Materialize as tables: each run pulls the cloud silos once into the
       # local DuckDB file so downstream models never re-scan the network.
