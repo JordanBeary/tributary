@@ -271,7 +271,7 @@ Assumes ~8–10 focused hours/week; ~14 weeks total. Phases gate on exit criteri
 | 0.5 | 1 | Harness build | `meta/` (charter, conventions, provenance, logs, knowledge graph); `CLAUDE.md`; naming and identifier corrections | Graph validates in CI; logs seeded; provenance backfilled |
 | 1 | 2–3 | Simulation engine | `simulation/` package; calibration notebooks vs. iPinYou/LendingClub/Criteo; hidden crosswalk | 1% and 100% scale runs reproducible from one seeded command; distribution QA passes |
 | 2 | 1 | Silo deployment | S3 lake (partitioned Parquet); Neon Postgres loaded; BigQuery marketing dataset | Each silo queryable from VS Code; silo audit memo drafted |
-| 3 | 2 | Unification | dbt staging models; Splink ER pipeline; reconciliation scorecard | ER F1 ≥ 0.9 vs. crosswalk; >95% auction events consumer-joinable |
+| 3 | 2 | Unification | dbt staging models; Splink ER pipeline; reconciliation scorecard | ER F1 in 0.8–0.9 vs. crosswalk (band per D8/P-010); >95% auction events consumer-joinable |
 | 4 | 2 | Analytics | Star schema marts; 4–6 dashboards; before/after silo analysis | Every §7.1 "unanswerable" question now answered with a chart |
 | 5 | 3 | ML models 1–4 | Trained models + model cards; evaluation notebooks | Beats naive baselines; calibration & uplift Qini curves documented |
 | 6 | 1–2 | Optimization & strategy | Floor-price simulation; bandit experiment; Strategy Memo | Simulated EPL lift quantified with uncertainty bands |
@@ -284,7 +284,7 @@ Assumes ~8–10 focused hours/week; ~14 weeks total. Phases gate on exit criteri
 | Risk | Likelihood | Mitigation |
 | --- | --- | --- |
 | Scope creep (this doc is ambitious) | High | Phases 5–6 are cuttable to models 1–2 only; site ships after Phase 4 regardless |
-| Synthetic data too clean → trivial ER | Medium | Pathology injection is parameterized; tune until ER F1 lands in 0.85–0.95, not 1.0 |
+| Synthetic data too clean → trivial ER | Medium | Pathology injection is parameterized; tune until ER F1 lands in 0.8–0.9 (D8/P-010), not 1.0 |
 | Free-tier limits shift | Medium | Scale dial (§3.3); Postgres silo is deliberately the smallest |
 | Simulation realism questioned in interviews | Medium | Calibration notebooks showing simulated vs. source-data distributions side-by-side |
 | Burnout / stall | High | Every phase ends in a publishable artifact; publish incrementally, not big-bang |
@@ -364,4 +364,4 @@ Per-document versioning (`../meta/plan.md` Section 7): every change cites the in
 | v1.1 | 2026-08-03 | Fictional company name replaced with descriptive terms; confidentiality-note emoji removed; author placeholder resolved; example S3 path corrected to the real bucket; provenance front matter added; reframing sentence linking `meta/charter.md`; Phase 0.5 and the global exit criterion added to the roadmap; "How this was built" page added to the site plan; companion-version discipline adopted | INT-001, INT-003, INT-004, INT-007, INT-008; D1–D3 |
 | v1.2 | 2026-08-07 | Section 3.2: identity attributes described as synthetic data — the narrative names the data, not the generating library (ratification amendment to C13b) | C13, P-007 |
 | v1.3 | 2026-08-10 | Section 3.2 stage 4: acquisition-channel layer added — intent-laddered channel mix with full-funnel economics and a monthly spend ledger, making unified ROAS-by-channel computable end to end | C16, P-008 |
-| v1.4 | 2026-08-20 | Sections 2.3/3.3: repeat applications heavy-tailed per the author's industry data (mean ~3.8, 100+ tail) with channel-dependent identity drift replacing one-shot duplicate corruption; ER target band 0.8–0.9 (supersedes 0.85–0.95); marketing volumes halved (fewer, heavier persons) | D8, C18, P-010 |
+| v1.4 | 2026-08-20 | Sections 2.3/3.3/9: repeat applications heavy-tailed per the author's industry data (mean ~3.8, 100+ tail) with channel-dependent identity drift replacing one-shot duplicate corruption; ER target band 0.8–0.9 in the Phase 3 exit row and risk register (supersedes 0.85–0.95 and the F1 >= 0.9 criterion); marketing volumes halved (fewer, heavier persons) | D8, C18, P-010 |
