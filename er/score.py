@@ -20,6 +20,7 @@ Two tasks:
 
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 
@@ -111,7 +112,12 @@ def score_dedupe(con: duckdb.DuckDBPyConnection) -> dict:
 
 
 def main() -> None:
-    con = duckdb.connect(str(DB_PATH), read_only=True)
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--local", action="store_true",
+                    help="score the tuning DB (local fracture outputs)")
+    args = ap.parse_args()
+    db = REPO_ROOT / "data" / "tuning.duckdb" if args.local else DB_PATH
+    con = duckdb.connect(str(db), read_only=True)
     tasks = [score_link(con)]
     have_dedupe = con.sql("""
         SELECT count(*) FROM information_schema.tables

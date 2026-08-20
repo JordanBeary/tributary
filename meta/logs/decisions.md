@@ -200,6 +200,22 @@ The spread is the point: an unprofitable channel (display), a thin one (paid sea
 
 **Engineering consequence.** Engine in `simulation/fracture.py`; the full five-stage pipeline now runs from one seeded command — 1.8 s at scale 0.01, 2m28s at scale 1.0 — and `tests/test_fracture.py` asserts every pathology from the outside (key isolation, crosswalk completeness, orphan mechanics, CRM semantics and timezone round-trips, semantic drift, crosswalk confinement to `data/private/`). Phase 1's local exit criteria (design Section 9: reproducible 1%/100% runs from one command; distribution QA passing) are met.
 
+### C18 — Heavy-tailed repeat applications with channel-dependent identity drift
+
+*2026-08-20. Category: engine amendment (consumers/leads/marketing stages), implementing the ratified D8 option (a). Human-directed: the repeat-application distribution and the drift-by-channel mechanism are the author's domain knowledge (P-010); implementation and dial values agent-proposed. Supersedes C14 (1-3 application mix) and C7's one-shot duplicate corruption; amends C16's assignment grain.*
+
+**(a) Applications per person are heavy-tailed, fitted from the author's industry data.** A one-year leads-per-contact table from the author's experience in personal-loan lead marketplaces (P-010; raw table git-ignored in `data/private/`, per the conventions Section 2 redaction rule) is distilled by `analysis/profiling/04_repeat_applications.py` into `simulation/params/repeat_applications.json`: a discrete power law with exponential cutoff (alpha 1.46, lambda 22.1, cap 150), mean 3.76 applications per person, with QA targets rounded to two significant figures. The committed artifact is the declared assumption; the raw histogram never enters the repository.
+
+**(b) Identity drift replaces one-shot duplication.** Between a person's consecutive applications, a drift event fires with a channel-tier hazard (high-intent 0.10 / mid 0.18 / low 0.30 per return gap — messy channels ship messier data, the P-010 directive). Each event derives a new consumer record from the person's *previous* variant — mutations compose over a heavy repeater's year — mutating phone (0.45), email (0.40, breaking the hash join), name form (0.35, diminutives/typos), and zip+address (0.18, in-state moves), at least one enforced. `is_duplicate` now marks drifted variants; the crosswalk grain is unchanged.
+
+**(c) Acquisition channels move to person grain** (new `simulation/channels.py`, shared by consumers and marketing) so drift can depend on them; the C16 economics are unchanged but their exact gates now hold at person grain — the *contact*-grain mix tilts toward low-intent channels because higher drift spawns more email variants per person (a marketing database accumulating identities from messy channels: an intended emergent property, bounded in tests). The channel-quality tilt is applied against the acceptance-model score at person grain.
+
+**(d) Volumes.** Persons 639,000 (2.4M lead target / fitted mean); leads 2,279,551 and auction events 24.5M — both effectively unchanged, so the CRM free-tier fit (D6) and the S3 layout carry over; marketing contacts 858,653 and messages 2.19M (roughly halved: fewer, heavier persons). Design Section 3.3 amended.
+
+**(e) Measured outcome (the D8 target).** First full-scale run, default dials: **link F1 0.879** (P 0.895 / R 0.864), **dedupe F1 0.873** (P 0.990 / R 0.781), corrupted-pair recall 0.743 — both tasks inside the human's 0.8-0.9 band with no dial iteration. Cross-silo field agreement on true pairs dropped from 97-100% to phone 78% / first name 91% / zip 93%.
+
+**En-route fixes.** The fracture stage accumulated stale parquet files across runs (partition basenames are new each run; the tree is now cleared before writing), and the S3 sync gained `--delete` for the same reason remotely. Tests updated: 43 pass, including new gates reproducing the repeat-count QA targets from the artifact alone and drift-mutation semantics measured against the predecessor variant.
+
 ### Interpretations of ambiguous design points `[backfill, Phase 0]`
 
 - **"Conversion" semantics** are implemented as three genuinely different column definitions in the three silos (sold lead / funded loan / email click) — the semantic-drift pathology must be real enough to bite during unification, not just documented.
@@ -291,6 +307,8 @@ Both exceed the band's 0.95 ceiling. The design's exit criterion (F1 >= 0.9) is 
 - **(c) Harden the evaluation only** (field-ablation robustness studies, no engine change). No re-deploy, but the base task stays easy; does not satisfy the band.
 
 **Recommendation: (a).** The linkage number is the flagship claim; at 0.976-by-construction it is not evidence of anything. The re-deploy cost is small and the whole loop (regen -> load -> stage -> ER -> score) is now automated end to end.
+
+- **Decision (human, 2026-08-20): option (a), with amendments (P-010)** — the author supplied a one-year leads-per-contact distribution from industry experience and the drift-by-channel mechanism, and moved the target band to **F1 0.8-0.9** (superseding the design's 0.85-0.95). Implemented as C18; first full-scale run landed both tasks in the amended band.
 
 ## Q-series — Open questions (parked, non-blocking)
 

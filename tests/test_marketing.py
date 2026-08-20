@@ -22,7 +22,8 @@ from simulation.stages import (
 )
 
 SEED = 202608
-N_CONSUMERS = 120_000  # per-segment holdout arms ~3.6k: rounding ~0.01pp << ATE
+N_PERSONS = 120_000
+CFG = SimConfig()  # per-segment holdout arms ~3.6k: rounding ~0.01pp << ATE
 MONTHS = 12
 WINDOW_START = "2025-07-01"
 MKT_RATE = 0.10
@@ -43,7 +44,9 @@ def world(um, vocab):
     model = CreditModel.from_params_dir("simulation/params")
     qm = QualityModel.from_params_dir("simulation/params")
     rng = np.random.default_rng(SEED)
-    consumers = build_population(model, vocab, N_CONSUMERS, 0.08, rng)
+    consumers = build_population(model, vocab, N_PERSONS,
+                                 CFG.marketing_only_rate, CFG.drift_hazard,
+                                 CFG.mutation_probs, CFG.params_dir, rng)
     leads = build_leads(consumers, qm, MONTHS, WINDOW_START,
                         np.random.default_rng(SEED + 1))
     contacts, messages, spend = build_marketing(
@@ -137,27 +140,41 @@ def test_pre_submission_timing(world):
 
 
 def test_channel_mix_and_conversion(world):
-    """C16: pool mix lands on the declared blend, and per-channel
-    contact->application conversion follows the intent ladder — organic and
-    direct convert best, display worst — at the rescaled target values."""
-    from simulation.marketing import ACQ_CHANNELS
-    _, _, contacts, _, _ = world
+    """C16/C18: the declared channel economics hold at *person* grain (where
+    channels are now assigned); the contact-grain mix tilts toward messy
+    low-intent channels because their higher drift hazard spawns more email
+    variants per person -- an intended emergent property, bounded here."""
+    from simulation.channels import ACQ_CHANNELS, converter_prospect_mixes
+    consumers, _, contacts, _, _ = world
+    p_conv, p_pros = converter_prospect_mixes(MKT_RATE)
+
+    # Person-grain converter mix: exact gate against the Bayes converter blend
+    person_mix = (consumers.drop_duplicates("consumer_key")
+                  ["acquisition_channel"].value_counts(normalize=True))
+    for ch, target in zip(ACQ_CHANNELS.index, p_conv):
+        assert abs(person_mix[ch] - target) < 0.012, \
+            f"{ch} person mix {person_mix[ch]:.3f} vs {target:.3f}"
+
+    # Prospect contacts: exact gate against the Bayes prospect blend
+    pros_mix = (contacts.loc[contacts["is_marketing_only"],
+                             "acquisition_channel"]
+                .value_counts(normalize=True))
+    for ch, target in zip(ACQ_CHANNELS.index, p_pros):
+        assert abs(pros_mix.get(ch, 0.0) - target) < 0.012, \
+            f"{ch} prospect mix {pros_mix.get(ch, 0.0):.3f} vs {target:.3f}"
+
+    # Contact-grain blend: drift multiplicity tilts it, but boundedly
     mix = contacts["acquisition_channel"].value_counts(normalize=True)
     for ch, target in ACQ_CHANNELS["mix"].items():
-        assert abs(mix[ch] - target) < 0.012, f"{ch} mix {mix[ch]:.3f}"
+        assert abs(mix[ch] - target) < 0.03, f"{ch} pool mix {mix[ch]:.3f}"
 
+    # The intent ladder survives at contact grain: high-intent channels still
+    # convert best (ordering, not exact rates -- rates are person-grain now)
     conv = (~contacts["is_marketing_only"]).groupby(
         contacts["acquisition_channel"]).mean()
-    scale = (1 - MKT_RATE) / (ACQ_CHANNELS["mix"]
-                              * ACQ_CHANNELS["conv_target"]).sum()
-    target = (ACQ_CHANNELS["conv_target"] * scale).clip(upper=0.995)
-    for ch in ACQ_CHANNELS.index:
-        assert abs(conv[ch] - target[ch]) < 0.015, \
-            f"{ch}: conv {conv[ch]:.3f} vs target {target[ch]:.3f}"
-    ladder = conv.reindex(ACQ_CHANNELS.index)  # table rows are intent-ordered
-    assert ladder.is_monotonic_decreasing, f"intent ladder broken:\n{ladder}"
-
-
+    from simulation.channels import ACQ_CHANNELS as A
+    tier_conv = conv.groupby(A["seg_tier"]).mean()
+    assert tier_conv["high"] > tier_conv["mid"] > tier_conv["low"]
 def test_channel_intent_correlations(world):
     """C16: high-intent channels skew to higher engagement segments AND
     deliver higher lead quality among converters (q_tilt)."""
@@ -177,7 +194,8 @@ def test_spend_ledger(world):
     """C16: the monthly media ledger is internally consistent — traffic
     covers contacts, spend follows the declared unit economics, owned
     channels cost nothing."""
-    from simulation.marketing import ACQ_CHANNELS, SPEND_JITTER
+    from simulation.channels import ACQ_CHANNELS
+    from simulation.marketing import SPEND_JITTER
     _, _, contacts, _, spend = world
     a = ACQ_CHANNELS.loc[spend["channel"]]
 

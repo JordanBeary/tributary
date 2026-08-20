@@ -1,12 +1,13 @@
 """Lead generation engine — the production implementation of design.md Section 3.2 stage 2.
 
-Each consumer record submits 1-3 loan applications over the configured window.
-The application-count mix is C14 (P(1)=0.55, P(2)=0.30, P(3)=0.15, mean exactly
-1.60), so full scale yields the design's 2.4M leads from 1.5M consumer records.
-First applications request the consumer's copula-drawn amount; repeat
-applications re-request with an upward-biased seeded multiplier — the ratified
-domain picture (P-007) is that small-loan borrowers return for more. All lead
-amounts snap to $25 increments, as real application forms do.
+Application counts are drawn per *person* in the consumer stage (heavy-tailed,
+C18/P-010, superseding the C14 1-3 mix) and allocated to identity-variant
+records there; this stage submits each record's n_apps applications, ordered
+in time per person so variant_seq follows submission order. First applications
+request the consumer's copula-drawn amount; repeat applications re-request
+with an upward-biased seeded multiplier — the ratified domain picture (P-007)
+is that small-loan borrowers return for more. All lead amounts snap to $25
+increments, as real application forms do.
 
 The lead quality score q — the waterfall's conditioning input — comes from the
 acceptance model fitted in ``lendingclub_marginals.json``: the standardized
@@ -16,9 +17,9 @@ employment tenure, so the model's missingness indicator is identically zero
 here (the n/a bucket is excluded at the consumer stage by the notebook's own
 construction).
 
-Timestamps are UTC-naive and daytime-skewed; per consumer, application times
-are sorted so ``app_seq`` increases with ``submitted_at``. Silo timezone
-pathologies are a fracture-stage concern.
+Timestamps are UTC-naive and daytime-skewed; per person, application times
+are sorted so ``app_seq`` increases with ``submitted_at`` across variants.
+Silo timezone pathologies are a fracture-stage concern.
 """
 
 from __future__ import annotations
@@ -32,10 +33,7 @@ import pandas as pd
 from scipy import stats
 
 from simulation.consumers import _uuid4
-
-# C14: applications per consumer record; mean 1.60 meets Section 3.3 exactly
-APP_COUNTS = np.array([1, 2, 3])
-APP_PROBS = np.array([0.55, 0.30, 0.15])
+from simulation.quality import QualityModel  # re-export for stage wiring
 
 # Repeat applications re-request more on average: exp(N(0.15, 0.30)) has a
 # median multiplier of ~1.16 with realistic spread (declared assumption, C14)
@@ -44,34 +42,6 @@ AMOUNT_STEP, AMOUNT_MIN, AMOUNT_MAX = 25.0, 500.0, 40_000.0
 
 # Submission time of day: daytime-skewed normal in seconds (declared assumption)
 TOD_MEAN_S, TOD_SD_S = 14 * 3600.0, 4.5 * 3600.0
-
-
-@dataclass(frozen=True)
-class QualityModel:
-    """The fitted acceptance model, loaded verbatim from the artifact."""
-
-    mean: np.ndarray
-    std: np.ndarray
-    coef: np.ndarray
-    intercept: float
-
-    @classmethod
-    def from_params_dir(cls, params_dir: Path | str) -> "QualityModel":
-        p = json.loads(
-            (Path(params_dir) / "lendingclub_marginals.json").read_text()
-        )["quality_score"]
-        assert p["features"] == ["log_amnt", "dti", "emp_years_f", "emp_missing"]
-        return cls(mean=np.asarray(p["standardize_mean"]),
-                   std=np.asarray(p["standardize_std"]),
-                   coef=np.asarray(p["coef"]),
-                   intercept=float(p["intercept"]))
-
-    def score(self, loan_amnt: np.ndarray, dti: np.ndarray,
-              emp_years: np.ndarray) -> np.ndarray:
-        """Raw linear acceptance score; emp_missing is 0 for generated consumers."""
-        x = np.column_stack([np.log1p(loan_amnt), dti, emp_years,
-                             np.zeros(len(loan_amnt))])
-        return (x - self.mean) / self.std @ self.coef + self.intercept
 
 
 def _snap(amount: np.ndarray) -> np.ndarray:
@@ -86,18 +56,30 @@ def build_leads(consumers: pd.DataFrame, qm: QualityModel, months: int,
     Rows come out sorted by submitted_at — the natural event ordering, which the
     fracture stage's sequential CRM lead_id will follow.
     """
-    n_apps = rng.choice(APP_COUNTS, size=len(consumers), p=APP_PROBS)
-    rec = np.repeat(np.arange(len(consumers)), n_apps)  # contiguous per record
+    # Records ordered person-contiguous with variants in sequence, so each
+    # person's earlier-variant applications get the earlier timestamps.
+    order = np.lexsort((consumers["variant_seq"].to_numpy(),
+                        consumers["consumer_key"].to_numpy()))
+    consumers = consumers.iloc[order].reset_index(drop=True)
+    n_apps = consumers["n_apps"].to_numpy()
+    rec = np.repeat(np.arange(len(consumers)), n_apps)
     n = len(rec)
 
+    # Person id per app (variants of one person are contiguous after the sort)
+    person = consumers["consumer_key"].to_numpy()[rec]
+    person_change = np.r_[True, person[1:] != person[:-1]]
+    person_id = np.cumsum(person_change) - 1
+
     # Submission times: uniform day in the window + daytime-skewed time of day,
-    # then sorted within each consumer record so app_seq follows real order
+    # then sorted within each *person* so app_seq follows real order across
+    # that person's identity variants
     n_days = int(months * 365.25 / 12)
     t = rng.integers(0, n_days, size=n) * 86_400.0 \
         + np.clip(rng.normal(TOD_MEAN_S, TOD_SD_S, size=n), 0, 86_399)
-    t = t[np.lexsort((t, rec))]
-    starts = np.r_[0, np.cumsum(n_apps)[:-1]]
-    app_seq = np.arange(n) - np.repeat(starts, n_apps) + 1
+    t = t[np.lexsort((t, person_id))]
+    p_starts = np.flatnonzero(person_change)
+    p_counts = np.diff(np.r_[p_starts, n])
+    app_seq = np.arange(n) - np.repeat(p_starts, p_counts) + 1
     submitted_at = pd.Timestamp(window_start) + pd.to_timedelta(t, unit="s")
 
     # Application amount: the consumer's copula anchor on first application,

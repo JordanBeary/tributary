@@ -89,9 +89,9 @@ generate_consumers → generate_leads → run_waterfall → generate_marketing �
 
 | Silo | Grain | Rows | On-disk size (compressed) |
 | --- | --- | --- | --- |
-| Auction (Parquet on S3) | event | ~9M | ~3–5 GB |
-| CRM (Postgres) | lead | ~2.4M | ~0.4 GB (trimmed to fit free tier) |
-| Marketing (BigQuery) | message | ~4M | ~1 GB |
+| Auction (Parquet on S3) | event | ~25M realized (volumes are targets; see decisions "Interpretations") | ~1.3 GB |
+| CRM (Postgres) | lead | ~2.4M | ~0.4 GB (trimmed to fit free tier, D6) |
+| Marketing (BigQuery) | message | ~2.2M (halved under C18: fewer, heavier persons) | ~0.7 GB |
 | Unified warehouse (derived) | mixed | — | ~3–4 GB |
 | **Total cloud footprint** |  |  | **~8–10 GB** |
 
@@ -364,3 +364,4 @@ Per-document versioning (`../meta/plan.md` Section 7): every change cites the in
 | v1.1 | 2026-08-03 | Fictional company name replaced with descriptive terms; confidentiality-note emoji removed; author placeholder resolved; example S3 path corrected to the real bucket; provenance front matter added; reframing sentence linking `meta/charter.md`; Phase 0.5 and the global exit criterion added to the roadmap; "How this was built" page added to the site plan; companion-version discipline adopted | INT-001, INT-003, INT-004, INT-007, INT-008; D1–D3 |
 | v1.2 | 2026-08-07 | Section 3.2: identity attributes described as synthetic data — the narrative names the data, not the generating library (ratification amendment to C13b) | C13, P-007 |
 | v1.3 | 2026-08-10 | Section 3.2 stage 4: acquisition-channel layer added — intent-laddered channel mix with full-funnel economics and a monthly spend ledger, making unified ROAS-by-channel computable end to end | C16, P-008 |
+| v1.4 | 2026-08-20 | Sections 2.3/3.3: repeat applications heavy-tailed per the author's industry data (mean ~3.8, 100+ tail) with channel-dependent identity drift replacing one-shot duplicate corruption; ER target band 0.8–0.9 (supersedes 0.85–0.95); marketing volumes halved (fewer, heavier persons) | D8, C18, P-010 |

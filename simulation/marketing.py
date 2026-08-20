@@ -41,6 +41,8 @@ import numpy as np
 import pandas as pd
 
 from simulation.consumers import IdentityVocab, _uuid4, sample_identity
+from simulation.channels import (ACQ_CHANNELS, SEG_TIER_PROBS,
+                                 converter_prospect_mixes)
 
 N_SEGMENTS = 5
 # Mean-preserving engagement scaling of the C5 funnel rates across segments
@@ -50,37 +52,9 @@ CHANNEL_PROBS = np.array([0.85, 0.15])
 OPEN_DELAY_MEAN_S = 6 * 3600.0     # send -> open lag (declared)
 CLICK_DELAY_MEAN_S = 15 * 60.0     # open -> click lag (declared)
 
-# ── Acquisition channels (C16): declared full-funnel economics ──
-# Each contact enters the pool through an acquisition channel with its own
-# intent level, and intent drives the whole funnel: contact->application
-# conversion (conv_target, rescaled so the pool-weighted rate matches the
-# structural rate implied by cfg.marketing_only_rate), engagement-segment mix
-# (seg_tier), and lead quality among converters (q_tilt). Unit economics
-# (click_to_contact, cpc/cpl, ctr) drive the monthly spend table so Phase 4
-# can compute true per-channel CAC and ROAS through to auction revenue.
-# Values are declared assumptions calibrated to lead-gen industry shape:
-# personal-loan paid-search clicks are expensive ($10 CPC at 8% click->contact
-# ~ $125 CAC), affiliates sell leads at ~$60 CPL, display retargeting buys
-# cheap low-intent clicks that convert worst — by construction the channel mix
-# spans clearly-profitable to unprofitable.
-ACQ_CHANNELS = pd.DataFrame({
-    "mix":              [0.08,   0.24,   0.08,   0.26,   0.12,   0.14,   0.08],
-    "conv_target":      [0.97,   0.95,   0.93,   0.90,   0.85,   0.82,   0.72],
-    "seg_tier":         ["high", "high", "mid",  "mid",  "low",  "low",  "low"],
-    "q_tilt":           [0.30,   0.40,   0.20,   0.00,   -0.20,  -0.30,  -0.40],
-    "click_to_contact": [0.35,   0.12,   0.10,   0.08,   np.nan, 0.025,  0.005],
-    "cpc":              [0.0,    0.0,    0.0,    10.00,  np.nan, 1.60,   0.80],
-    "cpl":              [np.nan, np.nan, np.nan, np.nan, 60.00,  np.nan, np.nan],
-    "ctr":              [np.nan, np.nan, np.nan, 0.045,  np.nan, 0.009,  0.0025],
-}, index=pd.Index(["direct", "organic_search", "referral", "paid_search",
-                   "affiliate", "paid_social", "display"], name="channel"))
-
-# Engagement-segment mix per intent tier (means 3.4 / 3.0 / 2.6)
-SEG_TIER_PROBS = {
-    "high": np.array([0.12, 0.16, 0.20, 0.24, 0.28]),
-    "mid":  np.array([0.20, 0.20, 0.20, 0.20, 0.20]),
-    "low":  np.array([0.28, 0.24, 0.20, 0.16, 0.12]),
-}
+# Acquisition-channel economics (C16) live in simulation.channels (C18:
+# channels are assigned at person grain in the consumer stage so identity
+# drift can depend on them; this stage keeps prospects and the spend ledger).
 ACQ_LAG_MEAN_S = 2 * 86_400.0      # acquisition -> first nurture send (declared)
 SPEND_JITTER = 0.10                # monthly unit-cost wobble (declared)
 
@@ -124,7 +98,7 @@ def _contact_pool(consumers: pd.DataFrame, leads: pd.DataFrame,
     # Phone/state/zip ride along: the ESP knows them from signup forms and SMS
     # reachability, and they are the cross-silo fuzzy-match signal for ER
     cons = consumers[["email", "first_name", "last_name", "phone",
-                      "addr_state", "zip_code"]].copy()
+                      "addr_state", "zip_code", "acquisition_channel"]].copy()
     cons["first_sub"] = consumers["consumer_record_id"].map(by_rec["first_sub"])
     cons["_mean_q"] = consumers["consumer_record_id"].map(by_rec["mean_q"])
     contacts = (cons.sort_values("first_sub", kind="stable")
@@ -135,7 +109,8 @@ def _contact_pool(consumers: pd.DataFrame, leads: pd.DataFrame,
                      state=("addr_state", "first"),
                      zip_code=("zip_code", "first"),
                      first_sub=("first_sub", "min"),
-                     _mean_q=("_mean_q", "mean")))
+                     _mean_q=("_mean_q", "mean"),
+                     acquisition_channel=("acquisition_channel", "first")))
     contacts["is_marketing_only"] = False
 
     # Prospects sized so they are marketing_only_rate of the total pool
@@ -155,6 +130,7 @@ def _contact_pool(consumers: pd.DataFrame, leads: pd.DataFrame,
         "last_name": ident["last_name"], "phone": ident["phone"],
         "state": states, "zip_code": ident["zip_code"],
         "first_sub": pd.NaT, "_mean_q": np.nan, "is_marketing_only": True,
+        "acquisition_channel": pd.NA,
     })
     pool = pd.concat([contacts, extras], ignore_index=True)
     return pool.iloc[rng.permutation(len(pool))].reset_index(drop=True)
@@ -162,48 +138,18 @@ def _contact_pool(consumers: pd.DataFrame, leads: pd.DataFrame,
 
 def _assign_channels(pool: pd.DataFrame, marketing_only_rate: float,
                      rng: np.random.Generator) -> pd.DataFrame:
-    """Acquisition channel per contact (C16), with the declared full funnel.
+    """Acquisition channel per contact (C16/C18).
 
-    Per-channel contact->application conversion targets are rescaled by one
-    factor so the pool-weighted rate matches the structural rate implied by
-    the marketing-only dial; the intent ordering is what carries the realism.
-    Converter/prospect channel mixes follow by Bayes from (mix, conversion).
-    Among converters, assignment tilts with realized mean lead quality
-    (q_tilt), so high-intent channels also deliver better leads downstream.
+    Converter contacts arrive with their person-grain channel (assigned in
+    the consumer stage, quality-tilted there); marketing-only prospects draw
+    from the Bayes prospect mix (dominated by low-intent paid channels).
     """
-    a = ACQ_CHANNELS
-    scale = (1 - marketing_only_rate) / (a["mix"] * a["conv_target"]).sum()
-    conv_rate = (a["conv_target"] * scale).clip(upper=0.995)
-    p_conv = (a["mix"] * conv_rate).to_numpy()
-    p_conv = p_conv / p_conv.sum()
-    p_pros = (a["mix"] * (1 - conv_rate)).to_numpy()
-    p_pros = p_pros / p_pros.sum()
-
-    channel = np.empty(len(pool), dtype=object)
+    _, p_pros = converter_prospect_mixes(marketing_only_rate)
+    channel = pool["acquisition_channel"].to_numpy(dtype=object).copy()
     is_pros = pool["is_marketing_only"].to_numpy()
-
-    # Prospects: plain mix draw (dominated by low-intent paid channels)
-    channel[is_pros] = rng.choice(a.index.to_numpy(), size=int(is_pros.sum()),
-                                  p=p_pros)
-    # Converters: mix draw tilted by the contact's lead-quality percentile
-    conv_idx = np.flatnonzero(~is_pros)
-    q_pct = stats_rank(pool["_mean_q"].to_numpy()[conv_idx])
-    probs = p_conv[None, :] * (1 + a["q_tilt"].to_numpy()[None, :]
-                               * (q_pct[:, None] - 0.5))
-    probs /= probs.sum(axis=1, keepdims=True)
-    cum = np.cumsum(probs, axis=1)
-    draw = rng.uniform(size=len(conv_idx))[:, None]
-    pick = np.minimum((draw >= cum).sum(axis=1), len(a) - 1)  # float-sum guard
-    channel[conv_idx] = a.index.to_numpy()[pick]
+    channel[is_pros] = rng.choice(ACQ_CHANNELS.index.to_numpy(),
+                                  size=int(is_pros.sum()), p=p_pros)
     return pool.assign(acquisition_channel=channel)
-
-
-def stats_rank(x: np.ndarray) -> np.ndarray:
-    """Percentile rank in (0,1); ties broken by stable order (x is continuous)."""
-    order = np.argsort(x, kind="stable")
-    ranks = np.empty(len(x))
-    ranks[order] = np.arange(1, len(x) + 1)
-    return ranks / (len(x) + 1)
 
 
 def _assign_holdout(pool: pd.DataFrame, um: UpliftModel,

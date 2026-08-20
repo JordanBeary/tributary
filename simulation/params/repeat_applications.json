@@ -1,0 +1,14 @@
+{
+  "provenance": "Declared assumption informed by the author's industry experience in personal-loan lead marketplaces (P-010); fitted from a private source table not committed to the repository (conventions Section 2). Fit: discrete power law with exponential cutoff, chi-square on bucket masses.",
+  "model": "P(k) ~ k^-alpha * exp(-k/lam), k = 1..cap",
+  "alpha": 1.4597,
+  "lam": 22.093,
+  "cap": 150,
+  "qa_targets_2sf": {
+    "p1": 0.48,
+    "p2": 0.17,
+    "p3": 0.09,
+    "mass_le_10": 0.92,
+    "mean": 3.8
+  }
+}

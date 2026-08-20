@@ -63,6 +63,9 @@ def main() -> None:
         find_aws_cli(), "--profile", profile,
         "s3", "sync", str(source), f"s3://{bucket}/auction",
         "--exclude", "*.DS_Store",
+        # Parquet basenames change every regeneration; --delete clears the
+        # previous run's files so the lake always mirrors the local tree.
+        "--delete",
     ]
     if args.dry_run:
         cmd.append("--dryrun")

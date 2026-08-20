@@ -10,4 +10,4 @@ Splink entity-resolution pipeline (Phase 3): probabilistic linkage over the dbt 
 
 Run order: `dbt build` in `warehouse/`, then the two model scripts, then `score.py`. Committed artifacts (model JSONs, scorecard) contain aggregate parameters and metrics only — no identity data.
 
-Current finding (2026-08-20, D8): both tasks score above the design's 0.85–0.95 difficulty band (link F1 0.976 = its ambiguity ceiling; dedupe F1 0.997). The pathology dials are pending a human decision before any tuning.
+D8 resolution (2026-08-20): the original engine scored above the band (link F1 0.976 = its ambiguity ceiling; dedupe 0.997). C18 (heavy-tailed repeat applications + channel-dependent identity drift, P-010) landed both tasks in the human-amended 0.8–0.9 band: link F1 0.879, dedupe F1 0.873 (corrupted-pair recall 0.743). Both model scripts take `--local` to tune dials against `data/generated/` without touching the cloud silos; the committed scorecard is the cloud-path run.

@@ -22,6 +22,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import argparse
+
 import duckdb
 from splink import DuckDBAPI, Linker, SettingsCreator, block_on
 import splink.comparison_library as cl
@@ -32,20 +34,52 @@ MODEL_PATH = Path(__file__).resolve().parent / "models" / "crm_marketing_model.j
 THRESHOLD = 0.5
 
 
-def main() -> None:
-    con = duckdb.connect(str(DB_PATH))
+def connect(local: bool):
+    """warehouse DB + staging views (default), or a scratch DB over the local
+    fracture outputs (--local, for D8 dial tuning without touching the cloud)."""
+    import duckdb as _duck
+    if not local:
+        con = _duck.connect(str(DB_PATH))
+        con.execute("CREATE SCHEMA IF NOT EXISTS main_er")
+        return con
+    con = _duck.connect(str(REPO_ROOT / "data" / "tuning.duckdb"))
     con.execute("CREATE SCHEMA IF NOT EXISTS main_er")
+    gen = REPO_ROOT / "data" / "generated"
+    con.execute(f"""
+        CREATE OR REPLACE VIEW local_crm AS
+        SELECT lead_id, email_sha256, first_name, last_name, phone,
+               state, zip_code
+        FROM read_csv('{gen}/crm/leads.csv')
+    """)
+    con.execute(f"""
+        CREATE OR REPLACE VIEW local_mkt AS
+        SELECT contact_id, first_name, last_name, phone, state, zip_code
+        FROM read_json('{gen}/marketing/contacts.jsonl')
+    """)
+    return con
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--local", action="store_true",
+                    help="read local fracture outputs (dial tuning)")
+    args = ap.parse_args()
+    con = connect(args.local)
 
     # Unified input views: Splink needs a shared schema and a unique_id.
-    con.execute("""
+    src_crm = "local_crm" if args.local else "main_staging.stg_crm__leads"
+    src_mkt = "local_mkt" if args.local else "main_staging.stg_marketing__contacts"
+    con.execute(f"""
         CREATE OR REPLACE VIEW er_in_crm AS
         SELECT lead_id AS unique_id, first_name, last_name, phone, zip_code, state
-        FROM main_staging.stg_crm__leads
+        FROM {src_crm}
     """)
-    con.execute("""
+    src_crm = "local_crm" if args.local else "main_staging.stg_crm__leads"
+    src_mkt = "local_mkt" if args.local else "main_staging.stg_marketing__contacts"
+    con.execute(f"""
         CREATE OR REPLACE VIEW er_in_mkt AS
         SELECT contact_id AS unique_id, first_name, last_name, phone, zip_code, state
-        FROM main_staging.stg_marketing__contacts
+        FROM {src_mkt}
     """)
 
     settings = SettingsCreator(

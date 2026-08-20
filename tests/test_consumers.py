@@ -8,9 +8,12 @@ tables (the notebook's raw held-out samples need the multi-GB downloads, which
 tests must not require); that verifies the sampler is faithful to the fitted
 distribution the notebook already gated against the source.
 
-Also asserted: the duplicate-injection structure (design Section 2.3, C7 mix)
-that the ER pipeline will later be scored against.
+Also asserted: the identity-drift variant structure (C18, superseding the C7
+one-shot duplicates) that the ER pipeline will later be scored against, and
+the heavy-tailed repeat-application QA gates from repeat_applications.json.
 """
+
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -19,14 +22,14 @@ from scipy import stats
 
 from simulation.config import SimConfig
 from simulation.consumers import (
-    CORRUPTION_PROBS, CORRUPTIONS, FICO_BANDS, FICO_EDGES,
-    CreditModel, IdentityVocab, build_population,
+    FICO_BANDS, FICO_EDGES, MUTATION_KINDS,
+    CreditModel, IdentityVocab, build_population, load_repeat_pmf,
 )
 from simulation.stages import generate_consumers
 
 SEED = 202608
-N = 150_000  # 10% scale: enough resolution for the ±1pp categorical gate
-DUP_RATE = 0.08
+N = 150_000  # enough persons for the ±1pp categorical gate
+CFG = SimConfig()  # default dials (drift hazard, mutation probs)
 
 
 @pytest.fixture(scope="module")
@@ -41,8 +44,9 @@ def vocab():
 
 @pytest.fixture(scope="module")
 def pop(model, vocab):
-    return build_population(model, vocab, N, DUP_RATE,
-                            np.random.default_rng(SEED))
+    return build_population(model, vocab, N, CFG.marketing_only_rate,
+                            CFG.drift_hazard, CFG.mutation_probs,
+                            CFG.params_dir, np.random.default_rng(SEED))
 
 
 @pytest.fixture(scope="module")
@@ -96,37 +100,65 @@ def test_fico_band_coherent(pop):
     assert (pop["fico_band"].to_numpy() == derived).all()
 
 
-def test_duplicate_structure(pop, base):
-    """Exactly n records; ~duplicate_rate duplicates; every duplicate shares a
-    base person's consumer_key and copies the credit profile verbatim."""
-    dups = pop[pop.is_duplicate]
-    assert len(pop) == N
-    assert len(dups) == round(N * DUP_RATE)
+def test_variant_structure(pop, base):
+    """C18: one base record per person; drifted variants share the person's
+    consumer_key, copy the credit profile verbatim, and n_apps sums to the
+    person's application count with contiguous variant_seq."""
+    assert len(base) == N
     assert pop["consumer_record_id"].is_unique
-    assert dups["consumer_key"].isin(set(base["consumer_key"])).all()
+    variants = pop[pop.is_duplicate]
+    assert (variants["variant_seq"] > 0).all()
+    assert variants["consumer_key"].isin(set(base["consumer_key"])).all()
 
-    merged = dups.merge(base, on="consumer_key", suffixes=("", "_b"))
-    assert len(merged) == len(dups)
+    merged = variants.merge(base, on="consumer_key", suffixes=("", "_b"))
+    assert len(merged) == len(variants)
     for col in ("loan_amnt", "dti", "annual_inc", "fico_mid", "emp_length",
-                "purpose", "addr_state", "last_name", "street_address",
-                "city", "zip_code"):
+                "purpose", "addr_state"):
         assert (merged[col] == merged[f"{col}_b"]).all(), f"{col} not copied"
 
+    # variant_seq contiguous 0..V-1 per person
+    seqs = pop.sort_values("variant_seq").groupby("consumer_key")["variant_seq"]
+    assert (seqs.min() == 0).all()
+    assert (seqs.max() + 1 == seqs.count()).all()
+    assert (pop["n_apps"] >= 1).all()
 
-def test_corruption_semantics(pop, base):
-    """C7: each corruption kind changes exactly the fields it names."""
-    merged = pop[pop.is_duplicate].merge(base, on="consumer_key",
-                                         suffixes=("", "_b"))
-    changed = {f: merged[f] != merged[f"{f}_b"]
-               for f in ("first_name", "email", "phone")}
-    kind = merged["corruption"]
-    assert (changed["first_name"] == kind.isin(["nickname", "all"])).all()
-    assert (changed["email"] == kind.isin(["email_typo", "all"])).all()
-    assert (changed["phone"] == kind.isin(["new_phone", "all"])).all()
 
-    # Mix lands near the C7 dial (binomial noise at n=12k is well under 2pp)
-    mix = kind.value_counts(normalize=True).reindex(CORRUPTIONS).to_numpy()
-    assert np.abs(mix - CORRUPTION_PROBS).max() < 0.02
+def test_repeat_count_gates(pop, base):
+    """Per-person application counts reproduce the P-010 artifact's rounded
+    QA targets (binomial noise at n=150k is far under the 1pp slack)."""
+    import json
+    art = json.loads((Path("simulation/params") /
+                      "repeat_applications.json").read_text())
+    k = pop.groupby("consumer_key")["n_apps"].sum()
+    tgt = art["qa_targets_2sf"]
+    share = k.value_counts(normalize=True)
+    assert abs(share.get(1, 0) - tgt["p1"]) < 0.01
+    assert abs(share.get(2, 0) - tgt["p2"]) < 0.01
+    assert abs(share.get(3, 0) - tgt["p3"]) < 0.01
+    assert abs(share[share.index <= 10].sum() - tgt["mass_le_10"]) < 0.01
+    assert abs(k.mean() - tgt["mean"]) < 0.15
+    assert k.max() <= art["cap"]
+
+
+def test_drift_mutation_semantics(pop):
+    """C18: each drift event's kinds change the fields they name, measured
+    against the person's *previous* variant (mutations compose)."""
+    cols = ["first_name", "last_name", "email", "phone", "zip_code",
+            "street_address", "city"]
+    s = pop.sort_values(["consumer_key", "variant_seq"])
+    prev = s.groupby("consumer_key")[cols].shift(1)
+    mask = s["variant_seq"] > 0
+    kinds = s.loc[mask, "corruption"].str.split(",")
+    changed = {c: (s.loc[mask, c] != prev.loc[mask, c]) for c in cols}
+
+    has = {k: kinds.apply(lambda ks, k=k: k in ks) for k in MUTATION_KINDS}
+    assert (changed["phone"] == has["new_phone"]).all()
+    assert (changed["email"] == has["new_email"]).all()
+    assert (changed["zip_code"] <= has["moved_zip"]).all()
+    name_changed = changed["first_name"] | changed["last_name"]
+    assert (name_changed == has["name_form"]).all()
+    # every event mutates something
+    assert kinds.str.len().ge(1).all()
 
 
 def test_identity_coherence(vocab, pop, base):
@@ -142,8 +174,10 @@ def test_identity_coherence(vocab, pop, base):
 
 def test_determinism(model, vocab):
     """Same seed, same population — the reproducibility exit criterion in miniature."""
-    a = build_population(model, vocab, 5_000, DUP_RATE, np.random.default_rng(11))
-    b = build_population(model, vocab, 5_000, DUP_RATE, np.random.default_rng(11))
+    args = (CFG.marketing_only_rate, CFG.drift_hazard, CFG.mutation_probs,
+            CFG.params_dir)
+    a = build_population(model, vocab, 5_000, *args, np.random.default_rng(11))
+    b = build_population(model, vocab, 5_000, *args, np.random.default_rng(11))
     pd.testing.assert_frame_equal(a, b)
 
 
@@ -154,5 +188,6 @@ def test_stage_writes_parquet(tmp_path):
     cfg.ensure_dirs()
     generate_consumers(cfg)
     df = pd.read_parquet(tmp_path / "consumers.parquet")
-    assert len(df) == cfg.n_consumers
-    assert {"consumer_record_id", "consumer_key", "email", "fico_mid"} <= set(df.columns)
+    assert df["consumer_key"].nunique() == cfg.n_persons
+    assert {"consumer_record_id", "consumer_key", "email", "fico_mid",
+            "n_apps", "variant_seq", "acquisition_channel"} <= set(df.columns)

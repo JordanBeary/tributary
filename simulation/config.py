@@ -3,7 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
-BASE_CONSUMERS = 1_500_000  # 100%-scale consumer count (design.md §3.2)
+BASE_PERSONS = 639_000  # 100%-scale persons: 2.4M lead target / 3.756 fitted
+                        # mean apps per person (C18, repeat_applications.json)
 
 
 @dataclass
@@ -21,14 +22,21 @@ class SimConfig:
     # never uploaded to any silo (design.md §2.4).
     private_dir: Path = Path("data/private")
 
-    # Pathology dials (docs/calibration_spec.md §4)
-    duplicate_rate: float = 0.08
+    # Pathology dials (docs/calibration_spec.md §4; drift dials are C18/D8)
     orphan_rate: float = 0.05
     marketing_only_rate: float = 0.10
+    # Identity-drift hazard per return gap, by channel intent tier: messy
+    # low-intent channels ship messier data (human directive, P-010).
+    drift_hazard: dict = field(default_factory=lambda: {
+        "high": 0.10, "mid": 0.18, "low": 0.30})
+    # Per-drift-event mutation probabilities (>= 1 enforced per event)
+    mutation_probs: dict = field(default_factory=lambda: {
+        "new_phone": 0.45, "new_email": 0.40, "name_form": 0.35,
+        "moved_zip": 0.18})
 
     @property
-    def n_consumers(self) -> int:
-        return max(1, int(BASE_CONSUMERS * self.scale))
+    def n_persons(self) -> int:
+        return max(1, int(BASE_PERSONS * self.scale))
 
     def ensure_dirs(self) -> None:
         for d in (self.out_dir, self.private_dir):

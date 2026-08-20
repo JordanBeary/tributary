@@ -7,6 +7,8 @@ timestamp semantics — is checkable without any raw-data download. Ends with th
 first three-stage integration run: consumers -> leads -> waterfall.
 """
 
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -15,13 +17,14 @@ from scipy import stats
 from simulation.config import SimConfig
 from simulation.consumers import CreditModel, IdentityVocab, build_population
 from simulation.leads import (
-    AMOUNT_MAX, AMOUNT_MIN, AMOUNT_STEP, APP_PROBS,
+    AMOUNT_MAX, AMOUNT_MIN, AMOUNT_STEP,
     QualityModel, build_leads,
 )
 from simulation.stages import generate_consumers, generate_leads, run_waterfall
 
 SEED = 202608
-N_CONSUMERS = 40_000
+N_PERSONS = 40_000
+CFG = SimConfig()
 MONTHS = 12
 WINDOW_START = "2025-07-01"
 
@@ -30,8 +33,9 @@ WINDOW_START = "2025-07-01"
 def consumers():
     model = CreditModel.from_params_dir("simulation/params")
     vocab = IdentityVocab.from_faker()
-    return build_population(model, vocab, N_CONSUMERS, 0.08,
-                            np.random.default_rng(SEED))
+    return build_population(model, vocab, N_PERSONS, CFG.marketing_only_rate,
+                            CFG.drift_hazard, CFG.mutation_probs,
+                            CFG.params_dir, np.random.default_rng(SEED))
 
 
 @pytest.fixture(scope="module")
@@ -46,13 +50,16 @@ def leads(consumers, qm):
 
 
 def test_volume_and_mix(consumers, leads):
-    """C14: mean 1.60 applications per record; per-record counts follow the mix."""
-    ratio = len(leads) / len(consumers)
-    assert 1.55 < ratio < 1.65, f"leads per record = {ratio:.3f}"
+    """C18: per-record lead counts equal the consumer stage's n_apps
+    allocation, and the person-level mean matches the P-010 artifact."""
+    import json
     counts = leads.groupby("consumer_record_id").size()
-    assert set(counts.unique()) <= {1, 2, 3}
-    mix = counts.value_counts(normalize=True).reindex([1, 2, 3]).to_numpy()
-    assert np.abs(mix - APP_PROBS).max() < 0.01, f"mix {np.round(mix, 3)}"
+    alloc = consumers.set_index("consumer_record_id")["n_apps"]
+    assert counts.sub(alloc.reindex(counts.index)).abs().max() == 0
+    art = json.loads(Path("simulation/params/repeat_applications.json")
+                     .read_text())
+    mean = len(leads) / consumers["consumer_key"].nunique()
+    assert abs(mean - art["qa_targets_2sf"]["mean"]) < 0.15
 
 
 def test_q_is_rank_uniform(leads, qm):
@@ -95,6 +102,8 @@ def test_time_semantics(leads):
     by_rec = leads.sort_values(["consumer_record_id", "app_seq"])
     grp = by_rec.groupby("consumer_record_id")["submitted_at"]
     assert (grp.apply(lambda s: s.is_monotonic_increasing)).all()
+    # app_seq is person-level: within a record it is increasing but need not
+    # start at 1 (earlier applications may sit on earlier identity variants)
     # Daytime skew: most submissions land in waking hours
     hours = leads["submitted_at"].dt.hour
     assert hours.between(8, 21).mean() > 0.8

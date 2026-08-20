@@ -97,3 +97,11 @@ Entry status values: `verbatim` (exact text, redactions marked) or `summary — 
   >
   > Make a note to be very clear and direct about what decisions you want me to make. For example, what specifically do you mean by saying "Pending your ratification" ?
 - **Shaped:** C17 ratified, with the OLAP wide-fact-table rationale added to its record (and noted as a Phase 4 mart-design preference). The second paragraph is a standing process correction, logged as INT-015: decision requests to the human must state concretely what is being decided, what accepting or rejecting entails, and what the agent recommends — "pending your ratification" without that context is insufficient.
+
+## P-010 — Heavy-tailed repeat applications and channel-dependent identity drift (Phase 3)
+
+- **Date:** 2026-08-20
+- **Status:** verbatim minus one marked redaction
+- **Content:** (ratifying D8 option (a) — the ER pathologies were too clean; both Splink tasks scored above the design band)
+  > Yes - in my experience working as lead generation/marketplace for the personal loan space there are many return customers and data drift is high depending on marketing channel. Over the course of 1 year (2025) here is the breakdown of leads per contact. [REDACTED: proprietary leads-per-contact distribution table — raw figures retained locally in `data/private/repeat_apps_source.csv`, never committed; fitted form in `simulation/params/repeat_applications.json`] Let's target ER F1 between 0.8-0.9.
+- **Shaped:** C18 — the largest post-Phase-1 engine amendment. The one-year leads-per-contact table (heavy-tailed: ~46% single-application, mean ~3.8, a 100+ tail) replaced the C14 1–3 mix via a fitted discrete power law with exponential cutoff; "data drift is high depending on marketing channel" became the channel-hazard identity-drift model that superseded C7's one-shot duplicates; and the ER target band moved from 0.85–0.95 to **0.8–0.9**. First full-scale run landed link F1 0.879 and dedupe F1 0.873 — both in the human's band on the default dials.

@@ -18,10 +18,15 @@ vectorized numpy draws rather than per-row library calls, keeping full-scale
 generation fast and every byte reproducible from one seed. Zip codes come from
 per-state ranges so they agree with the LendingClub-calibrated ``addr_state``.
 
-Duplicate records (design Section 2.3, ~8% of rows) share a person's hidden
-``consumer_key`` with corrupted identity fields per the C7 mix: nickname 40% /
-email typo 30% / new phone 20% / all three 10%. Credit features copy verbatim —
-it is the same person applying again.
+Identity variants (C18, superseding the one-shot C7 duplicates): each person
+draws a heavy-tailed application count from ``repeat_applications.json`` (a
+declared assumption informed by the author's industry experience, P-010), and
+between consecutive returns identity *drift* events occur with a channel-
+dependent hazard — low-intent acquisition channels ship messier data. Each
+drift event derives a new consumer record from the person's previous one by
+mutating one or more identity fields (new phone / new email / name form /
+moved zip); credit features copy verbatim — it is the same person applying
+again. Records after the first carry ``is_duplicate`` for the crosswalk.
 """
 
 from __future__ import annotations
@@ -33,6 +38,9 @@ import json
 import numpy as np
 import pandas as pd
 from scipy import stats
+
+from simulation.channels import ACQ_CHANNELS, assign_converter_channels
+from simulation.quality import QualityModel
 
 # Ordinal employment buckets from the fitting notebook (01_lendingclub Section 2).
 # The n/a bucket is real applicant behavior in the source mix, but the copula
@@ -47,9 +55,17 @@ EMP_YEARS = {"< 1 year": 0.5, "1 year": 1, "2 years": 2, "3 years": 3,
 FICO_EDGES = np.array([600, 660, 720, 780])
 FICO_BANDS = np.array(["<600", "600-659", "660-719", "720-779", "780+"])
 
-# C7 duplicate corruption mix (calibration spec Section 4)
-CORRUPTIONS = np.array(["nickname", "email_typo", "new_phone", "all"])
-CORRUPTION_PROBS = np.array([0.40, 0.30, 0.20, 0.10])
+# C18 drift-mutation kinds (per-event probabilities live in SimConfig dials)
+MUTATION_KINDS = ["new_phone", "new_email", "name_form", "moved_zip"]
+LAST_NAME_TYPO_SHARE = 0.30  # name_form events that hit the surname instead
+
+
+def load_repeat_pmf(params_dir) -> np.ndarray:
+    """P(k applications), k = 1..cap, from the C18 artifact (P-010)."""
+    art = json.loads((Path(params_dir) / "repeat_applications.json").read_text())
+    k = np.arange(1, art["cap"] + 1, dtype=float)
+    w = k ** (-art["alpha"]) * np.exp(-k / art["lam"])
+    return w / w.sum()
 
 # Common US diminutives for the nickname corruption. Names without an entry fall
 # back to a seeded single-character typo, so every "nickname" duplicate is
@@ -272,59 +288,160 @@ def sample_identity(vocab: IdentityVocab, states: np.ndarray,
     })
 
 
-def _corrupt_duplicates(dups: pd.DataFrame, taken_emails: set[str],
-                        rng: np.random.Generator) -> pd.DataFrame:
-    """Apply the C7 corruption mix in place; returns dups with a corruption column."""
-    kinds = rng.choice(CORRUPTIONS, size=len(dups), p=CORRUPTION_PROBS)
-    dups = dups.assign(is_duplicate=True, corruption=kinds)
+def _drift_mutate(rows: pd.DataFrame, vocab: IdentityVocab,
+                  mutation_probs: dict[str, float], taken_emails: set[str],
+                  rng: np.random.Generator) -> pd.DataFrame:
+    """Derive drifted identity variants from their predecessor rows (C18).
 
-    nick = np.isin(kinds, ["nickname", "all"])
-    dups.loc[nick, "first_name"] = [
-        NICKNAMES.get(f, None) or _typo(f, rng)
-        for f in dups.loc[nick, "first_name"]]
-
-    typo = np.isin(kinds, ["email_typo", "all"])
-    new_emails = []
-    for e in dups.loc[typo, "email"]:
-        loc, _, dom = e.partition("@")
-        cand = _typo(loc, rng) + "@" + dom
-        while cand in taken_emails:  # astronomically rare; keep exactness anyway
-            cand = _typo(loc, rng) + str(rng.integers(10)) + "@" + dom
-        taken_emails.add(cand)
-        new_emails.append(cand)
-    dups.loc[typo, "email"] = new_emails
-
-    phone = np.isin(kinds, ["new_phone", "all"])
-    dups.loc[phone, "phone"] = _phones(int(phone.sum()), rng)
-    return dups
-
-
-def build_population(model: CreditModel, vocab: IdentityVocab, n: int,
-                     duplicate_rate: float, rng: np.random.Generator) -> pd.DataFrame:
-    """The full consumer table: exactly n records, ~duplicate_rate of them
-    duplicate records sharing a base person's consumer_key (design Section 2.3).
-
-    Sources for duplicates are drawn with replacement, so a few persons carry
-    three or more records — real duplicate flooding is not pairwise-only.
+    Each row is one drift event: every mutation kind fires independently with
+    its dialed probability, and at least one is enforced (an event with no
+    visible change would not be a variant). Mutations compose -- a heavy
+    repeater's later variants accumulate distance from the original identity.
     """
-    n_dup = int(round(n * duplicate_rate))
-    n_base = n - n_dup
+    n = len(rows)
+    fire = {k: rng.uniform(size=n) < mutation_probs[k] for k in MUTATION_KINDS}
+    none = ~np.logical_or.reduce(list(fire.values()))
+    fire["new_phone"] = fire["new_phone"] | none  # enforce >= 1 mutation
 
-    credit = sample_credit(model, n_base, rng)
+    kinds = np.array([",".join(k for k in MUTATION_KINDS if fire[k][i])
+                      for i in range(n)], dtype=object)
+    rows = rows.assign(is_duplicate=True, corruption=kinds)
+
+    # Name form: mostly diminutives/typos on the first name, sometimes a
+    # surname typo (married-name-style changes are out of scope).
+    nf = np.flatnonzero(fire["name_form"])
+    on_last = rng.uniform(size=len(nf)) < LAST_NAME_TYPO_SHARE
+    first = rows["first_name"].to_numpy(dtype=object).copy()
+    last = rows["last_name"].to_numpy(dtype=object).copy()
+    for i, is_last in zip(nf, on_last):
+        if is_last:
+            last[i] = _typo(str(last[i]), rng)
+        else:
+            first[i] = NICKNAMES.get(first[i], None) or _typo(str(first[i]), rng)
+    rows["first_name"], rows["last_name"] = first, last
+
+    # New email: rebuilt from the *current* (possibly renamed) identity so
+    # the variant's signals cohere; global uniqueness preserved.
+    ne = np.flatnonzero(fire["new_email"])
+    emails = rows["email"].to_numpy(dtype=object).copy()
+    for i in ne:
+        fl = str(rows["first_name"].iloc[i]).lower()
+        ll = str(rows["last_name"].iloc[i]).lower()
+        dom = str(rng.choice(vocab.email_domains))
+        pattern = int(rng.integers(3))
+        local = [f"{fl}.{ll}", f"{fl}{ll}", f"{fl[:1]}{ll}"][pattern]
+        cand = f"{local}@{dom}"
+        while cand in taken_emails:
+            cand = f"{local}{rng.integers(1000)}@{dom}"
+        taken_emails.add(cand)
+        emails[i] = cand
+    rows["email"] = emails
+
+    # New phone: a genuinely different number, not a typo of the old one.
+    np_idx = fire["new_phone"]
+    rows.loc[np_idx, "phone"] = _phones(int(np_idx.sum()), rng)
+
+    # Moved zip: new zip within the same state (credit geography holds), with
+    # street and city redrawn to match the move.
+    mv = np.flatnonzero(fire["moved_zip"])
+    if len(mv):
+        states = rows["addr_state"].to_numpy()[mv]
+        lo = np.array([vocab.zip_lo[s] for s in states])
+        hi = np.array([vocab.zip_hi[s] for s in states])
+        zips = lo + (rng.uniform(size=len(mv)) * (hi - lo + 1)).astype(int)
+        rows.iloc[mv, rows.columns.get_loc("zip_code")] = \
+            np.char.zfill(zips.astype(str), 5).astype(object)
+        st_num = rng.integers(1, 10_000, size=len(mv)).astype(str)
+        st_name = rng.choice(np.concatenate([vocab.first_names, vocab.last_names]),
+                             size=len(mv))
+        st_suff = rng.choice(vocab.street_suffixes, size=len(mv))
+        rows.iloc[mv, rows.columns.get_loc("street_address")] = np.array(
+            [f"{a} {b} {c}" for a, b, c in zip(st_num, st_name, st_suff)],
+            dtype=object)
+        city_stem = rng.choice(vocab.first_names, size=len(mv))
+        city_suf = rng.choice(vocab.city_suffixes, size=len(mv))
+        rows.iloc[mv, rows.columns.get_loc("city")] = np.array(
+            [f"{a}{b}" for a, b in zip(city_stem, city_suf)], dtype=object)
+    return rows
+
+
+def build_population(model: CreditModel, vocab: IdentityVocab, n_persons: int,
+                     marketing_only_rate: float, drift_hazard: dict[str, float],
+                     mutation_probs: dict[str, float], params_dir,
+                     rng: np.random.Generator) -> pd.DataFrame:
+    """The full consumer table (C18): one row per identity *variant*.
+
+    Each of the n_persons persons draws a heavy-tailed application count k
+    from the repeat_applications artifact and an acquisition channel (C16
+    converter mix, quality-tilted). Between consecutive returns a drift
+    event fires with the channel-tier hazard; each event derives a new
+    variant record from the person's previous one via _drift_mutate.
+    Application counts are person-level, identity is variant-level: each
+    record's n_apps says how many applications submit under that identity
+    snapshot, and variant_seq orders snapshots in submission order. The
+    crosswalk keeps the person truth.
+    """
+    credit = sample_credit(model, n_persons, rng)
     ident = sample_identity(vocab, credit["addr_state"].to_numpy(), rng)
     base = pd.concat([ident, credit], axis=1)
-    base.insert(0, "consumer_key", _uuid4(n_base, rng))
+    base.insert(0, "consumer_key", _uuid4(n_persons, rng))
     base.insert(1, "is_duplicate", False)
     base.insert(2, "corruption", pd.NA)
+    base.insert(3, "variant_seq", 0)
 
-    # Duplicates: same person, verbatim credit profile, corrupted identity fields
-    src = rng.integers(0, n_base, size=n_dup)
-    dups = _corrupt_duplicates(base.iloc[src].drop(columns="corruption"),
-                               set(base["email"]), rng)
+    # Heavy-tailed applications per person (P-010 artifact)
+    pmf = load_repeat_pmf(params_dir)
+    k = rng.choice(np.arange(1, len(pmf) + 1), size=n_persons, p=pmf)
 
-    pop = pd.concat([base, dups], ignore_index=True)
-    # Per-record key (leads reference a specific identity record); independent of
-    # consumer_key so no silo-visible id can leak the hidden person key
+    # Acquisition channel at person grain, tilted by the acceptance-model
+    # score on the person's anchor application (preserves C16's
+    # channel-quality correlation ahead of lead generation).
+    qm = QualityModel.from_params_dir(params_dir)
+    z = qm.score(base["loan_amnt"].to_numpy(), base["dti"].to_numpy(),
+                 base["emp_years"].to_numpy())
+    q_pct = stats.rankdata(z) / (n_persons + 1)
+    base.insert(4, "acquisition_channel",
+                assign_converter_channels(q_pct, marketing_only_rate, rng))
+
+    # One Bernoulli per return gap at the channel-tier hazard: apps between
+    # drift events share a variant, so the variant index per app is the
+    # within-person cumulative count of fired gaps.
+    tier = base["acquisition_channel"].map(ACQ_CHANNELS["seg_tier"]).to_numpy()
+    hazard = np.array([drift_hazard[t] for t in tier])
+    rep = np.repeat(np.arange(n_persons), k)          # app -> person
+    starts = np.r_[0, np.cumsum(k)[:-1]]
+    pos = np.arange(int(k.sum())) - np.repeat(starts, k)
+    drift = (rng.uniform(size=int(k.sum())) < hazard[rep]) & (pos > 0)
+    c = np.cumsum(drift)
+    v_app = c - np.repeat(c[starts], k)               # 0-based variant per app
+
+    # Apps per (person, variant) -> each record's n_apps
+    napps = (pd.DataFrame({"p": rep, "v": v_app})
+             .groupby(["p", "v"]).size())
+    n_variants = np.zeros(n_persons, dtype=int)
+    np.maximum.at(n_variants, rep, v_app + 1)
+
+    base["n_apps"] = napps.xs(0, level="v").reindex(
+        np.arange(n_persons)).to_numpy()
+    levels = [base]
+    prev = base                                        # indexed by person id
+    taken = set(base["email"])
+    level = 1
+    while True:
+        persons_l = np.flatnonzero(n_variants > level)
+        if not len(persons_l):
+            break
+        rows = _drift_mutate(prev.loc[persons_l].copy(), vocab,
+                             mutation_probs, taken, rng)
+        rows["variant_seq"] = level
+        rows["n_apps"] = napps.reindex(
+            pd.MultiIndex.from_arrays(
+                [persons_l, np.full(len(persons_l), level)])).to_numpy()
+        levels.append(rows)
+        prev = rows                                    # person-id index kept
+        level += 1
+
+    pop = pd.concat(levels, ignore_index=True)
     pop.insert(0, "consumer_record_id", _uuid4(len(pop), rng))
-    # Shuffle so duplicate records are not positionally clustered downstream
+    # Shuffle so variant records are not positionally clustered downstream
     return pop.iloc[rng.permutation(len(pop))].reset_index(drop=True)

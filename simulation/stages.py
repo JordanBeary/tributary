@@ -23,16 +23,17 @@ from simulation.fracture import (
 
 
 def generate_consumers(cfg: SimConfig) -> None:
-    """Sample cfg.n_consumers consumer records with credit features + identity.
+    """Sample cfg.n_persons persons and their identity-variant records (C18).
 
     - Credit/demographic features from the LendingClub Gaussian copula
       (params: lendingclub_marginals.json).
     - Synthetic identity attributes (name, email, phone, address), sampled
       from en_US vocabularies through the stage RNG stream (C13b).
-    - ~cfg.duplicate_rate of the records are duplicates: the same person
-      (shared consumer_key) with corrupted identity fields per the C7 mix
-      (nickname, typo'd email, new phone). Record count includes duplicates,
-      so Section 3.3 volumes hold exactly.
+    - Heavy-tailed applications per person (repeat_applications.json, P-010);
+      acquisition channel at person grain (C16 converter mix, quality-tilted);
+      identity drift between returns at the channel-tier hazard, mutating
+      phone/email/name-form/zip per cfg.mutation_probs. Variant records after
+      the first carry is_duplicate for the crosswalk.
     - Writes consumers.parquet WITH consumer_key, which only the fracture
       stage may strip; the crosswalk goes to cfg.private_dir.
     """
@@ -40,13 +41,15 @@ def generate_consumers(cfg: SimConfig) -> None:
     vocab = IdentityVocab.from_faker()
     # Stage-scoped RNG stream: independent of other stages, reproducible per seed
     rng = np.random.default_rng(np.random.SeedSequence([cfg.seed, 1]))
-    pop = build_population(model, vocab, cfg.n_consumers, cfg.duplicate_rate, rng)
+    pop = build_population(model, vocab, cfg.n_persons, cfg.marketing_only_rate,
+                           cfg.drift_hazard, cfg.mutation_probs,
+                           cfg.params_dir, rng)
     pop.to_parquet(cfg.out_dir / "consumers.parquet", index=False)
 
 
 def generate_leads(cfg: SimConfig) -> None:
-    """1-3 applications per consumer over cfg.months; 1.6x consumers in
-    expectation (C14 mix).
+    """Applications per the consumer stage's per-record n_apps allocation
+    (heavy-tailed per person, C18; supersedes the C14 1-3 mix).
 
     Application features conditioned on the consumer credit profile (repeat
     applications re-request upward-jittered amounts); quality score q from the
@@ -162,6 +165,11 @@ def fracture_into_silos(cfg: SimConfig) -> None:
     (crm_dir / "schema.sql").write_text(CRM_SCHEMA_SQL)
 
     auction = build_auction_export(events, leads)
+    # Clear the partition tree first: parquet basenames are new each run, so
+    # rewriting in place would accumulate stale files from earlier runs.
+    import shutil
+    if (cfg.out_dir / "auction").exists():
+        shutil.rmtree(cfg.out_dir / "auction")
     auction.to_parquet(cfg.out_dir / "auction", partition_cols=["event_date"],
                        index=False)
 

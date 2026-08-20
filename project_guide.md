@@ -6,7 +6,7 @@ What the project *is* — including the global/local split and the precedence ru
 
 Status: v2.4, 2026-08-20 (Phase 3 started) · Written against design.md v1.3
 Provenance: A (original), HD (v2.0 reconciliation), A (v2.1–v2.4)
-Project status: **Phases 0–2 complete (Phase 2 closed 2026-08-14: three silos live, audit memo, cost receipts). Phase 3 in progress — dbt staging layer over all three silos built and green (5 models, 17 tests, `warehouse/`; D7 ratified); Splink ER pipeline built and scored: link F1 0.976, dedupe F1 0.997 — both above the 0.85–0.95 band; pathology-dial decision D8 pending (blocks ER finalization, not other work).**
+Project status: **Phases 0–2 complete (Phase 2 closed 2026-08-14: three silos live, audit memo, cost receipts). Phase 3 in progress — dbt staging layer over all three silos built and green (5 models, 17 tests, `warehouse/`; D7 ratified); Splink ER pipeline built; D8 resolved via C18 (heavy-tailed repeats + channel-dependent identity drift, P-010): link F1 0.879 / dedupe F1 0.873, both in the amended 0.8–0.9 band. Silo re-deploy + official cloud-path scorecard in progress.**
 
 ---
 
@@ -52,7 +52,7 @@ Project status: **Phases 0–2 complete (Phase 2 closed 2026-08-14: three silos 
 - **Gate on exit criteria, not enthusiasm.** Each phase's local exit criteria are in design Section 9; the global exit criterion is in charter Section 2. Don't start Phase N+1 while Phase N's criteria are unmet — the roadmap's cut-lines (models 3–6 are droppable; the site ships after Phase 4 regardless) only work if phases actually close.
 - **Publish incrementally.** Every phase ends in a committable, showable artifact (the design's burnout mitigation). Prefer a finished small thing over a half-built big thing.
 - **Phase 1 order**: profiling notebooks first (they produce the param artifacts), then stages in pipeline order (consumers → leads → waterfall → marketing → fracture), each validated at `--scale 0.01` before scaling. The waterfall stage is the heart — budget the most care there, since models 1–3 and 5–6 all depend on its censoring structure being right.
-- **Realism check that matters most**: ER difficulty. If Splink hits F1 ~ 1.0, the pathologies are too clean — turn the dials (C7) up. Target band 0.85–0.95.
+- **Realism check that matters most**: ER difficulty. If Splink saturates, the pathologies are too clean — turn the drift dials (C18) up. Target band 0.8–0.9 (D8/P-010, supersedes the design's original 0.85–0.95).
 - **Cost artifacts as you go**: screenshot budgets, note bytes-scanned before/after partitioning, keep the receipts — Section 5.3's 100x-scale analysis and the FinOps write-up need them.
 - **Site (Phase 7) is a presentation layer only** (human directive, 2026-08-20): analysis, modeling, and DS products surface as *static cached artifacts* on the public site once complete — no live compute or backends behind it. This sharpens design Section 10's $0-hosting stance: build every deliverable so its presentation form is a cacheable static export.
 - **Mart shape (Phase 4)**: prefer wide, denormalized fact tables — event grain carrying consumer/demographic attributes row-wise — over narrow facts requiring joins (the author's stated OLAP preference, P-009/C17).

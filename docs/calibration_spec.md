@@ -72,11 +72,14 @@ Not calibrated to a dataset — these are the §2.3 design dials, listed here so
 
 | Dial | Default | Range to tune |
 | --- | --- | --- |
-| Duplicate-consumer rate | 8% | 5–12% — tune until ER F1 lands in 0.85–0.95 |
-| Duplicate corruption mix | nickname 40% / email typo 30% / new phone 20% / all 10% | — |
+| Applications per person (C18) | discrete power law x exp cutoff: alpha 1.46, lambda 22.1, cap 150 (mean 3.76) — fitted, `repeat_applications.json` | artifact-driven (P-010) |
+| Drift hazard per return gap (C18) | by channel intent tier: high 0.10 / mid 0.18 / low 0.30 | tune until ER F1 lands in 0.8–0.9 (D8) |
+| Drift mutation probabilities (C18) | new phone 0.45 / new email 0.40 / name form 0.35 / moved zip 0.18 (>=1 enforced, composing) | same |
 | Orphaned auction events | 5% | 3–8% |
 | Marketing-only contacts | 10% of contacts | — |
 | Timezones | auction UTC, CRM US/Pacific naive, marketing US/Eastern | fixed |
+
+Superseded (C18): the 8% one-shot duplicate rate and the C7 corruption mix — drift variants now emerge from the repeat/hazard model above; realized variant share is ~34% of records (~51% of leads sit on drifted variants).
 
 ## 5. Deliverables checklist (Phase 1 gate)
 
@@ -104,3 +107,4 @@ Not calibrated to a dataset — these are the §2.3 design dials, listed here so
 | v0.10 | 2026-08-10 | Marketing engine (`simulation/marketing.py`) implements Section 3 in production: contact pool with never-applier prospects (the marketing-only dial, consumed at this stage), per-segment inverse construction of the holdout assignment, ITT semantics, `marketing_contacts.parquet` added to the stage contract; Section 3 rows amended (ITT note; Criteo baseline marked non-transferable) and the naive-recovery gate asserted sharply in `tests/test_marketing.py` | C15 |
 | v0.11 | 2026-08-10 | Acquisition-channel layer added to Section 3 (intent ladder, per-channel conversion, segment and lead-quality tilts, unit economics, monthly spend ledger `channel_spend.parquet`); channel gates (mix, conversion ladder, ledger consistency, intent correlations) added to `tests/test_marketing.py` | C16, P-008 |
 | v0.12 | 2026-08-10 | Fracture engine (`simulation/fracture.py`) implements Section 4 in production: offer payload on bid_request rows, early-window migration orphans with dense CRM renumbering, funded flag at the artifact CVR, dual-hash email isolation with phone/state/zip as the fuzzy ER signal; pathology gates in `tests/test_fracture.py`. Five-stage pipeline complete — Phase 1 exit criteria met | C17 |
+| v0.13 | 2026-08-20 | Section 4 pathology dials replaced: heavy-tailed applications per person (fitted artifact, P-010) with channel-hazard identity drift supersede the duplicate rate + C7 mix; ER band 0.8–0.9 | C18, D8 |

@@ -24,8 +24,8 @@ def run_pipeline(cfg: SimConfig, only: str | None = None) -> None:
     cfg.ensure_dirs()
     to_run = {only: STAGES[only]} if only else STAGES
     log.info(
-        "scale=%s seed=%s -> %s consumers; stages: %s",
-        cfg.scale, cfg.seed, f"{cfg.n_consumers:,}", ", ".join(to_run),
+        "scale=%s seed=%s -> %s persons; stages: %s",
+        cfg.scale, cfg.seed, f"{cfg.n_persons:,}", ", ".join(to_run),
     )
     for name, fn in to_run.items():
         t0 = time.perf_counter()

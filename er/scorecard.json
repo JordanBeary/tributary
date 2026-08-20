@@ -2,101 +2,101 @@
   "tasks": [
     {
       "task": "crm_marketing_link",
-      "ground_truth_pairs": 2279540,
+      "ground_truth_pairs": 2279550,
       "selection": "best_match_per_lead",
       "by_threshold": [
         {
           "threshold": 0.5,
-          "predicted_pairs": 2279540,
-          "true_positives": 2223850,
-          "precision": 0.9756,
-          "recall": 0.9756,
-          "f1": 0.9756
+          "predicted_pairs": 2201661,
+          "true_positives": 1969810,
+          "precision": 0.8947,
+          "recall": 0.8641,
+          "f1": 0.8791
         },
         {
           "threshold": 0.7,
-          "predicted_pairs": 2279437,
-          "true_positives": 2223749,
-          "precision": 0.9756,
-          "recall": 0.9755,
-          "f1": 0.9755
+          "predicted_pairs": 2201553,
+          "true_positives": 1969715,
+          "precision": 0.8947,
+          "recall": 0.8641,
+          "f1": 0.8791
         },
         {
           "threshold": 0.9,
-          "predicted_pairs": 2279437,
-          "true_positives": 2223749,
-          "precision": 0.9756,
-          "recall": 0.9755,
-          "f1": 0.9755
+          "predicted_pairs": 2187211,
+          "true_positives": 1960031,
+          "precision": 0.8961,
+          "recall": 0.8598,
+          "f1": 0.8776
         },
         {
           "threshold": 0.95,
-          "predicted_pairs": 2279437,
-          "true_positives": 2223749,
-          "precision": 0.9756,
-          "recall": 0.9755,
-          "f1": 0.9755
+          "predicted_pairs": 2185300,
+          "true_positives": 1958450,
+          "precision": 0.8962,
+          "recall": 0.8591,
+          "f1": 0.8773
         },
         {
           "threshold": 0.99,
-          "predicted_pairs": 2279237,
-          "true_positives": 2223551,
-          "precision": 0.9756,
-          "recall": 0.9754,
-          "f1": 0.9755
+          "predicted_pairs": 2183340,
+          "true_positives": 1956906,
+          "precision": 0.8963,
+          "recall": 0.8585,
+          "f1": 0.877
         }
       ]
     },
     {
       "task": "crm_dedupe",
-      "ground_truth_pairs": 1302430,
-      "corrupted_pairs": 368558,
+      "ground_truth_pairs": 14039564,
+      "corrupted_pairs": 11992978,
       "selection": "pairwise",
       "by_threshold": [
         {
           "threshold": 0.5,
-          "predicted_pairs": 1299883,
-          "true_positives": 1297560,
-          "precision": 0.9982,
-          "recall": 0.9963,
-          "f1": 0.9972,
-          "recall_corrupted_pairs": 0.9868
+          "predicted_pairs": 11073376,
+          "true_positives": 10958299,
+          "precision": 0.9896,
+          "recall": 0.7805,
+          "f1": 0.8727,
+          "recall_corrupted_pairs": 0.7431
         },
         {
           "threshold": 0.7,
-          "predicted_pairs": 1299883,
-          "true_positives": 1297560,
-          "precision": 0.9982,
-          "recall": 0.9963,
-          "f1": 0.9972,
-          "recall_corrupted_pairs": 0.9868
+          "predicted_pairs": 11073376,
+          "true_positives": 10958299,
+          "precision": 0.9896,
+          "recall": 0.7805,
+          "f1": 0.8727,
+          "recall_corrupted_pairs": 0.7431
         },
         {
           "threshold": 0.9,
-          "predicted_pairs": 1290162,
-          "true_positives": 1289274,
-          "precision": 0.9993,
-          "recall": 0.9899,
-          "f1": 0.9946,
-          "recall_corrupted_pairs": 0.9643
+          "predicted_pairs": 10733141,
+          "true_positives": 10731504,
+          "precision": 0.9998,
+          "recall": 0.7644,
+          "f1": 0.8664,
+          "recall_corrupted_pairs": 0.7242
         },
         {
           "threshold": 0.95,
-          "predicted_pairs": 1290162,
-          "true_positives": 1289274,
-          "precision": 0.9993,
-          "recall": 0.9899,
-          "f1": 0.9946,
-          "recall_corrupted_pairs": 0.9643
+          "predicted_pairs": 10672794,
+          "true_positives": 10671157,
+          "precision": 0.9998,
+          "recall": 0.7601,
+          "f1": 0.8636,
+          "recall_corrupted_pairs": 0.7191
         },
         {
           "threshold": 0.99,
-          "predicted_pairs": 1274030,
-          "true_positives": 1273444,
-          "precision": 0.9995,
-          "recall": 0.9777,
-          "f1": 0.9885,
-          "recall_corrupted_pairs": 0.9214
+          "predicted_pairs": 10669602,
+          "true_positives": 10667965,
+          "precision": 0.9998,
+          "recall": 0.7599,
+          "f1": 0.8635,
+          "recall_corrupted_pairs": 0.7189
         }
       ]
     }
