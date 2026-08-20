@@ -273,6 +273,25 @@ The spread is the point: an unprofitable channel (display), a thin one (paid sea
 
 **Engineering consequence.** `warehouse/` is now a working dbt project (profile in-repo, `.env`-driven secrets, DuckDB file as a disposable build artifact). First full build: 5 staging models + 17 data tests green in 9m10s -- the auction pull dominates (547s for 25.0M events, 1.3 GB over httpfs), the CRM wire pull takes 102s (2.28M rows), and the marketing models run in seconds against local exports. Verification: staged row counts match all three silos exactly (25,024,926 / 2,279,540 / 1,586,849 + 4,045,057 + 84), and the CRM timezone unwind round-trips the fracture's own UTC-to-Pacific transform -- staged min/max land exactly on the pipeline's [2025-07-01 00:00 UTC, 2026-07-01) window. One fix en route: monthly display impressions (4.77B) overflow INT32; counts are BIGINT.
 
+### D8 — ER difficulty: both tasks score above the design band (decision pending)
+
+*2026-08-20. Category: pathology calibration (C7/C17e watch item landing). Finding by the agent; decision is the human's per the standing rule ("tune until ER F1 lands in 0.85-0.95", C7) and INT-015.*
+
+**Finding.** First full Splink run over the staged silos, scored against the crosswalk:
+
+- **CRM-marketing link: F1 0.976** at every threshold (P = R = 0.976, best-match-per-lead, 2.28M ground-truth pairs). Diagnostic: on true cross-silo pairs, last_name and zip agree 100%, phone 98.5%, first_name 97% -- the C7 corruption never crosses the silo boundary, so the task's difficulty is only doppelganger ambiguity (identical field vectors), and 0.976 is the ceiling any model can reach. The 55,690 misses have *higher*-than-average field agreement: they are ties, not corruption casualties.
+- **CRM dedupe: F1 0.997** (P 0.998 / R 0.996 at 0.5), and recall restricted to corrupted pairs is still **0.987** -- corruption changes at most three of five identity fields, so a surviving exact key always remains.
+
+Both exceed the band's 0.95 ceiling. The design's exit criterion (F1 >= 0.9) is met, but its realism rule ("if Splink hits F1 ~ 1.0 the pathologies are too clean -- turn the dials up") is triggered.
+
+**Options put to the human:**
+
+- **(a) Turn the dials up and re-deploy** (recommended). Amend the fracture: add cross-silo identity drift (nickname/new-phone/moved-zip between a consumer's CRM and marketing records) and strengthen C7 multi-field corruption (all-three share up from 10%, add zip drift). Regenerate at scale 1.0, re-run the three silo loaders, rebuild staging, re-run ER; iterate the dials until both tasks land in 0.85-0.95. Cost: ~2.5 min regen + ~3 GB re-upload (cents, the loaders are idempotent) + ~10 min staging + ER re-runs; C7/C17e records and the Phase 2 audit memo numbers get amended with changelog entries. This is what the crosswalk exists for.
+- **(b) Accept as measured.** Exit criterion satisfied; report the saturation analysis honestly as the reconciliation story. Cheaper, but the centerpiece deliverable then documents that the simulation was too easy -- against the design's own realism rule.
+- **(c) Harden the evaluation only** (field-ablation robustness studies, no engine change). No re-deploy, but the base task stays easy; does not satisfy the band.
+
+**Recommendation: (a).** The linkage number is the flagship claim; at 0.976-by-construction it is not evidence of anything. The re-deploy cost is small and the whole loop (regen -> load -> stage -> ER -> score) is now automated end to end.
+
 ## Q-series — Open questions (parked, non-blocking)
 
 | # | Question | Status |
