@@ -4,9 +4,9 @@ Working companion to [docs/design.md](docs/design.md): the local workload's curr
 
 What the project *is* — including the global/local split and the precedence rule — lives in [meta/charter.md](meta/charter.md). Decision tables formerly in this guide live in [meta/logs/decisions.md](meta/logs/decisions.md) (ids preserved); machine and environment quirks live in [CLAUDE.md](CLAUDE.md).
 
-Status: v2.4, 2026-08-20 (Phase 3 started) · Written against design.md v1.3
-Provenance: A (original), HD (v2.0 reconciliation), A (v2.1–v2.4)
-Project status: **Phases 0–2 complete. Phase 3 exit criteria measured and met (2026-08-20): ER F1 in band (link 0.879 / dedupe 0.873, D8 band 0.8–0.9); auction events 95.3% consumer-joinable (>95% criterion; 0% before ER). Full stack: dbt staging (22 tests) + intermediate spine (8 tests) + four-task ER pipeline scored against the crosswalk (`er/scorecard.json`). Phase close awaits D9 ratification.**
+Status: v2.5, 2026-08-20 (Phase 3 closed) · Written against design.md v1.4
+Provenance: A (original), HD (v2.0 reconciliation), A (v2.1–v2.5)
+Project status: **Phases 0–3 complete (Phase 3 closed 2026-08-20, D9 ratified: ER in band, 95.3% event joinability, purity 0.9998). Phase 4 (analytics marts + dashboards) next — session-start context in [meta/logs/sessions/2026-08-20_phase4_handoff.md](meta/logs/sessions/2026-08-20_phase4_handoff.md).**
 
 ---
 

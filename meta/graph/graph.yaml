@@ -21,6 +21,7 @@ nodes:
   - {id: session-log-phase0, type: log-entry, path: meta/logs/sessions/2026-07-30_phase0_session.md, title: "Verbatim session log: Phase 0 build (prompts + responses, redactions marked)"}
   - {id: session-log-founding, type: log-entry, path: meta/logs/sessions/2026-07_founding_design_session.md, title: "Verbatim session log: founding design chat (P-001/P-002/P-003 source, employer redacted)"}
   - {id: phase2-handoff,  type: document, path: meta/logs/sessions/2026-08-12_phase2_handoff.md, title: "Phase 1 -> 2 handoff: session-start context for silo deployment"}
+  - {id: phase4-handoff,  type: document, path: meta/logs/sessions/2026-08-20_phase4_handoff.md, title: "Phase 3 -> 4 handoff: session-start context for analytics marts"}
   - {id: graph-dir,       type: directory, path: meta/graph,                title: "This graph + validator"}
 
   # ── Local track: documents ──
@@ -133,6 +134,8 @@ edges:
   - [prompts, documents, design-doc]
   - [session-log-phase0, documents, phase-0]
   - [phase2-handoff, documents, phase-2]
+  - [phase4-handoff, documents, phase-4]
+  - [phase4-handoff, documents, phase-3]
   - [silo-audit, documents, phase-2]
   - [silo-audit, documents, auction-lake]
   - [silo-audit, documents, crm-postgres]

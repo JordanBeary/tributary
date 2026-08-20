@@ -312,7 +312,7 @@ Both exceed the band's 0.95 ceiling. The design's exit criterion (F1 >= 0.9) is 
 
 ### D9 — Auction linkage deterministic; cluster operating point; intermediate layer
 
-*2026-08-20. Category: Phase 3 unification architecture, resolved while completing the ER pipeline. Proposed by the agent; pending ratification.*
+*2026-08-20. Category: Phase 3 unification architecture, resolved while completing the ER pipeline. Proposed by the agent; **ratified 2026-08-20, accepted as recorded**. Phase 3 closed with this ratification.*
 
 **(a) The auction-CRM linkage is deterministic SQL, not a Splink model** (`er/link_auction_crm.py`). The C17a payload (state, loan amount, purpose, FICO band) agrees exactly for 100% of true pairs, and the submission-to-auction lag is 0-540 s (shifted -3600 s inside the DST fall-back hour, which the window accommodates rather than repairs) -- with an exact composite key and a nine-minute window, nearest-to-center-in-time is the honest tool; a probabilistic model would only obscure that the residual failures are payload doppelgangers inside the window, which no model can separate. Measured: lead precision 0.995, non-orphan recall 0.998, orphan specificity 0.934.
 
