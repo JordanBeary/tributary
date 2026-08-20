@@ -1,0 +1,14 @@
+# Tributary warehouse: staging (per-silo cleaning + semantic alignment) ->
+# intermediate (entity-resolution outputs) -> marts (design.md Section 4.1).
+name: tributary_warehouse
+version: "1.0"
+profile: tributary
+model-paths: ["models"]
+
+models:
+  tributary_warehouse:
+    staging:
+      # Materialize as tables: each run pulls the cloud silos once into the
+      # local DuckDB file so downstream models never re-scan the network.
+      +materialized: table
+      +schema: staging

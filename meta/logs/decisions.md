@@ -259,6 +259,20 @@ The spread is the point: an unprofitable channel (display), a thin one (paid sea
 - **Decision (human, 2026-08-14): option (a)** — trim `street_address`/`city` and recode `email_sha256` to `BYTEA` at load, with minimum history retention and an immediate post-load re-measure; (c) is the fallback if the measured size still exceeds the tier. The generated CSV and `schema.sql` stay untouched; the deployed DDL lives in the loader and the divergence is documented in the silo audit memo.
 - **Post-load measurement (2026-08-14):** all 2,279,540 rows loaded; **0.462 GB relation (0.411 heap + 0.051 PK index), 0.470 GB database logical size — under the ~0.5 GB tier with ~6% headroom**. Hash round-trip verified exact (stored 32-byte values re-encode to the CSV hex verbatim). The fallback was not needed. Watch item: headroom is thin — history retention stays at minimum, and any future schema addition re-measures first.
 
+### D7 — Warehouse staging wiring: silo access patterns and staging conventions
+
+*2026-08-20. Category: Phase 3 architecture, resolved while standing up the dbt staging layer. Proposed by the agent; pending ratification.*
+
+**(a) Marketing silo reads from local Parquet exports** (`warehouse/export_marketing.py`, BigQuery Storage read into git-ignored `data/silo_exports/marketing/`), refreshed only when the silo itself is reloaded. Design 4.1 names this pattern ("DuckDB reads local exports from BigQuery"); the rejected alternatives were the DuckDB BigQuery community extension (an unvetted dependency in the critical path) and per-run live queries (dbt-duckdb has no BigQuery transport, and re-scanning a static silo every run buys nothing). Adds `google-cloud-bigquery-storage` to `[dev]`.
+
+**(b) CRM attaches live, read-only** (DuckDB postgres extension against Neon) — the design's stated pattern, kept because staging models materialize as tables, so the 2.28M-row wire pull happens once per `dbt build`, not per downstream query. The S3 auction lake likewise streams straight from the bucket via the least-privilege profile's credential chain.
+
+**(c) Staging timestamp convention: everything lands naive-UTC in `*_utc` columns.** The auction silo logs UTC natively; CRM (US/Pacific) and marketing (US/Eastern) naive wall-clock are localized via ICU. The CRM DST fall-back hour is ambiguous *by construction* (C17f): ICU resolves it to one offset, a bounded one-hour error on roughly one wall-clock hour of rows per year, documented in the model rather than "corrected" — the pathology stays visible in the silo, staging just makes downstream joins sane.
+
+**(d) Tests encode the intended pathologies, not textbook cleanliness**: `lead_id` unique but consumers deliberately not; `message_id` unique and messages→contacts referentially intact (verified against the generated data before writing the tests); event types closed to the four observed; no test dedupes or repairs what the fracture stage deliberately broke.
+
+**Engineering consequence.** `warehouse/` is now a working dbt project (profile in-repo, `.env`-driven secrets, DuckDB file as a disposable build artifact). First full build: 5 staging models + 17 data tests green in 9m10s -- the auction pull dominates (547s for 25.0M events, 1.3 GB over httpfs), the CRM wire pull takes 102s (2.28M rows), and the marketing models run in seconds against local exports. Verification: staged row counts match all three silos exactly (25,024,926 / 2,279,540 / 1,586,849 + 4,045,057 + 84), and the CRM timezone unwind round-trips the fracture's own UTC-to-Pacific transform -- staged min/max land exactly on the pipeline's [2025-07-01 00:00 UTC, 2026-07-01) window. One fix en route: monthly display impressions (4.77B) overflow INT32; counts are BIGINT.
+
 ## Q-series — Open questions (parked, non-blocking)
 
 | # | Question | Status |

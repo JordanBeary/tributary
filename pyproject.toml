@@ -26,6 +26,7 @@ dev = [
     "splink>=4.0",
     "boto3>=1.34",
     "google-cloud-bigquery>=3.20",
+    "google-cloud-bigquery-storage>=2.24",
     "psycopg2-binary>=2.9",
     "pytest>=8",
 ]

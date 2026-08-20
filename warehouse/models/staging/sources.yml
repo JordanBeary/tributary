@@ -1,0 +1,35 @@
+version: 2
+
+sources:
+  # Silo 1: auction event lake — Hive-partitioned Parquet read straight from
+  # S3 (DuckDB httpfs; the S3 secret comes from the profile).
+  - name: auction
+    description: "Auction silo: event-grain lake, UTC timestamps, no consumer identity beyond the offer payload (C17a)."
+    tables:
+      - name: events
+        meta:
+          external_location: "read_parquet('s3://{{ env_var('TRIBUTARY_S3_BUCKET') }}/auction/event_date=*/*.parquet', hive_partitioning = true)"
+
+  # Silo 2: CRM — Neon Postgres attached read-only as database alias `crm`.
+  - name: crm
+    database: crm
+    schema: public
+    description: "CRM silo: entity-grain leads, naive US/Pacific timestamps, D6 deployed shape (no street/city, hash as BYTEA)."
+    tables:
+      - name: leads
+
+  # Silo 3: marketing — local Parquet exports of the BigQuery tables
+  # (design Section 4.1: DuckDB reads local exports; refresh with
+  # export_marketing.py). Paths are relative to this dbt project directory.
+  - name: marketing
+    description: "Marketing silo: message-grain exports, naive US/Eastern timestamps, md5 contact ids (C17e)."
+    tables:
+      - name: contacts
+        meta:
+          external_location: "read_parquet('../data/silo_exports/marketing/contacts.parquet')"
+      - name: messages
+        meta:
+          external_location: "read_parquet('../data/silo_exports/marketing/messages.parquet')"
+      - name: channel_spend
+        meta:
+          external_location: "read_parquet('../data/silo_exports/marketing/channel_spend.parquet')"

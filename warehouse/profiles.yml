@@ -1,0 +1,25 @@
+# dbt-duckdb profile (auto-discovered when dbt runs from this directory).
+# Cloud access: S3 via the least-privilege `tributary` AWS profile
+# (credential chain), CRM via CRM_DATABASE_URL from the repo .env — run dbt
+# with the .env exported, e.g.:  set -a; . ../.env; set +a; dbt run
+tributary:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: tributary.duckdb
+      threads: 4
+      extensions:
+        - httpfs
+        - postgres
+      secrets:
+        - type: s3
+          provider: credential_chain
+          chain: config
+          profile: tributary
+          region: us-east-1
+      attach:
+        - path: "{{ env_var('CRM_DATABASE_URL') }}"
+          type: postgres
+          alias: crm
+          read_only: true

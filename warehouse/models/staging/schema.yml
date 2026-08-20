@@ -1,0 +1,54 @@
+version: 2
+
+models:
+  - name: stg_auction__events
+    description: "Event-grain auction waterfall, naive-UTC timestamps. No consumer identity beyond the C17a offer payload."
+    columns:
+      - name: lead_uuid
+        tests: [not_null]
+      - name: event_type
+        tests:
+          - not_null
+          - accepted_values:
+              values: [bid_request, bid, win, no_sale]
+      - name: event_at_utc
+        tests: [not_null]
+
+  - name: stg_crm__leads
+    description: "Entity-grain leads (mutable snapshot). Duplicate consumers (~8%, C7) are separate lead_ids by design -- lead_id is unique, consumers are not."
+    columns:
+      - name: lead_id
+        tests: [unique, not_null]
+      - name: email_sha256
+        tests: [not_null]
+      - name: status
+        tests:
+          - not_null
+          - accepted_values:
+              values: [sold, closed_lost, funded]
+
+  - name: stg_marketing__contacts
+    description: "Contact-grain marketing base. ~10% never become CRM leads (marketing-only pathology)."
+    columns:
+      - name: contact_id
+        tests: [unique, not_null]
+
+  - name: stg_marketing__messages
+    description: "Message-grain sends with open/click. 'Conversion' in this silo means click (semantic drift)."
+    columns:
+      - name: message_id
+        tests: [unique, not_null]
+      - name: contact_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_marketing__contacts')
+              field: contact_id
+
+  - name: stg_marketing__channel_spend
+    description: "Month x channel acquisition spend and funnel counts (C16)."
+    columns:
+      - name: spend_month
+        tests: [not_null]
+      - name: channel
+        tests: [not_null]
