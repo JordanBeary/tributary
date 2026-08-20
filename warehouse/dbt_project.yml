@@ -15,3 +15,8 @@ models:
       # local DuckDB file so downstream models never re-scan the network.
       +materialized: table
       +schema: staging
+    marts:
+      # Wide, denormalized facts at event / lead / contact grain (P-009);
+      # dashboards read these tables only.
+      +materialized: table
+      +schema: marts

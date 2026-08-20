@@ -22,6 +22,7 @@ nodes:
   - {id: session-log-founding, type: log-entry, path: meta/logs/sessions/2026-07_founding_design_session.md, title: "Verbatim session log: founding design chat (P-001/P-002/P-003 source, employer redacted)"}
   - {id: phase2-handoff,  type: document, path: meta/logs/sessions/2026-08-12_phase2_handoff.md, title: "Phase 1 -> 2 handoff: session-start context for silo deployment"}
   - {id: phase4-handoff,  type: document, path: meta/logs/sessions/2026-08-20_phase4_handoff.md, title: "Phase 3 -> 4 handoff: session-start context for analytics marts"}
+  - {id: phase5-handoff,  type: document, path: meta/logs/sessions/2026-08-20_phase5_handoff.md, title: "Phase 4 -> 5 handoff: session-start context for ML models"}
   - {id: graph-dir,       type: directory, path: meta/graph,                title: "This graph + validator"}
 
   # ── Local track: documents ──
@@ -38,6 +39,8 @@ nodes:
   - {id: warehouse,       type: directory, path: warehouse,                 title: "dbt project: staging -> ER -> marts (Phases 3-4)"}
   - {id: er-dir,          type: directory, path: er,                        title: "Splink pipeline + crosswalk scoring (Phase 3)"}
   - {id: analysis,        type: directory, path: analysis,                  title: "Notebooks + dashboard exports (Phase 4)"}
+  - {id: marts,           type: directory, path: warehouse/models/marts,    title: "Wide denormalized marts: event/lead/contact facts + consumer dim (Phase 4, D10)"}
+  - {id: dashboards,      type: directory, path: analysis/dashboards,       title: "Static Plotly dashboards + aggregate JSON, built from the marts (Phase 4)"}
   - {id: models-dir,      type: directory, path: models,                    title: "ML training, model cards, strategy memo (Phases 5-6)"}
   - {id: site,            type: directory, path: site,                      title: "Quarto site (Phase 7)"}
   - {id: scripts,         type: directory, path: scripts,                   title: "Dataset download helpers"}
@@ -99,6 +102,11 @@ edges:
   - [warehouse, implements, phase-3]
   - [er-dir, implements, phase-3]
   - [analysis, implements, phase-4]
+  - [marts, implements, phase-4]
+  - [dashboards, implements, phase-4]
+  - [marts, depends-on, er-dir]
+  - [dashboards, depends-on, marts]
+  - [site, depends-on, dashboards]
   - [models-dir, implements, phase-5]
   - [models-dir, implements, phase-6]
   - [site, implements, phase-7]
@@ -136,6 +144,9 @@ edges:
   - [phase2-handoff, documents, phase-2]
   - [phase4-handoff, documents, phase-4]
   - [phase4-handoff, documents, phase-3]
+  - [phase5-handoff, documents, phase-5]
+  - [phase5-handoff, documents, phase-4]
+  - [silo-audit, documents, phase-4]
   - [silo-audit, documents, phase-2]
   - [silo-audit, documents, auction-lake]
   - [silo-audit, documents, crm-postgres]

@@ -1,0 +1,44 @@
+version: 2
+
+models:
+  - name: fct_leads
+    description: "Lead-grain wide fact: auction outcome + offer payload + CRM record + marketing contact + consumer entity on one row per lead_uuid. Orphans present with null CRM/consumer columns. Campaign attribution is last-touch, 30-day window."
+    columns:
+      - name: lead_uuid
+        tests: [unique, not_null]
+      - name: submitted_at_utc
+        tests: [not_null]
+      - name: revenue_usd
+        tests: [not_null]
+      - name: sold
+        tests: [not_null]
+
+  - name: fct_auction_events
+    description: "Event-grain wide fact: every auction event hydrated with payload, consumer entity, CRM outcome, and marketing attributes (P-009)."
+    columns:
+      - name: lead_uuid
+        tests: [not_null]
+      - name: event_type
+        tests: [not_null]
+
+  - name: fct_marketing_contacts
+    description: "Contact-grain wide fact: acquisition + experiment attributes, message funnel, and post-ER applications/sales/revenue. Uplift reads treated vs in_holdout (ITT)."
+    columns:
+      - name: contact_id
+        tests: [unique, not_null]
+      - name: in_holdout
+        tests: [not_null]
+
+  - name: fct_channel_month
+    description: "Month x acquisition channel: spend ledger joined to cohort applications, sales, revenue; ROAS and CAC."
+    columns:
+      - name: spend_month
+        tests: [not_null]
+      - name: channel
+        tests: [not_null]
+
+  - name: dim_consumer
+    description: "Resolved consumer entities (t=0.9 clusters): identity multiplicity, application history, lifetime revenue, duplicate-sale revenue."
+    columns:
+      - name: consumer_entity_id
+        tests: [unique, not_null]

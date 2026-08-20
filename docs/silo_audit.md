@@ -76,3 +76,19 @@ The C17 watch item asked for a measurement before any trim decision, because CSV
 
 - Silo key isolation, orphan mechanics, timezone pathologies, and crosswalk confinement are asserted by `tests/test_fracture.py` against the generated artifacts; this memo's job was to confirm the *deployed* copies match the generated ones (byte-exact on S3; row-exact on BigQuery; row-exact on Neon minus the two D6-dropped columns, with the hash recoding verified lossless).
 - Naive wall-clock timestamps were loaded into BigQuery as `DATETIME` (not `TIMESTAMP`) precisely so the timezone pathology survives deployment instead of being silently "fixed" by a UTC assumption.
+
+## 6. Phase 4 exit checklist: every Section 2 question answered with a chart
+
+Measured 2026-08-20 from the marts (`warehouse/models/marts/`, D10); charts are the static pages in `analysis/dashboards/out/`, panel tags match the ids below.
+
+| Id | Question | Silo alone | Answered by | Answer |
+| --- | --- | --- | --- | --- |
+| A1 | How much revenue did marketing drive? | unanswerable | 05 attribution (revenue by channel; ROAS), 01 before/after | $263.8M of $286.2M (92%) attributable to a marketing contact; $142.2M to paid channels; paid ROAS 1.29x (display) to 4.16x (affiliate) |
+| A2 | How many distinct consumers do we auction? | 2.40M lead_uuids | 04 identity (silo counts vs resolved; repeat tail; duplicate cost) | 635,580 consumers (3.8x overcount); 69% of applications are repeats; $40.0M paid by buyers for consumers they had bought within 30 days |
+| A3 | Did the leads we sold actually fund? | "conversion" = sold | 02 funnel (funded rate by tier and price band) | 12.7% of sold leads funded (CRM-reported); flat across tiers and prices -- by construction, C17d |
+| C1 | What did this lead sell for? | unanswerable | 03 auction (price spread by tier x FICO; EPL by FICO x purpose) | every sold CRM lead carries its clearing price; tier-1 median ~$270, EPL $71-$113 by FICO band |
+| C2 | Which campaign sourced this applicant? | unanswerable | 05 attribution (acquisition channel; last-touch campaign) | acquisition channel on every linked lead; last-touch campaign (30-day) on 19% of revenue |
+| C3 | How many unique applicants do we have? | 2.28M lead_ids | 04 identity (identities per consumer; repeat and orphan share by month) | 635,580 consumers; 112,035 orphan applications restored from the lake |
+| M1 | What is campaign ROI? | clicks per dollar | 01 before/after (clicks vs ROAS), 05 attribution | ROAS and CAC per channel; click ranking inverts the revenue ranking |
+| M2 | Did the people we messaged apply or fund? | unanswerable | 02 funnel (conversion by channel), 05 attribution (value by segment) | 84.6% of contacts applied; stage rates per channel |
+| M3 | What did the holdout experiment lift? | click lift only | 06 uplift | +0.125pp applications (95% CI -0.09 to +0.34; injected +0.115pp); revenue lift -$1.95 +/- $4 per contact: underpowered at this scale |
