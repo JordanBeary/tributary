@@ -88,6 +88,13 @@ def build_leads(consumers: pd.DataFrame, qm: QualityModel, months: int,
     mult = np.exp(rng.normal(REPEAT_LOG_MEAN, REPEAT_LOG_SD, size=n))
     loan_amnt = _snap(np.where(app_seq == 1, anchor, anchor * mult))
 
+    # Days since the same person's previous application (NaN on the first):
+    # the recency signal buyer demand responds to (C19). Computed here because
+    # person grain exists only in this stage; bucketing is the waterfall's job.
+    t_sorted = t  # already person-sorted above
+    gap_days = np.diff(t_sorted, prepend=np.nan) / 86_400.0
+    gap_days[p_starts] = np.nan
+
     # Consumer-level features carried onto each application
     carried = consumers.iloc[rec][
         ["consumer_record_id", "purpose", "dti", "annual_inc", "fico_mid",
@@ -102,7 +109,7 @@ def build_leads(consumers: pd.DataFrame, qm: QualityModel, months: int,
     leads = pd.concat([
         pd.DataFrame({"lead_uuid": _uuid4(n, rng), "app_seq": app_seq,
                       "submitted_at": submitted_at, "loan_amnt": loan_amnt,
-                      "q": q}),
+                      "days_since_prior": gap_days, "q": q}),
         carried,
     ], axis=1)
     return leads.sort_values("submitted_at", kind="stable").reset_index(drop=True)

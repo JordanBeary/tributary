@@ -105,3 +105,15 @@ Entry status values: `verbatim` (exact text, redactions marked) or `summary — 
 - **Content:** (ratifying D8 option (a) — the ER pathologies were too clean; both Splink tasks scored above the design band)
   > Yes - in my experience working as lead generation/marketplace for the personal loan space there are many return customers and data drift is high depending on marketing channel. Over the course of 1 year (2025) here is the breakdown of leads per contact. [REDACTED: proprietary leads-per-contact distribution table — raw figures retained locally in `data/private/repeat_apps_source.csv`, never committed; fitted form in `simulation/params/repeat_applications.json`] Let's target ER F1 between 0.8-0.9.
 - **Shaped:** C18 — the largest post-Phase-1 engine amendment. The one-year leads-per-contact table (heavy-tailed: ~46% single-application, mean ~3.8, a 100+ tail) replaced the C14 1–3 mix via a fitted discrete power law with exponential cutoff; "data drift is high depending on marketing channel" became the channel-hazard identity-drift model that superseded C7's one-shot duplicates; and the ER target band moved from 0.85–0.95 to **0.8–0.9**. First full-scale run landed link F1 0.879 and dedupe F1 0.873 — both in the human's band on the default dials.
+
+## P-011 — Duplicate-recency demand penalty and price-dependent funding (Phase 4)
+
+- **Date:** 2026-08-24
+- **Status:** verbatim minus one marked redaction
+- **Content:** (reviewing the Phase 4 close-out, which flagged two findings: the funded rate is flat by construction (C17d), and duplicate-consumer sales carry no demand penalty)
+  > These two items are troublesome.
+  >
+  > Higher purchase price should garner better results in terms of conversion fund rate but the lift should be modest.
+  >
+  > I attached some stats on duplicates - dup1 = same day, dup7 = within the last 7 days, dup30 = within the last 30 days, unique_dup30+ = either never seen before OR previously seen but outside of the 30 day lookback window. KPI's win_rate (sold divided by leads), earnings-per-lead (EPL), etc. are lower for consumers that return soon after the last lead instance for the same contact. [REDACTED: proprietary duplicate-performance KPI table (sent/sold/revenue/win-rate/EPL by recency bucket) — raw figures retained locally in `data/private/duplicate_performance.csv`, never committed; distilled ratio targets in `simulation/params/repeat_demand.json`]
+- **Shaped:** C19 — recency-dependent buyer demand (participation and valuation dials per recency bucket, fitted to the table's win-rate and price ratios) and a mean-preserving price gradient on the funded flag. Consequences accepted with it: overall sell-through moves from the invented ~60% to the table's own ~49%, and mean clearing price falls toward the C1 anchor.

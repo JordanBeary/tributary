@@ -35,6 +35,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DB_PATH = REPO_ROOT / "warehouse" / "tributary.duckdb"
 CROSSWALK = REPO_ROOT / "data" / "private" / "crosswalk.parquet"
 OUT_PATH = Path(__file__).resolve().parent / "scorecard.json"
+OUT_PATH_LOCAL = Path(__file__).resolve().parent / "scorecard_local.json"
 THRESHOLDS = [0.5, 0.7, 0.9, 0.95, 0.99]
 
 
@@ -116,7 +117,8 @@ def score_dedupe(con: duckdb.DuckDBPyConnection) -> dict:
             "by_threshold": results}
 
 
-def score_auction_link(con: duckdb.DuckDBPyConnection) -> dict:
+def score_auction_link(con: duckdb.DuckDBPyConnection,
+                       local: bool = False) -> dict:
     con.execute(f"""
         CREATE OR REPLACE TEMP VIEW truth_auction AS
         SELECT lead_uuid, crm_lead_id
@@ -137,12 +139,15 @@ def score_auction_link(con: duckdb.DuckDBPyConnection) -> dict:
         WHERE t.crm_lead_id IS NULL
     """).fetchone()[0]
 
-    # Event grain: the exit criterion counts events, not leads
-    ev_total, ev_joined, ev_correct = con.sql("""
+    # Event grain: the exit criterion counts events, not leads. Local mode
+    # (tuning DB) has no staging schema; read the generated events directly.
+    events_src = (f"read_parquet('{REPO_ROOT / 'data' / 'generated' / 'auction_events.parquet'}')"
+                  if local else "main_staging.stg_auction__events")
+    ev_total, ev_joined, ev_correct = con.sql(f"""
         SELECT count(*),
                sum((p.crm_lead_id IS NOT NULL)::int),
                sum((p.crm_lead_id = t.crm_lead_id)::int)
-        FROM main_staging.stg_auction__events e
+        FROM {events_src} e
         LEFT JOIN main_er.auction_crm_matches p USING (lead_uuid)
         LEFT JOIN truth_auction t ON t.lead_uuid = e.lead_uuid
     """).fetchone()
@@ -237,9 +242,11 @@ def main() -> None:
         if con.sql(f"""SELECT count(*) FROM information_schema.tables
                        WHERE table_schema = 'main_er'
                        AND table_name = '{tbl}'""").fetchone()[0]:
-            tasks.append(fn(con))
-    OUT_PATH.write_text(json.dumps({"tasks": tasks}, indent=2) + "\n")
-    print(f"scorecard written to {OUT_PATH}")
+            tasks.append(fn(con, local=args.local) if fn is score_auction_link
+                         else fn(con))
+    out = OUT_PATH_LOCAL if args.local else OUT_PATH
+    out.write_text(json.dumps({"tasks": tasks}, indent=2) + "\n")
+    print(f"scorecard written to {out}")
 
 
 if __name__ == "__main__":

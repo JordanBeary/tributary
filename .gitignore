@@ -35,3 +35,4 @@ warehouse/.user.yml
 
 # Test tooling
 .pytest_cache/
+er/scorecard_local.json

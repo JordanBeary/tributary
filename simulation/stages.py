@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 
 from simulation.auction import AuctionLandscape, run_auctions
+from simulation.repeat_demand import RepeatDemand
 from simulation.config import SimConfig
 from simulation.consumers import CreditModel, IdentityVocab, build_population
 from simulation.leads import QualityModel, build_leads
@@ -79,11 +80,17 @@ def run_waterfall(cfg: SimConfig) -> None:
     """
     leads = pd.read_parquet(cfg.out_dir / "leads.parquet")
     land = AuctionLandscape.from_params_dir(cfg.params_dir)
+    # Recency-dependent demand (C19): bucket each lead by days since the
+    # person's previous application; buyers suppress and discount recents.
+    demand = RepeatDemand.from_params_dir(cfg.params_dir)
+    bucket = demand.bucket(leads["days_since_prior"].to_numpy())
     # Stage-scoped RNG stream: independent of other stages, reproducible per seed
     rng = np.random.default_rng(np.random.SeedSequence([cfg.seed, 3]))
 
     result = run_auctions(leads["q"].to_numpy(), land, rng,
-                          lead_uuid=leads["lead_uuid"].to_numpy(), emit_events=True)
+                          lead_uuid=leads["lead_uuid"].to_numpy(), emit_events=True,
+                          recency_odds=demand.odds_mult[bucket],
+                          recency_price=demand.price_mult[bucket])
 
     events = result.events
     if "submitted_at" in leads.columns:
@@ -158,7 +165,8 @@ def fracture_into_silos(cfg: SimConfig) -> None:
 
     crm, crm_id_map = build_crm(
         leads, consumers, outcomes, cfg.window_start, cfg.orphan_rate,
-        funded_rate_from_artifact(cfg.params_dir), rng)
+        funded_rate_from_artifact(cfg.params_dir), rng,
+        funded_beta=RepeatDemand.from_params_dir(cfg.params_dir).funded_beta)
     crm_dir = cfg.out_dir / "crm"
     crm_dir.mkdir(parents=True, exist_ok=True)
     crm.to_csv(crm_dir / "leads.csv", index=False)

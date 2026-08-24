@@ -4,8 +4,8 @@ Working companion to [docs/design.md](docs/design.md): the local workload's curr
 
 What the project *is* — including the global/local split and the precedence rule — lives in [meta/charter.md](meta/charter.md). Decision tables formerly in this guide live in [meta/logs/decisions.md](meta/logs/decisions.md) (ids preserved); machine and environment quirks live in [CLAUDE.md](CLAUDE.md).
 
-Status: v2.6, 2026-08-20 (Phase 4 built, D10 pending ratification) · Written against design.md v1.5
-Provenance: A (original), HD (v2.0 reconciliation), A (v2.1–v2.6)
+Status: v2.7, 2026-08-24 (Phase 4 built; D10 and C19 pending ratification) · Written against design.md v1.6
+Provenance: A (original), HD (v2.0 reconciliation), A (v2.1–v2.7)
 Project status: **Phases 0–3 complete. Phase 4 built 2026-08-20 (wide marts + six static dashboards; all nine silo-audit questions answered with a chart, [docs/silo_audit.md](docs/silo_audit.md) Section 6) — closes on D10 ratification. Phase 5 (ML models) next — session-start context in [meta/logs/sessions/2026-08-20_phase5_handoff.md](meta/logs/sessions/2026-08-20_phase5_handoff.md).**
 
 ---
@@ -56,6 +56,6 @@ Project status: **Phases 0–3 complete. Phase 4 built 2026-08-20 (wide marts + 
 - **Cost artifacts as you go**: screenshot budgets, note bytes-scanned before/after partitioning, keep the receipts — Section 5.3's 100x-scale analysis and the FinOps write-up need them.
 - **Site (Phase 7) is a presentation layer only** (human directive, 2026-08-20): analysis, modeling, and DS products surface as *static cached artifacts* on the public site once complete — no live compute or backends behind it. This sharpens design Section 10's $0-hosting stance: build every deliverable so its presentation form is a cacheable static export.
 - **Mart shape (Phase 4, built)**: wide, denormalized fact tables — event grain carrying consumer/demographic attributes row-wise — over narrow facts requiring joins (the author's stated OLAP preference, P-009/C17; realized as D10). Phase 5 features come from `fct_leads` / `fct_auction_events`, not from staging.
-- **Phase 5 realism watch items (D10)**: the funded flag is drawn uniformly among sold leads (C17d), so a funded-propensity model has nothing to learn by construction; the nurture experiment is underpowered for the pooled ATE at project scale, so evaluate uplift models on Qini/ranking.
+- **Phase 5 realism watch items (D10, amended by C19)**: C19 (2026-08-24, pending ratification) supersedes the two flagged gaps -- the funded flag now rides a modest price gradient (mean preserved) and recent repeat consumers win less and clear lower, both calibrated from the author's duplicate-performance data (P-011). Overall sell-through moves ~60% -> ~49% (the source data's own overall). The deployed silos and committed dashboards still show the C18 world until the C19 redeploy is ratified. The nurture experiment remains underpowered for the pooled ATE, so evaluate uplift models on Qini/ranking.
 - **When adding dependencies**, they go in `pyproject.toml` (runtime) or `[dev]`/`[ml]` extras — the devcontainer and Codespaces flow depend on `pip install -e '.[dev]'` being sufficient.
 - **Session records**: follow the trigger table in [meta/conventions.md](meta/conventions.md) Section 3 — interventions, decisions, prompt candidates, graph diffs.

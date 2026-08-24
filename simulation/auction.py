@@ -82,13 +82,21 @@ def run_auctions(
     rng: np.random.Generator,
     lead_uuid: np.ndarray | None = None,
     emit_events: bool = False,
+    *,
+    recency_odds: np.ndarray | None = None,
+    recency_price: np.ndarray | None = None,
 ) -> AuctionResult:
     """Run the full waterfall for an array of leads.
 
     ``q`` is the within-cohort percentile-rank quality score (uniform on (0,1)
     by construction, C11). ``lead_uuid`` labels event rows when
-    ``emit_events`` is set. Vectorized per tier; memory scales with the number
-    of still-active leads, so full-scale runs (~2.4M leads) stay in-core.
+    ``emit_events`` is set. ``recency_odds``/``recency_price`` are optional
+    per-lead demand multipliers from the repeat-recency calibration (C19):
+    buyers participate less and value less when the consumer applied
+    recently. Omitted -> pre-C19 behavior, which keeps the artifact-only QA
+    gates runnable on a fresh uniform pool. Vectorized per tier; memory
+    scales with the number of still-active leads, so full-scale runs (~2.4M
+    leads) stay in-core.
     """
     n = len(q)
     sold_tier = np.full(n, -1, dtype=np.int8)
@@ -105,15 +113,21 @@ def run_auctions(
         seats = rng.choice(land.seat_counts, size=len(idx), p=land.seat_probs)
         seated = np.arange(max_seats)[None, :] < seats[:, None]
 
-        # Participation: Beta base odds shifted by quality (cherry-picking, C12)
+        # Participation: Beta base odds shifted by quality (cherry-picking,
+        # C12) and by consumer recency (buyer-side dedupe suppression, C19)
         p0 = rng.beta(land.beta_a, land.beta_b, size=(len(idx), max_seats))
         logit = np.log(p0 / (1 - p0)) + land.kappa * (q[idx] - 0.5)[:, None]
+        if recency_odds is not None:
+            logit += np.log(recency_odds[idx])[:, None]
         bids_mask = (rng.uniform(size=(len(idx), max_seats)) < 1 / (1 + np.exp(-logit))) & seated
 
-        # Valuations: location + declared elasticity on rank-q + empirical-shape noise
+        # Valuations: location + declared elasticity on rank-q + empirical-shape
+        # noise, discounted for recently-seen consumers (C19)
         z = np.interp(rng.uniform(size=(len(idx), max_seats)), land.z_probs, land.z_table)
         vals = np.exp(land.mu[t] + land.elasticity * (q[idx] - 0.5)[:, None]
                       + land.sigma[t] * z)
+        if recency_price is not None:
+            vals *= recency_price[idx][:, None]
         vals[~bids_mask] = -np.inf
 
         order = np.sort(vals, axis=1)

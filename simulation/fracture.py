@@ -42,6 +42,8 @@ import json
 import numpy as np
 import pandas as pd
 
+from simulation.repeat_demand import funded_flags
+
 CRM_TZ = "America/Los_Angeles"
 MKT_TZ = "America/New_York"
 ORPHAN_WINDOW_MONTHS = 3       # the "migration" lost early records (C17)
@@ -75,18 +77,21 @@ def funded_rate_from_artifact(params_dir: Path | str) -> float:
 def build_crm(leads: pd.DataFrame, consumers: pd.DataFrame,
               outcomes: pd.DataFrame, window_start: str, orphan_rate: float,
               funded_rate: float, rng: np.random.Generator,
+              funded_beta: float = 0.0,
               ) -> tuple[pd.DataFrame, pd.Series]:
     """Entity-grain CRM table + the lead_uuid -> lead_id map for the crosswalk.
 
     Orphan drop first (migration), then a dense renumbered id sequence in
-    submission order. Status is current-state: sold leads are 'funded' at the
-    artifact CVR else 'sold'; the rest are 'closed_lost'. updated_at is the
-    single overwritten audit column.
+    submission order. Status is current-state: sold leads are 'funded' with a
+    price-dependent propensity whose mean is the artifact CVR (C19,
+    supersedes C17d's uniform draw; funded_beta = 0 reproduces it) else
+    'sold'; the rest are 'closed_lost'. updated_at is the single overwritten
+    audit column.
     """
     df = (leads.merge(consumers[["consumer_record_id", "email", "first_name",
                                  "last_name", "phone", "street_address",
                                  "city", "zip_code"]], on="consumer_record_id")
-          .merge(outcomes[["lead_uuid", "sold"]], on="lead_uuid"))
+          .merge(outcomes[["lead_uuid", "sold", "clearing_price"]], on="lead_uuid"))
 
     # Migration data loss: the orphan budget comes out of the earliest months
     cutoff = pd.Timestamp(window_start) + pd.DateOffset(months=ORPHAN_WINDOW_MONTHS)
@@ -97,8 +102,12 @@ def build_crm(leads: pd.DataFrame, consumers: pd.DataFrame,
         "submitted_at", kind="stable").reset_index(drop=True)
     df["lead_id"] = LEAD_ID_START + np.arange(len(df))
 
-    # Current-state status + overwritten audit timestamp (entity-grain, mutable)
-    funded = df["sold"].to_numpy() & (rng.uniform(size=len(df)) < funded_rate)
+    # Current-state status + overwritten audit timestamp (entity-grain,
+    # mutable). Funded rides a modest price gradient, mean-preserved (C19).
+    funded = np.zeros(len(df), dtype=bool)
+    sold_i = np.flatnonzero(df["sold"].to_numpy())
+    funded[sold_i] = funded_flags(df["clearing_price"].to_numpy()[sold_i],
+                                  funded_rate, funded_beta, rng)
     df["status"] = np.select([funded, df["sold"]], ["funded", "sold"],
                              default="closed_lost")
     lag = np.where(
