@@ -13,7 +13,7 @@ Provenance: A
 4. *Consequences of accepting:* Phase 5 closes (all four models beat baselines; calibration + uplift curves documented in `models/out/`; logs current; graph validates; 58 tests green). Phase 6 starts from the D11 artifacts.
 5. *Recommendation:* accept. Every methodological choice is verified against the failure it prevents, and the two honest failures (Tobit specification, tie-breaking artifact) are documented as findings, which is the stronger portfolio story.
 
-**D10 — Phase 4 marts and dashboards** remains pending from the previous session; the full INT-015 ask is in the Phase 5 handoff (`2026-08-20_phase5_handoff.md`) and is unchanged by this session. Phase 4 closes on it.
+**D10 — Phase 4 marts and dashboards: ratified 2026-08-24 ("Approve D10"), accepted as recorded — Phase 4 is closed.** Only D11 above remains open.
 
 ## Where Phase 5 ended
 

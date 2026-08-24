@@ -4,9 +4,9 @@ Working companion to [docs/design.md](docs/design.md): the local workload's curr
 
 What the project *is* — including the global/local split and the precedence rule — lives in [meta/charter.md](meta/charter.md). Decision tables formerly in this guide live in [meta/logs/decisions.md](meta/logs/decisions.md) (ids preserved); machine and environment quirks live in [CLAUDE.md](CLAUDE.md).
 
-Status: v2.9, 2026-08-24 (Phase 5 built; D10 and D11 pending ratification) · Written against design.md v1.7
-Provenance: A (original), HD (v2.0 reconciliation), A (v2.1–v2.9)
-Project status: **Phases 0–3 complete. Phase 4 built 2026-08-20 — closes on D10 ratification. Phase 5 built 2026-08-24 (models 1–4 trained on the marts, model cards, static evaluation reports; every model beats its naive baseline; calibration and uplift gain curves documented in `models/out/`) — closes on D11 ratification. Phase 6 (optimization + strategy memo) next — session-start context in [meta/logs/sessions/2026-08-24_phase6_handoff.md](meta/logs/sessions/2026-08-24_phase6_handoff.md).**
+Status: v2.10, 2026-08-24 (D10 ratified — Phase 4 closed; D11 pending ratification) · Written against design.md v1.7
+Provenance: A (original), HD (v2.0 reconciliation), A (v2.1–v2.10)
+Project status: **Phases 0–4 complete (D10 ratified 2026-08-24). Phase 5 built 2026-08-24 (models 1–4 trained on the marts, model cards, static evaluation reports; every model beats its naive baseline; calibration and uplift gain curves documented in `models/out/`) — closes on D11 ratification. Phase 6 (optimization + strategy memo) next — session-start context in [meta/logs/sessions/2026-08-24_phase6_handoff.md](meta/logs/sessions/2026-08-24_phase6_handoff.md).**
 
 ---
 

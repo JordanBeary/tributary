@@ -39,7 +39,7 @@ Full design: [docs/design.md](docs/design.md) · Calibration spec: [docs/calibra
 | `simulation/` | Consumer/lead/waterfall/marketing generators + silo fracturing (Phase 1) |
 | `infra/` | Cloud setup scripts: buckets, IAM policies, budget alarms (Phase 0) |
 | `silos/` | Loaders that deploy fractured outputs to S3 / Postgres / BigQuery (Phase 2) |
-| `warehouse/` | dbt project: staging → entity resolution → star-schema marts (Phases 3–4) |
+| `warehouse/` | dbt project: staging → entity resolution → wide denormalized marts (Phases 3–4, D10) |
 | `er/` | Splink pipeline + scoring vs. the hidden crosswalk (Phase 3) |
 | `analysis/` | Notebooks and dashboard exports (Phase 4) |
 | `models/` | ML training, model cards, strategy memo (Phases 5–6) |

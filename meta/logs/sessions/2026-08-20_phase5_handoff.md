@@ -30,6 +30,8 @@ Preview of the new duplicate economics (local full-scale): recent-repeat (≤30d
 
 Two findings in D10 correct earlier records and need no decision, only awareness: C16's realized display ROAS (0.78x) is stale under C18 (now 1.29x; ordering and spread unchanged), and the funded flag is flat by construction (C17d).
 
+**Resolution: ratified 2026-08-24 ("Approve D10"), accepted as recorded — no amendments. Phase 4 closed** (the numeric findings above were already superseded by the C19 redeploy; the operating points stand).
+
 ## Where Phase 4 ended
 
 - `warehouse/models/marts/`: `fct_auction_events` (26.4M × 37, C19 world), `fct_leads` (2.40M × 54), `fct_marketing_contacts` (859k × 23), `fct_channel_month` (84 × 18), `dim_consumer` (635,579 × 15). `dbt build --select marts` rebuilds them from the existing staging/intermediate tables without touching the cloud (21 s, 19 tests).
