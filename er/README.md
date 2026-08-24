@@ -8,11 +8,13 @@ Splink entity-resolution pipeline (Phase 3): probabilistic linkage over the dbt 
 | `dedupe_crm.py` | CRM leads → consumer clusters (C7 corrupted duplicates) | `main_er.crm_dedupe_matches`; `models/crm_dedupe_model.json` |
 | `link_auction_crm.py` | Auction lead_uuid ↔ CRM lead (C17a payload + time proximity; deterministic, D9) | `main_er.auction_crm_matches` |
 | `build_clusters.py` | Consumer entities: connected components over dedupe pairs at t=0.9 (D9) | `main_er.consumer_clusters` |
-| `score.py` | All four tasks vs. crosswalk: P/R/F1 by threshold, corrupted-pair recall, event joinability, cluster purity | `scorecard.json` (aggregates only) |
+| `score.py` | All four tasks vs. crosswalk: P/R/F1 by threshold, corrupted-pair recall, event joinability, cluster purity | `scorecard.json` (aggregates only; `--local` runs write git-ignored `scorecard_local.json` so tuning never clobbers the committed cloud-path scorecard) |
 
-Run order: `dbt build` in `warehouse/`, then the four model scripts (link, dedupe, auction link, clusters), then `score.py`; the dbt intermediate layer (`int_consumer_entities`, `int_auction_consumer_map`) consumes the `main_er` outputs. Committed artifacts (model JSONs, scorecard) contain aggregate parameters and metrics only — no identity data.
+Run order: `dbt build` in `warehouse/`, then the four model scripts (link, dedupe, auction link, clusters), then `score.py`, then `compact_warehouse.py` (drops ER scratch objects and rebuilds the warehouse file compactly); the dbt intermediate layer (`int_consumer_entities`, `int_auction_consumer_map`) consumes the `main_er` outputs. Committed artifacts (model JSONs, scorecard) contain aggregate parameters and metrics only — no identity data.
 
-## Reconciliation scorecard (Phase 3 exit, measured 2026-08-20)
+## Reconciliation scorecard (Phase 3 exit, measured 2026-08-20; re-run 2026-08-24 on the C19 world)
+
+*The C19 engine amendment (recency-penalized demand, price-graded funding) changes auction outcomes but not identities, so the re-run reproduced every metric below to the fourth decimal (auction events now 26.4M; the committed `scorecard.json` is the C19 cloud-path run).*
 
 | Claim | Number |
 | --- | --- |

@@ -13,7 +13,7 @@ All figures are from the seeded full-scale run (`--scale 1.0 --seed 42`, regener
 
 | Silo | Platform | Contents | Rows | Deployed size |
 | --- | --- | --- | --- | --- |
-| Auction lake | S3 `s3://tributary-auction-lake-jb/auction/` | Hive-partitioned Parquet, `event_date=YYYY-MM-DD/`, 366 partitions, 366 objects | 24,543,377 events | 1,194,481,319 bytes (byte-exact vs. local) |
+| Auction lake | S3 `s3://tributary-auction-lake-jb/auction/` | Hive-partitioned Parquet, `event_date=YYYY-MM-DD/`, 366 partitions, 366 objects | 26,442,068 events (C19 world, redeployed 2026-08-24) | 1,297,717,314 bytes (byte-exact vs. local) |
 | CRM | Neon Postgres, `leads` table (D6 shape: no street/city, hash as `BYTEA`) | full snapshot, entity grain | 2,279,550 | 0.461 GB relation; 0.469 GB database logical |
 | Marketing | BigQuery `marketing` dataset | `contacts`, `messages` (partitioned by `DATE(sent_at)`, clustered by `channel`), `channel_spend` | 858,653 / 2,191,102 / 84 | ~0.09 / ~0.23 / ~0 GB logical |
 
@@ -61,6 +61,7 @@ Answers well: send/open/click rates by campaign and channel; acquisition-channel
 - **BigQuery load**: load jobs are free; ~0.59 GB total logical storage, inside the 10 GiB free tier.
 - **Bytes-scanned benchmark** (`silos/marketing_bq/benchmark_receipt.json`): a representative dashboard query (one channel, one month, per-campaign open/click rollup) scanned **124,325,982 bytes against the unpartitioned `messages` table and 11,430,092 bytes after `PARTITION BY DATE(sent_at)` + `CLUSTER BY channel` — a 10.9x reduction**. At the on-demand rate of $6.25/TiB this table is effectively free at project scale either way; at the design Section 5.3 100x extrapolation (~40 GB table), the same query goes from ~12 GB scanned to ~1.1 GB — the difference between burning the 1 TiB free tier in ~80 dashboard loads versus ~900.
 - **Neon**: $0 — the full silo fits the free tier by measurement (Section 4), which avoided a ~$15/month typical-spend paid tier.
+- **C19 redeploy (2026-08-24)**: full auction-lake re-upload (all 366 objects changed; 1.30 GB byte-verified local = remote) plus the Neon reload (2,279,550 rows, 0.472 GB logical — D6 headroom unchanged). BigQuery untouched: the marketing outputs are byte-identical under C19 (verified by content hash), so no load job ran. Upload cost: a few hundred PUT-class requests again, well under $0.02.
 - **Billing console receipts at phase close (2026-08-14):** AWS month-to-date **$0.01** ([screenshot](img/aws-cost-2026-08-14.png)); GCP August 1–14 **$0.00** ([screenshot](img/gcp-cost-2026-08-14.png)). The whole Phase 2 deployment — 3 GB uploaded, three silos live — cost one cent.
 
 ## 4. CRM free-tier fit (measured, decided, resolved)
@@ -79,16 +80,16 @@ The C17 watch item asked for a measurement before any trim decision, because CSV
 
 ## 6. Phase 4 exit checklist: every Section 2 question answered with a chart
 
-Measured 2026-08-20 from the marts (`warehouse/models/marts/`, D10); charts are the static pages in `analysis/dashboards/out/`, panel tags match the ids below.
+Measured 2026-08-24 from the marts (`warehouse/models/marts/`, D10) over the C19 world (recency-penalized demand, price-graded funding — ratified 2026-08-24); charts are the static pages in `analysis/dashboards/out/`, panel tags match the ids below.
 
 | Id | Question | Silo alone | Answered by | Answer |
 | --- | --- | --- | --- | --- |
-| A1 | How much revenue did marketing drive? | unanswerable | 05 attribution (revenue by channel; ROAS), 01 before/after | $263.8M of $286.2M (92%) attributable to a marketing contact; $142.2M to paid channels; paid ROAS 1.29x (display) to 4.16x (affiliate) |
-| A2 | How many distinct consumers do we auction? | 2.40M lead_uuids | 04 identity (silo counts vs resolved; repeat tail; duplicate cost) | 635,580 consumers (3.8x overcount); 69% of applications are repeats; $40.0M paid by buyers for consumers they had bought within 30 days |
-| A3 | Did the leads we sold actually fund? | "conversion" = sold | 02 funnel (funded rate by tier and price band) | 12.7% of sold leads funded (CRM-reported); flat across tiers and prices -- by construction, C17d |
-| C1 | What did this lead sell for? | unanswerable | 03 auction (price spread by tier x FICO; EPL by FICO x purpose) | every sold CRM lead carries its clearing price; tier-1 median ~$270, EPL $71-$113 by FICO band |
+| A1 | How much revenue did marketing drive? | unanswerable | 05 attribution (revenue by channel; ROAS), 01 before/after | $194.3M of $209.2M (93%) attributable to a marketing contact; $104.5M to paid channels; paid ROAS 0.94x (display, below break-even) to 3.06x (affiliate) |
+| A2 | How many distinct consumers do we auction? | 2.40M lead_uuids | 04 identity (silo counts vs resolved; repeat tail; duplicate cost) | 635,579 consumers (3.8x overcount); 69% of applications are repeats; $12.0M (5.7% of revenue) still paid by buyers for consumers they had bought within 30 days, after C19's buyer-side suppression and discounting |
+| A3 | Did the leads we sold actually fund? | "conversion" = sold | 02 funnel (funded rate by tier and price band) | 12.7% of sold leads funded (CRM-reported); declining with tier, 14.3% (tier 1) to 8.5% (tier 6) -- funding rides a modest price gradient (C19) |
+| C1 | What did this lead sell for? | unanswerable | 03 auction (price spread by tier x FICO; EPL by FICO x purpose) | every sold CRM lead carries its clearing price; tier-1 mean ~$255; recent repeats clear at 0.52-0.75x fresh prices (C19) |
 | C2 | Which campaign sourced this applicant? | unanswerable | 05 attribution (acquisition channel; last-touch campaign) | acquisition channel on every linked lead; last-touch campaign (30-day) on 19% of revenue |
-| C3 | How many unique applicants do we have? | 2.28M lead_ids | 04 identity (identities per consumer; repeat and orphan share by month) | 635,580 consumers; 112,035 orphan applications restored from the lake |
+| C3 | How many unique applicants do we have? | 2.28M lead_ids | 04 identity (identities per consumer; repeat and orphan share by month) | 635,579 consumers; 112,035 orphan applications restored from the lake |
 | M1 | What is campaign ROI? | clicks per dollar | 01 before/after (clicks vs ROAS), 05 attribution | ROAS and CAC per channel; click ranking inverts the revenue ranking |
 | M2 | Did the people we messaged apply or fund? | unanswerable | 02 funnel (conversion by channel), 05 attribution (value by segment) | 84.6% of contacts applied; stage rates per channel |
-| M3 | What did the holdout experiment lift? | click lift only | 06 uplift | +0.125pp applications (95% CI -0.09 to +0.34; injected +0.115pp); revenue lift -$1.95 +/- $4 per contact: underpowered at this scale |
+| M3 | What did the holdout experiment lift? | click lift only | 06 uplift | +0.109pp applications (injected +0.115pp; CI spans zero); revenue lift per contact indistinguishable from zero: underpowered at this scale |

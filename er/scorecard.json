@@ -8,15 +8,15 @@
         {
           "threshold": 0.5,
           "predicted_pairs": 2201661,
-          "true_positives": 1969810,
+          "true_positives": 1969867,
           "precision": 0.8947,
           "recall": 0.8641,
-          "f1": 0.8791
+          "f1": 0.8792
         },
         {
           "threshold": 0.7,
           "predicted_pairs": 2201553,
-          "true_positives": 1969715,
+          "true_positives": 1969772,
           "precision": 0.8947,
           "recall": 0.8641,
           "f1": 0.8791
@@ -24,23 +24,23 @@
         {
           "threshold": 0.9,
           "predicted_pairs": 2187211,
-          "true_positives": 1960031,
-          "precision": 0.8961,
-          "recall": 0.8598,
+          "true_positives": 1960088,
+          "precision": 0.8962,
+          "recall": 0.8599,
           "f1": 0.8776
         },
         {
           "threshold": 0.95,
           "predicted_pairs": 2185300,
-          "true_positives": 1958450,
+          "true_positives": 1958507,
           "precision": 0.8962,
-          "recall": 0.8591,
+          "recall": 0.8592,
           "f1": 0.8773
         },
         {
           "threshold": 0.99,
           "predicted_pairs": 2183340,
-          "true_positives": 1956906,
+          "true_positives": 1956963,
           "precision": 0.8963,
           "recall": 0.8585,
           "f1": 0.877
@@ -64,26 +64,26 @@
         },
         {
           "threshold": 0.7,
-          "predicted_pairs": 11073376,
-          "true_positives": 10958299,
+          "predicted_pairs": 11060015,
+          "true_positives": 10944938,
           "precision": 0.9896,
-          "recall": 0.7805,
-          "f1": 0.8727,
-          "recall_corrupted_pairs": 0.7431
+          "recall": 0.7796,
+          "f1": 0.8721,
+          "recall_corrupted_pairs": 0.742
         },
         {
           "threshold": 0.9,
-          "predicted_pairs": 10733141,
-          "true_positives": 10731504,
+          "predicted_pairs": 10731838,
+          "true_positives": 10730201,
           "precision": 0.9998,
-          "recall": 0.7644,
-          "f1": 0.8664,
-          "recall_corrupted_pairs": 0.7242
+          "recall": 0.7643,
+          "f1": 0.8663,
+          "recall_corrupted_pairs": 0.7241
         },
         {
           "threshold": 0.95,
-          "predicted_pairs": 10672794,
-          "true_positives": 10671157,
+          "predicted_pairs": 10672611,
+          "true_positives": 10670974,
           "precision": 0.9998,
           "recall": 0.7601,
           "f1": 0.8636,
@@ -106,10 +106,10 @@
       "orphan_uuids": 119976,
       "lead_precision": 0.9949,
       "lead_recall_nonorphan": 0.9984,
-      "orphan_specificity": 0.9338,
-      "events_total": 24543377,
-      "events_joinable_pct": 0.9532,
-      "events_correctly_joined_pct": 0.9485,
+      "orphan_specificity": 0.9339,
+      "events_total": 26442068,
+      "events_joinable_pct": 0.9534,
+      "events_correctly_joined_pct": 0.9489,
       "events_joinable_before_er_pct": 0.0
     },
     {

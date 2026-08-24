@@ -277,14 +277,14 @@ def dash_funnel(con, built_at):
               textposition="outside", hovertemplate="%{x}: funded %{y:.1%}<extra></extra>")
     f.update_layout(showlegend=False)
     p.panel("Did what we sold fund? Funded rate by tier", ["A3"], f,
-            "Denominator excludes the 112k migration-orphan leads whose CRM outcome is lost (C17c). The lake alone calls every sale a 'conversion'. The rate is flat across tiers because the simulator draws funding uniformly among sold leads (C17d) -- a realism gap logged as a Phase 5 watch item, not a finding.")
+            "Denominator excludes the 112k migration-orphan leads whose CRM outcome is lost (C17c). The lake alone calls every sale a 'conversion'. Funded declines with tier because funding rides a modest price gradient (C19, calibrated direction with the mean preserved at the CRM's 13.3%).")
 
     f = fig(title="Funded rate by clearing-price band", yaxis_title="funded rate", yaxis_tickformat=".1%")
     fb = d["funded_by_price"]
     f.add_bar(x=[x["band"][2:] for x in fb], y=[x["funded"] / x["with_crm"] for x in fb], marker_color=AFTER,
               text=[f"{x['sold']:,} sold" for x in fb], textposition="outside", hovertemplate="%{x}: %{y:.1%}<extra></extra>")
     f.update_layout(showlegend=False)
-    p.panel("Does price predict funding?", ["A3", "C1"], f, "In this world, no: funding is drawn independently of price (C17d). The chart exists because the question is now answerable; the flat answer is a property of the simulator, not of lead markets.")
+    p.panel("Does price predict funding?", ["A3", "C1"], f, "Modestly, yes (C19): funded odds rise with log clearing price, so higher-priced bands fund more often -- visible only after unification, since price and funding live in different silos.")
 
     f = fig(title="Unsold leads: mean bid vs. floor at each tier of the cascade (log USD)", yaxis_title="USD (log)", yaxis_type="log", barmode="group")
     u = d["unsold"]
@@ -474,7 +474,7 @@ def dash_identity(con, built_at):
               text=[f"{x['any_buyer_30d']/x['revenue']:.0%}" for x in dc], textposition="outside", hovertemplate="%{x}: $%{y:,.0f}<extra></extra>")
     f.add_bar(name="all tier revenue", x=[f"tier {x['tier']}" for x in dc], y=[x["revenue"] for x in dc], marker_color="#d9d8d3", hovertemplate="%{x}: $%{y:,.0f}<extra></extra>")
     p.panel("What duplicates cost, in dollars", ["A2"], f,
-            "Labels are the share of tier revenue. The same-buyer figure is the money a buyer paid twice for one person; the any-buyer figure is the marketplace's re-sale of the same consumer. Neither is visible to the lake, which sees only fresh UUIDs.")
+            "Labels are the share of tier revenue. The same-buyer figure is the money a buyer paid twice for one person; the any-buyer figure is the marketplace's re-sale of the same consumer. Neither is visible to the lake, which sees only fresh UUIDs. Buyers already suppress and discount recent repeats (C19), so these are the dollars that slip through that defense.")
 
     f = fig(title="Duplicate-sale revenue vs. the de-duplication window", xaxis_title="window (days since prior sale)", yaxis_title="USD")
     dw = d["dup_window"]
@@ -538,7 +538,7 @@ def dash_attribution(con, built_at):
     f.add_hline(y=1.0, line_dash="dot", line_color=INK2, annotation_text="break-even", annotation_position="top left")
     f.update_layout(showlegend=False)
     p.panel("Which channels pay back?", ["M1", "A1"], f,
-            "Display is the thin channel; affiliate (CPL) and paid social lead. The marketing silo alone ranks channels by click volume, which inverts this ordering.")
+            "Display is below break-even; affiliate (CPL) and paid social lead. Recency-penalized repeat leads (C19) weigh hardest on the low-intent channels. The marketing silo alone ranks channels by click volume, which inverts this ordering.")
 
     f = fig(title="Cost vs. value per contact, by channel", xaxis_title="acquisition cost per contact (USD)", yaxis_title="auction revenue per contact (USD)")
     for c in CHANNELS:
