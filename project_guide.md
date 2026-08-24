@@ -4,9 +4,9 @@ Working companion to [docs/design.md](docs/design.md): the local workload's curr
 
 What the project *is* — including the global/local split and the precedence rule — lives in [meta/charter.md](meta/charter.md). Decision tables formerly in this guide live in [meta/logs/decisions.md](meta/logs/decisions.md) (ids preserved); machine and environment quirks live in [CLAUDE.md](CLAUDE.md).
 
-Status: v2.8, 2026-08-24 (C19 ratified and redeployed; D10 pending ratification) · Written against design.md v1.6
-Provenance: A (original), HD (v2.0 reconciliation), A (v2.1–v2.8)
-Project status: **Phases 0–3 complete. Phase 4 built 2026-08-20 (wide marts + six static dashboards; all nine silo-audit questions answered with a chart, [docs/silo_audit.md](docs/silo_audit.md) Section 6) — closes on D10 ratification. Phase 5 (ML models) next — session-start context in [meta/logs/sessions/2026-08-20_phase5_handoff.md](meta/logs/sessions/2026-08-20_phase5_handoff.md).**
+Status: v2.9, 2026-08-24 (Phase 5 built; D10 and D11 pending ratification) · Written against design.md v1.7
+Provenance: A (original), HD (v2.0 reconciliation), A (v2.1–v2.9)
+Project status: **Phases 0–3 complete. Phase 4 built 2026-08-20 — closes on D10 ratification. Phase 5 built 2026-08-24 (models 1–4 trained on the marts, model cards, static evaluation reports; every model beats its naive baseline; calibration and uplift gain curves documented in `models/out/`) — closes on D11 ratification. Phase 6 (optimization + strategy memo) next — session-start context in [meta/logs/sessions/2026-08-24_phase6_handoff.md](meta/logs/sessions/2026-08-24_phase6_handoff.md).**
 
 ---
 
@@ -57,5 +57,6 @@ Project status: **Phases 0–3 complete. Phase 4 built 2026-08-20 (wide marts + 
 - **Site (Phase 7) is a presentation layer only** (human directive, 2026-08-20): analysis, modeling, and DS products surface as *static cached artifacts* on the public site once complete — no live compute or backends behind it. This sharpens design Section 10's $0-hosting stance: build every deliverable so its presentation form is a cacheable static export.
 - **Mart shape (Phase 4, built)**: wide, denormalized fact tables — event grain carrying consumer/demographic attributes row-wise — over narrow facts requiring joins (the author's stated OLAP preference, P-009/C17; realized as D10). Phase 5 features come from `fct_leads` / `fct_auction_events`, not from staging.
 - **Phase 5 realism watch items (D10, amended by C19)**: C19 (2026-08-24, pending ratification) supersedes the two flagged gaps -- the funded flag now rides a modest price gradient (mean preserved) and recent repeat consumers win less and clear lower, both calibrated from the author's duplicate-performance data (P-011). Overall sell-through moves ~60% -> ~49% (the source data's own overall). C19 was ratified and redeployed 2026-08-24: silos, warehouse, scorecard, marts, and dashboards all reflect the C19 world (S3 + Neon reloaded; BigQuery untouched — marketing outputs byte-identical). The nurture experiment remains underpowered for the pooled ATE, so evaluate uplift models on Qini/ranking.
+- **Phase 6 inputs (D11)**: model 3's recommended reserve schedule is validated by re-running the engine at those floors and measuring realized EPL against the replay's prediction — that comparison is the Phase 6 exit ("simulated EPL lift quantified with uncertainty bands"). The strategy memo draws on the four model cards and the m3 response curves; the bandit (design model 5) and OPE (model 6) remain droppable per the risk register.
 - **When adding dependencies**, they go in `pyproject.toml` (runtime) or `[dev]`/`[ml]` extras — the devcontainer and Codespaces flow depend on `pip install -e '.[dev]'` being sufficient.
 - **Session records**: follow the trigger table in [meta/conventions.md](meta/conventions.md) Section 3 — interventions, decisions, prompt candidates, graph diffs.

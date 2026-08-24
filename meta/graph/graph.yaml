@@ -23,6 +23,7 @@ nodes:
   - {id: phase2-handoff,  type: document, path: meta/logs/sessions/2026-08-12_phase2_handoff.md, title: "Phase 1 -> 2 handoff: session-start context for silo deployment"}
   - {id: phase4-handoff,  type: document, path: meta/logs/sessions/2026-08-20_phase4_handoff.md, title: "Phase 3 -> 4 handoff: session-start context for analytics marts"}
   - {id: phase5-handoff,  type: document, path: meta/logs/sessions/2026-08-20_phase5_handoff.md, title: "Phase 4 -> 5 handoff: session-start context for ML models"}
+  - {id: phase6-handoff,  type: document, path: meta/logs/sessions/2026-08-24_phase6_handoff.md, title: "Phase 5 -> 6 handoff: session-start context for optimization + strategy memo"}
   - {id: graph-dir,       type: directory, path: meta/graph,                title: "This graph + validator"}
 
   # ── Local track: documents ──
@@ -41,7 +42,9 @@ nodes:
   - {id: analysis,        type: directory, path: analysis,                  title: "Notebooks + dashboard exports (Phase 4)"}
   - {id: marts,           type: directory, path: warehouse/models/marts,    title: "Wide denormalized marts: event/lead/contact facts + consumer dim (Phase 4, D10)"}
   - {id: dashboards,      type: directory, path: analysis/dashboards,       title: "Static Plotly dashboards + aggregate JSON, built from the marts (Phase 4)"}
-  - {id: models-dir,      type: directory, path: models,                    title: "ML training, model cards, strategy memo (Phases 5-6)"}
+  - {id: models-dir,      type: directory, path: models,                    title: "ML training scripts: feature contract, models 1-4 (Phase 5, D11)"}
+  - {id: models-cards,    type: directory, path: models/cards,              title: "One-page model cards for models 1-4 (Phase 5)"}
+  - {id: models-out,      type: directory, path: models/out,                title: "Model metrics JSON + static evaluation reports (Phase 5; boosters git-ignored)"}
   - {id: site,            type: directory, path: site,                      title: "Quarto site (Phase 7)"}
   - {id: scripts,         type: directory, path: scripts,                   title: "Dataset download helpers"}
   - {id: tests-dir,       type: directory, path: tests,                     title: "Engine tests: Section 2 gates reproduced from artifacts alone"}
@@ -109,6 +112,10 @@ edges:
   - [site, depends-on, dashboards]
   - [models-dir, implements, phase-5]
   - [models-dir, implements, phase-6]
+  - [models-dir, depends-on, marts]
+  - [models-cards, documents, models-dir]
+  - [models-out, depends-on, models-dir]
+  - [tests-dir, depends-on, models-dir]
   - [site, implements, phase-7]
 
   # Calibration lineage
@@ -146,6 +153,8 @@ edges:
   - [phase4-handoff, documents, phase-3]
   - [phase5-handoff, documents, phase-5]
   - [phase5-handoff, documents, phase-4]
+  - [phase6-handoff, documents, phase-6]
+  - [phase6-handoff, documents, phase-5]
   - [silo-audit, documents, phase-4]
   - [silo-audit, documents, phase-2]
   - [silo-audit, documents, auction-lake]

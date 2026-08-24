@@ -36,3 +36,6 @@ warehouse/.user.yml
 # Test tooling
 .pytest_cache/
 er/scorecard_local.json
+
+# Trained model binaries — reproducible from the warehouse, not versioned
+models/out/boosters/

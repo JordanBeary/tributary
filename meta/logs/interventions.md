@@ -166,3 +166,11 @@ Entries INT-001 through INT-008 were seeded during the 2026-08-03 reorganization
 - **Human guidance:** "Make a note to be very clear and direct about what decisions you want me to make. For example, what specifically do you mean by saying 'Pending your ratification'?" (verbatim, P-009)
 - **Resolution:** Standing protocol for decision requests, effective immediately: each open decision is presented as (1) a one-sentence statement of what was decided and why, (2) the concrete question — usually accept / amend / reject, (3) what each answer entails downstream, and (4) the agent's recommendation. Bare id lists are not decision requests. Applied in the same session to the still-open C10 and C15.
 - **Doc changes:** none (process only); this entry.
+
+## INT-016 — En-route fix: LightGBM unloadable on this machine (missing arm64 OpenMP runtime)
+
+- **Date:** 2026-08-24
+- **Phase:** 5 (session start) · **Severity:** low (environment; no repo artifacts affected) · **Flag: en-route fix**
+- **What was found:** `import lightgbm` failed — the wheel links `@rpath/libomp.dylib`, and every `libomp.dylib` on the machine (Homebrew paths absent; conda installs) is x86_64 on this arm64 host. The broken-Homebrew quirk (CLAUDE.md) means no system package manager could supply it.
+- **Fix:** downloaded the universal (x86_64+arm64) libomp 17.0.6 binary from the R project's macOS toolchain distribution (mac.r-project.org/openmp), placed it at `~/.local/lib/libomp.dylib` and copied it into the uv-managed Python's `lib/` directory (`~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/`), which is on the wheel's rpath search list. `lightgbm 4.7.0` imports and trains normally. Note: a uv Python upgrade replaces that directory; the copy in `~/.local/lib` is the durable one — re-copy if LightGBM breaks after an interpreter upgrade.
+- **Doc changes:** none in-repo (machine state only); agent memory updated (machine-quirks entry).
