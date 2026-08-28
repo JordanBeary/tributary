@@ -380,7 +380,7 @@ Both exceed the band's 0.95 ceiling. The design's exit criterion (F1 >= 0.9) is 
 
 ### D12 — Phase 7 pulled ahead of Phase 6; first site release scoped to Phases 0–4 content; Quarto on GitHub Pages
 
-*2026-08-28. Category: sequencing and presentation stack (design Section 9 risk register, Section 10). Scope decided by the human in session; stack is the design's own recommendation, accepted by the agent; **ratification of this record requested at session end**.*
+*2026-08-28. Category: sequencing and presentation stack (design Section 9 risk register, Section 10). Scope decided by the human in session; stack is the design's own recommendation, accepted by the agent; **ratified 2026-08-28, accepted as recorded**. The companion prompt-log candidate (P-012) was rejected at the same review as not log-worthy; the `Directs: P-012` trailer on commit d3144f1 therefore points at no entry — this note is the authoritative record of that directive's disposition.*
 
 **(a) Phase 7 (website) starts now, ahead of Phase 6 and ahead of D11 ratification.** Sanctioned by the risk register's cut-line ("site ships after Phase 4 regardless"). Phase 6 and the D11 ratification remain open and resume after the first site release.
 

@@ -4,9 +4,9 @@ Working companion to [docs/design.md](docs/design.md): the local workload's curr
 
 What the project *is* — including the global/local split and the precedence rule — lives in [meta/charter.md](meta/charter.md). Decision tables formerly in this guide live in [meta/logs/decisions.md](meta/logs/decisions.md) (ids preserved); machine and environment quirks live in [CLAUDE.md](CLAUDE.md).
 
-Status: v2.11, 2026-08-28 (Phase 7 pulled ahead per D12; D11 and D12 pending ratification) · Written against design.md v1.7
-Provenance: A (original), HD (v2.0 reconciliation), A (v2.1–v2.11)
-Project status: **Phases 0–4 complete (D10 ratified 2026-08-24). Phase 5 built 2026-08-24 — closes on D11 ratification. Phase 7 started 2026-08-28 ahead of Phase 6 (human directive, D12): Quarto site scaffolded in `site/` with the first release scoped to Phases 0–4 content; ML/strategy pages held until D11 ratifies and Phase 6 closes. Publish workflow is manual (`workflow_dispatch`) until the human review pass. Phase 6 session-start context in [meta/logs/sessions/2026-08-24_phase6_handoff.md](meta/logs/sessions/2026-08-24_phase6_handoff.md).**
+Status: v2.12, 2026-08-28 (D12 ratified; D11 still pending ratification) · Written against design.md v1.7
+Provenance: A (original), HD (v2.0 reconciliation), A (v2.1–v2.12)
+Project status: **Phases 0–4 complete (D10 ratified 2026-08-24). Phase 5 built 2026-08-24 — closes on D11 ratification. Phase 7 started 2026-08-28 ahead of Phase 6 (D12, ratified 2026-08-28): Quarto site scaffolded in `site/` with the first release scoped to Phases 0–4 content; ML/strategy pages held until D11 ratifies and Phase 6 closes. Publish workflow is manual (`workflow_dispatch`) until the human review pass. Phase 6 session-start context in [meta/logs/sessions/2026-08-24_phase6_handoff.md](meta/logs/sessions/2026-08-24_phase6_handoff.md).**
 
 ---
 
