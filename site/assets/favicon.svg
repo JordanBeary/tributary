@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Three streams converging into one: the tributary mark. -->
+  <rect width="32" height="32" rx="6" fill="#0a58ca"/>
+  <path d="M8 6 C8 16 16 16 16 26 M16 6 V26 M24 6 C24 16 16 16 16 26"
+        stroke="#ffffff" fill="none" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

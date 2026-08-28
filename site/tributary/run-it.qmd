@@ -6,7 +6,7 @@ description: "One seeded command regenerates the entire world at any scale."
 The whole project is reproducible from the repository — the simulated world,
 the silo fracture, and the analysis on top of it.
 
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/JordanBeary/tributary)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg){fig-alt="Open in GitHub Codespaces"}](https://codespaces.new/JordanBeary/tributary)
 
 ## Locally
 

@@ -5,4 +5,9 @@
 set -eu
 
 find _site -name '*.html' -exec sed -i.bak '/bootstrap-icons\.css/d' {} \;
+
+# Quarto's navbar toggler button carries role="menu", which is invalid ARIA
+# on a button element (flagged by accessibility audits); drop just that role.
+find _site -name '*.html' -exec sed -i.bak 's/aria-controls="navbarCollapse" role="menu"/aria-controls="navbarCollapse"/' {} \;
+
 find _site -name '*.html.bak' -delete

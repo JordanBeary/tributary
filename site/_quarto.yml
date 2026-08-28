@@ -16,6 +16,7 @@ website:
   title: "Jordan Beary"
   description: "Data science portfolio: the Tributary case study — silo unification, cost engineering, and ML on a simulated lead marketplace."
   site-url: https://jordanbeary.github.io/tributary/
+  favicon: assets/favicon.svg
   repo-url: https://github.com/JordanBeary/tributary
   # An eight-page site with a docked sidebar doesn't need search, and the
   # search stack (fuse + autocomplete) render-blocks every page.

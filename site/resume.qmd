@@ -1,6 +1,7 @@
 ---
 title: "Jordan Beary"
 subtitle: "Data science leadership — analytics infrastructure, experimentation, marketplace ML"
+description: "Resume of Jordan Beary: data science leadership, analytics infrastructure, experimentation, and marketplace ML."
 sidebar: false
 toc: false
 format:

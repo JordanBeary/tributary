@@ -6,3 +6,13 @@
 $web-font-path: "data:text/css;base64,";
 $font-family-sans-serif: -apple-system, BlinkMacSystemFont, "Segoe UI",
   Roboto, "Helvetica Neue", Arial, sans-serif;
+
+// Cosmo's default primary (#2780e3) fails WCAG AA as white-on-primary button
+// text (~3.6:1); this deeper blue clears 4.5:1 for buttons and link text.
+$primary: #0a58ca;
+
+/*-- scss:rules --*/
+// The theme's muted figure captions fall below 4.5:1 on white.
+.figure-caption {
+  color: #595959;
+}

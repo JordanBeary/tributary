@@ -1,5 +1,6 @@
 ---
 title: "Jordan Beary"
+description: "Data science leadership: analytics infrastructure, experimentation, and marketplace ML — presented through the Tributary case study."
 sidebar: false
 toc: false
 ---
