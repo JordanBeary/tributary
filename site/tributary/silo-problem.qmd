@@ -1,0 +1,96 @@
+---
+title: "The silo problem"
+description: "Three silos, no shared key — unified with entity resolution and scored against a hidden ground truth."
+---
+
+## Three silos that cannot talk to each other
+
+The simulated marketplace's data is deliberately fractured the way real
+marketplace data fractures:
+
+| Silo | System | Grain | Identity scheme |
+| --- | --- | --- | --- |
+| Auction lake | S3, partitioned Parquet | one row per bid event | `lead_uuid` (UUIDv4) |
+| CRM | Neon Postgres | one mutable row per lead | integer `lead_id` + hashed email |
+| Marketing | BigQuery exports | one row per message | `contact_id` (MD5 of lowercased email) |
+
+No silo contains another silo's key, and the fracture injects the defects
+that make real unification hard: about 8% duplicate consumers (nickname vs.
+legal name, typo'd emails, new phone numbers), about 5% orphaned auction
+events from a simulated migration, timestamps logged in three different
+timezones (UTC, naive US/Pacific, US/Eastern), and "conversion" meaning three
+different things in three systems. Each pathology is parameterized in the
+[simulation engine](https://github.com/JordanBeary/tributary/tree/main/simulation),
+not hand-waved.
+
+The consequence: before unification, nobody can say what a lead sold for
+end-to-end, how many distinct consumers exist, or what revenue marketing
+drove. The [before/after dashboard](dashboards.qmd) walks through nine such
+questions.
+
+## The trick that makes it measurable
+
+The simulator generates every consumer with a true `consumer_key`, strips it
+from all three silos, and keeps it in a private crosswalk that never enters
+the cloud. The unification pipeline works blind, exactly as a real team
+would — and is then *scored* against the crosswalk. Every claim below is a
+measurement, not an assertion.
+
+One honest note on difficulty: the pathology dials were deliberately tuned so
+entity resolution lands in the 0.8–0.9 F1 band. Early versions of the
+fracture were too clean and the matcher saturated — a synthetic benchmark you
+can ace is not a benchmark.
+
+## How the unification works
+
+- **Probabilistic matching where it belongs.** CRM deduplication and the
+  CRM-to-marketing link are [Splink](https://github.com/moj-analytical-services/splink)
+  models (term-frequency-adjusted comparisons over name, email, phone,
+  geography) — the classic fuzzy-identity problems.
+- **Deterministic SQL where a model would obscure the truth.** The
+  auction-to-CRM linkage is an exact composite key (state, loan amount,
+  purpose, FICO band) plus a nine-minute submission window, choosing
+  nearest-in-time. The residual errors are payload doppelgangers inside the
+  window — which no probabilistic model could separate either, so the honest
+  tool is the simple one. It also has to absorb a daylight-saving fall-back
+  hour where CRM timestamps land 3,600 seconds off.
+- **High-precision clustering.** Consumer entities are connected components
+  over dedupe pairs at the 0.9 threshold, where pairwise precision is 0.9998
+  — transitive closure amplifies any false edge, so clustering runs at the
+  high-precision operating point rather than the F1-optimal one.
+- **A thin dbt spine.** Two intermediate models map every lead and auction
+  event to its resolved consumer entity; wide denormalized marts join through
+  that spine.
+
+## The scorecard
+
+Scored against the hidden crosswalk
+([er/scorecard.json](https://github.com/JordanBeary/tributary/blob/main/er/scorecard.json)):
+
+| Task | Precision | Recall | F1 |
+| --- | --- | --- | --- |
+| CRM–marketing link (probabilistic, best match per lead) | 0.895 | 0.864 | **0.879** |
+| CRM dedupe (probabilistic, pairwise) | — | — | **0.873** |
+| Auction–CRM linkage (deterministic) | 0.995 (lead) | 0.998 (non-orphan) | — |
+
+Downstream identity quality: 636,164 resolved consumer clusters against
+623,470 true persons, weighted cluster purity 0.9998, and 98.1% of persons
+kept whole (unsplit).
+
+**The headline:** 95.3% of auction events are consumer-joinable after
+unification, against a >95% target and 0% before — and of the 4.7% gap,
+almost all is the ~5% migration-orphan population that is unjoinable by
+construction. The linkage recovers 99.8% of what is recoverable.
+
+## What the unified view immediately paid for
+
+- The CRM's 2.40M lead ids resolve to **635,579 actual consumers** — a 3.8x
+  overcount; 69% of applications are repeat applicants.
+- Buyers paid **$12.0M (5.7% of revenue)** for consumers they had already
+  bought within the prior 30 days — invisible when every application looks
+  like a new person.
+- **93% of $209.2M** in revenue became attributable to a marketing
+  touch, exposing paid-channel ROAS ranging from 0.94x (below break-even)
+  to 3.06x.
+
+All three, with charts, in the [dashboards](dashboards.qmd).

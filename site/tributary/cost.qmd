@@ -1,0 +1,76 @@
+---
+title: "Cost engineering"
+description: "A three-silo cloud deployment for one cent, with receipts, and the design habits that keep it that way at scale."
+---
+
+## The bill
+
+At the close of silo deployment — three live cloud systems, roughly 3 GB
+uploaded — the month-to-date bills read:
+
+| Cloud | Month-to-date | Receipt |
+| --- | --- | --- |
+| AWS | **$0.01** | screenshot below |
+| GCP | **$0.00** | screenshot below |
+
+Both accounts run $10/month budgets with 50/80/100% alerts, configured before
+any data moved — spend governance first, workload second.
+
+::: {layout-ncol=2}
+![AWS billing console at phase close](../assets/img/aws-cost-2026-08-14.png)
+
+![GCP billing console at phase close](../assets/img/gcp-cost-2026-08-14.png)
+:::
+
+The cheapness is engineered, not lucky. Four habits did the work.
+
+## 1. Respect the write/read asymmetry
+
+S3 PUT-class requests cost roughly 12x GET-class requests. Design
+consequence: the auction lake is a few hundred *large* Parquet objects synced
+once per deploy — never millions of small objects iterated remotely. A full
+1.3 GB lake deployment costs under $0.02 in requests and about $0.03/month to
+store.
+
+## 2. Make the warehouse scan less
+
+BigQuery prices queries by bytes scanned. A representative dashboard query
+(one channel, one month, per-campaign open/click rollup) was benchmarked
+before and after `PARTITION BY DATE(sent_at)` + `CLUSTER BY channel`:
+
+| | Bytes scanned |
+| --- | --- |
+| Unpartitioned `messages` table | 124,325,982 |
+| Partitioned + clustered | **11,430,092 (10.9x less)** |
+
+At project scale both round to free. The point is the habit: extrapolated to
+a 100x-scale table, the same query drops from ~12 GB scanned to ~1.1 GB —
+the difference between exhausting the 1 TiB free tier in ~80 dashboard loads
+versus ~900. Receipt:
+[benchmark_receipt.json](https://github.com/JordanBeary/tributary/blob/main/silos/marketing_bq/benchmark_receipt.json).
+
+## 3. Fit the free tier by measurement, not hope
+
+The CRM silo's natural size (561 MB as generated) did not fit Neon's ~0.5 GB
+free tier. Rather than pay the ~$15/month first paid tier, the deployed table
+was re-engineered: two columns the entity-resolution ladder never uses were
+dropped, and the email hash stored as 32-byte binary instead of 64-character
+hex. Measured after the full 2.28M-row load: **0.470 GB logical — under the
+tier with ~6% headroom**, hash round-trip verified exact. Thin headroom is a
+managed risk: retention stays at the console minimum and any schema addition
+re-measures first.
+
+## 4. Push compute to the data
+
+Egress ($0.09/GB beyond the free allowance) is the silent cost at real scale.
+Local DuckDB reads the S3 lake directly over `httpfs` for development slices,
+dashboards are built from small pre-aggregated extracts, and anything heavy
+runs where the data lives. Development pulls stayed inside the free
+allowance for the entire build.
+
+## Steady state
+
+With the working set at ~10 GB, the whole project idles at well under
+$1/month — and the line-item model behind these numbers, including the
+100x-scale extrapolation, is in
+[the design document, Section 5](https://github.com/JordanBeary/tributary/blob/main/docs/design.md).

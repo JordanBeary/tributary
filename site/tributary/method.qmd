@@ -1,0 +1,70 @@
+---
+title: "How this was built"
+description: "A human directing AI agents, with the direction kept as an auditable record."
+---
+
+Tributary is two projects sharing one repository. The data science build is
+the visible one. The primary one is the working method: demonstrating that a
+human can direct AI agents to produce real, reviewable work — and keeping
+enough of a record that an outside evaluator can decompose who contributed
+what. The build is the demonstration payload; the method is the exhibit.
+
+That record is not this page's summary of itself — it is in the repository,
+in [meta/](https://github.com/JordanBeary/tributary/tree/main/meta), and it
+is the part of the project I would most want an evaluator to open.
+
+## The harness
+
+Agents in this repo do not start from a blank prompt. They start from a
+harness built to make them more effective than out-of-the-box:
+
+- **A charter and standing instruction set** —
+  [twelve working agreements](https://github.com/JordanBeary/tributary/blob/main/meta/conventions.md)
+  fixed at the start (quality over development cost, no invented company
+  names, honesty over flash, comment the code, index the repo for agents)
+  plus a mandatory trigger table: *this* event requires *that* record, every
+  session.
+- **A knowledge graph** —
+  [a machine-readable index](https://github.com/JordanBeary/tributary/blob/main/meta/graph/graph.yaml)
+  of every document, package, silo, phase, and decision, validated in CI on
+  every push. Agents load it at session start and navigate the repo cheaply
+  instead of re-discovering it.
+- **A design document as the seed** — the
+  [full build design](https://github.com/JordanBeary/tributary/blob/main/docs/design.md)
+  was written first and is kept alive: every change to it cites the decision
+  or intervention that caused it, in its changelog.
+
+## The records
+
+- **Decision log** —
+  [an ADR series](https://github.com/JordanBeary/tributary/blob/main/meta/logs/decisions.md)
+  for every choice between real alternatives, from cloud naming to why the
+  auction linkage is deterministic SQL while the dedupe is probabilistic.
+  Agents propose; the human ratifies, amends, or rejects — and the log says
+  which happened.
+- **Intervention log** —
+  [agent errors and the corrections that fixed them](https://github.com/JordanBeary/tributary/blob/main/meta/logs/interventions.md),
+  classified. Kept deliberately: a record of only successes would be
+  advertising, not evidence.
+- **Prompt log** — the prompts that materially shaped artifacts, recorded
+  verbatim minus marked redactions.
+- **Per-commit provenance** — every commit carries a trailer classifying its
+  content: `H` (human-authored), `HD` (human-directed), `A` (agent-executed),
+  per the [provenance spec](https://github.com/JordanBeary/tributary/blob/main/meta/provenance.md).
+  `git log` itself is the contribution ledger.
+
+## The discipline that makes it real
+
+A phase is not done when the code works. It is done when the logs are
+current, the graph validates, and provenance is recorded — that global exit
+criterion gates every phase alongside its technical one. Several phases
+closed only after a ratification round in which proposed decisions were
+accepted, amended, or sent back.
+
+Two working rules worth naming because they are easy to fake and expensive to
+keep: numbers over adjectives (the ER band was *tuned down* to 0.8–0.9 when
+early versions were suspiciously clean, and the uplift experiment is reported
+as underpowered because it is), and fictionalization without fictional names
+(the simulated marketplace resembles the real world's mechanics but names no
+company and reuses no proprietary numbers — every statistic traces to a
+public dataset or a declared assumption).

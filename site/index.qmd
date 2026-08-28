@@ -1,0 +1,38 @@
+---
+title: "Jordan Beary"
+sidebar: false
+toc: false
+---
+
+<!-- TODO(human): replace this section with your positioning statement — the
+     "cover letter" voice from design.md Section 10.2: who you are, how you
+     create value, in your own words. The proof points below are factual and
+     can stay. -->
+
+Data scientist. This site presents one project in depth: **Tributary**, an
+end-to-end build that simulates a fractured marketplace data environment,
+unifies it with measured accuracy, and mines the unified view for decisions —
+directed by me, built with AI agents, with the direction itself kept as an
+auditable record.
+
+## Three proof points
+
+**Provable unification.** Three architecturally real cloud silos (S3 Parquet
+lake, transactional Postgres, BigQuery) are resolved to a single consumer
+identity — and scored against a hidden ground-truth crosswalk the pipeline
+never sees. Entity-resolution F1 of 0.87–0.88, with 95.3% of auction revenue
+events made consumer-joinable, up from 0%.
+[The silo problem →](tributary/silo-problem.qmd)
+
+**Cost engineering as a discipline.** The entire three-silo cloud footprint
+was deployed for one cent, held under a $10/month budget with alerting, and
+instrumented with before/after receipts — including a 10.9x reduction in
+warehouse bytes scanned from partitioning alone.
+[Cost engineering →](tributary/cost.qmd)
+
+**A working method you can audit.** Every phase ships with decision records,
+an intervention log of agent errors and the corrections that fixed them, and
+per-commit provenance decomposing human direction from agent execution.
+[How this was built →](tributary/method.qmd)
+
+<p class="mt-4"><a class="btn btn-primary" href="tributary/index.qmd">Read the case study</a></p>

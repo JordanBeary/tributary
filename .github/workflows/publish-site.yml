@@ -1,0 +1,41 @@
+# Renders the Quarto site and deploys it to GitHub Pages.
+#
+# Trigger is manual (workflow_dispatch) until the human review pass before
+# launch; then add a push trigger on main so the site tracks the repo.
+# Requires Pages enabled with source "GitHub Actions" in repo settings.
+name: publish-site
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: quarto-dev/quarto-actions/setup@v2
+        with:
+          version: 1.10.18   # match the version pinned locally in ~/.local/opt
+      - run: quarto render site
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/_site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

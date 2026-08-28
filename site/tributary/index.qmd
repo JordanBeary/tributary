@@ -1,0 +1,68 @@
+---
+title: "Tributary — Overview"
+description: "Problem, architecture, and results in sixty seconds."
+---
+
+## The problem
+
+A simulated two-sided marketplace sells personal-loan leads to lenders through
+a six-tier sequential waterfall auction. Like most companies that grew fast,
+its data grew in pieces: engineering logs auction events to a data lake, sales
+operations runs the CRM, and a marketing agency exports campaign data to its
+own warehouse. Three silos, three identity schemes, no shared key — so the
+questions that matter most (what did this lead sell for? how many distinct
+consumers do we actually have? what revenue did marketing drive?) are
+unanswerable.
+
+Tributary builds that world deliberately, then fixes it — and because the
+world is simulated from a hidden ground truth, every unification claim is
+*scored*, not asserted.
+
+## Architecture
+
+```text
+             simulation engine (local Python, seeded, --scale dial)
+                  │            │            │
+          ┌───────▼──┐   ┌─────▼─────┐  ┌───▼──────────┐
+          │ AWS S3   │   │ Neon      │  │ BigQuery     │
+          │ auction  │   │ Postgres  │  │ marketing    │
+          │ lake     │   │ CRM       │  │ exports      │
+          └───────┬──┘   └─────┬─────┘  └───┬──────────┘
+                  └──────┬─────┴─────┬──────┘
+                         ▼           ▼
+              DuckDB + dbt + Splink (unification, scored vs. ground truth)
+                         │
+                         ▼
+         wide analytics marts · static dashboards · ML models
+```
+
+One seeded command regenerates everything at any scale: 1.5M consumer records,
+2.4M leads, 26.4M auction events, and 2.19M marketing messages in about two
+and a half minutes at full scale. The simulator is calibrated against three
+public datasets (iPinYou bid logs, LendingClub applications, Criteo uplift),
+so its distributions are defensible, and the silo fracture injects the
+identity pathologies that make unification genuinely hard.
+
+## Results in sixty seconds
+
+| Claim | Number | Where it's proven |
+| --- | --- | --- |
+| Auction revenue events joinable to a consumer | **95.3%**, up from 0% | [ER scorecard](https://github.com/JordanBeary/tributary/blob/main/er/scorecard.json), [details](silo-problem.qmd) |
+| Entity-resolution accuracy vs. hidden ground truth | link F1 **0.879**, dedupe F1 **0.873** | [ER pipeline](https://github.com/JordanBeary/tributary/tree/main/er) |
+| Consumer identity: apparent vs. real | 2.40M lead ids → **635,579** consumers (3.8x overcount) | [Identity dashboard](dashboards.qmd) |
+| Duplicate spend exposed by unification | **$12.0M** (5.7% of revenue) paid for consumers bought within the prior 30 days | [Auction dashboard](dashboards.qmd) |
+| Marketing revenue attribution, previously impossible | **93%** of $209.2M revenue attributed; channel ROAS 0.94x–3.06x | [Attribution dashboard](dashboards.qmd) |
+| Total cloud bill for the three-silo deployment | **$0.01** | [Cost engineering](cost.qmd) |
+| Warehouse scan cost after partitioning | **10.9x** fewer bytes scanned | [Benchmark receipt](https://github.com/JordanBeary/tributary/blob/main/silos/marketing_bq/benchmark_receipt.json) |
+
+## What's here now, what's next
+
+This first release covers the build through analytics: the silo story,
+entity resolution with its scorecard, cost engineering, and six dashboards.
+The ML workstream (sale propensity, censored price modeling, reserve-price
+optimization, uplift) is trained and evaluated but publishes here only after
+its review closes — an ordering chosen deliberately so the site never cites
+unratified numbers.
+
+Start with [the silo problem](silo-problem.qmd), or skip to
+[how this was built](method.qmd) if the working method is what you came for.

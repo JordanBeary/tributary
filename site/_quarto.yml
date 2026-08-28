@@ -1,0 +1,59 @@
+# Quarto site configuration (Phase 7, D12).
+# Render: `quarto render site` from the repo root (quarto is in ~/.local/bin).
+# The pre-render hook copies static artifacts (dashboards, cost screenshots)
+# from their source-of-truth locations; the copies are git-ignored.
+
+project:
+  type: website
+  output-dir: _site
+  pre-render: tools/prerender.sh
+  resources:
+    - tributary/embedded/*
+    - assets/img/*
+
+website:
+  title: "Jordan Beary"
+  description: "Data science portfolio: the Tributary case study — silo unification, cost engineering, and ML on a simulated lead marketplace."
+  site-url: https://jordanbeary.github.io/tributary/
+  repo-url: https://github.com/JordanBeary/tributary
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - href: resume.qmd
+        text: Resume
+      - href: tributary/index.qmd
+        text: "Tributary: the case study"
+    right:
+      - icon: github
+        href: https://github.com/JordanBeary/tributary
+        aria-label: GitHub repository
+  sidebar:
+    - id: tributary
+      title: "Tributary"
+      style: docked
+      collapse-level: 1
+      contents:
+        - href: tributary/index.qmd
+          text: Overview
+        - href: tributary/silo-problem.qmd
+          text: The silo problem
+        - href: tributary/cost.qmd
+          text: Cost engineering
+        - href: tributary/dashboards.qmd
+          text: Dashboards
+        - href: tributary/method.qmd
+          text: How this was built
+        - href: tributary/run-it.qmd
+          text: Run it yourself
+  page-footer:
+    center: |
+      Static site — every number links to the artifact that produced it.
+      [Repository](https://github.com/JordanBeary/tributary)
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true
+    link-external-newwindow: true

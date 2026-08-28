@@ -1,0 +1,47 @@
+---
+title: "Run it yourself"
+description: "One seeded command regenerates the entire world at any scale."
+---
+
+The whole project is reproducible from the repository — the simulated world,
+the silo fracture, and the analysis on top of it.
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/JordanBeary/tributary)
+
+## Locally
+
+```bash
+git clone https://github.com/JordanBeary/tributary.git
+cd tributary
+pip install -e ".[dev]"
+
+# 1% scale: full pipeline in ~2 seconds
+python -m simulation --scale 0.01 --seed 42
+
+# full scale: 1.5M consumers, 2.4M leads, 26.4M auction events, ~2.5 minutes
+python -m simulation --scale 1.0 --seed 42
+```
+
+The `--scale` dial regenerates a self-consistent world at any size, from a
+laptop smoke test to the full deployment, from one seed. The simulator reads
+only fitted parameter artifacts (committed JSON), never the ~35 GB of raw
+public datasets — calibration was a one-time, versioned step, so cloning the
+repo is enough.
+
+## What to poke at
+
+- `pytest` runs the test suite, which reproduces the calibration QA gates
+  (distribution shape, correlation structure, pathology rates) from the
+  parameter artifacts alone.
+- The [calibration spec](https://github.com/JordanBeary/tributary/blob/main/docs/calibration_spec.md)
+  maps each public dataset (iPinYou, LendingClub, Criteo) to the simulator
+  parameters it drives.
+- The [dbt project](https://github.com/JordanBeary/tributary/tree/main/warehouse)
+  and [ER pipeline](https://github.com/JordanBeary/tributary/tree/main/er)
+  run against the generated silo outputs.
+
+One caveat, stated plainly: the hidden ground-truth crosswalk that scores
+entity resolution is generated on your machine when you run the simulator —
+but the *committed* scorecard numbers come from the author's full-scale run.
+The crosswalk itself is git-ignored by design and never leaves the machine
+that generated it.

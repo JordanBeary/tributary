@@ -1,0 +1,14 @@
+---
+title: "Resume"
+sidebar: false
+toc: false
+---
+
+<!-- TODO(human): this page is a placeholder. Per design.md Section 10.2 it
+     should carry the HTML resume plus a downloadable PDF, kept in sync.
+     Drop the PDF at assets/resume.pdf and mirror its content here. -->
+
+Resume forthcoming. In the meantime, the [Tributary case study](tributary/index.qmd)
+is the deepest available sample of my work, and the
+[repository](https://github.com/JordanBeary/tributary) includes the full
+working record.

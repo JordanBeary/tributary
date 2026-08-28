@@ -43,7 +43,7 @@ Session end: draft candidate records for the human to accept, edit, or reject. C
 
 This machine deviates from defaults in ways that matter:
 
-- **Homebrew is partially broken** (`/usr/local/share/man/man8` not user-writable; fix needs sudo). All CLIs are installed user-locally instead: `gh`, `aws` (`~/aws-cli`), `gcloud`/`bq` (`~/google-cloud-sdk`), `uv` — symlinked into `~/.local/bin`, which is on PATH for *interactive* shells only. Non-interactive shells: prefix with `PATH="$HOME/.local/bin:$PATH"`.
+- **Homebrew is partially broken** (`/usr/local/share/man/man8` not user-writable; fix needs sudo). All CLIs are installed user-locally instead: `gh`, `aws` (`~/aws-cli`), `gcloud`/`bq` (`~/google-cloud-sdk`), `uv`, `quarto` (`~/.local/opt/quarto-1.10.18`) — symlinked into `~/.local/bin`, which is on PATH for *interactive* shells only. Non-interactive shells: prefix with `PATH="$HOME/.local/bin:$PATH"`.
 - **System Pythons are 3.7/3.8 — too old for everything.** Use `.venv/bin/python` (3.12, all dev deps installed) for project code; never bare `python3`.
 - **gcloud needs `CLOUDSDK_PYTHON`** pointing at the uv-managed 3.12 interpreter (`~/.local/share/uv/python/cpython-3.12-macos-aarch64-none/bin/python3.12`). Exported in `~/.zshrc`; non-interactive scripts must export it explicitly.
 - **Git auth** goes through `gh`'s credential helper (HTTPS). A broken `gh` binary exists in the `pBot` conda env; the real one is `~/.local/bin/gh`.

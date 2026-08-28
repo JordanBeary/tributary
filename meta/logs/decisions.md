@@ -378,6 +378,16 @@ Both exceed the band's 0.95 ceiling. The design's exit criterion (F1 >= 0.9) is 
 
 **Phase 5 exit measurement (design Section 9).** Every model beats its naive baseline on its headline metric ((c)-(f) above); calibration curves (model 1 reliability, model 2 exit calibration) and the uplift gain/Qini curve are documented in the committed static reports. Model-layer math (Tobit gradients vs numerical differentiation, replay mechanics, uplift-curve tie-breaking, feature-contract leakage disjointness, C19 bucket agreement with the artifact) is gated in `tests/test_models.py` (10 tests); the engine suite is untouched (48 tests).
 
+### D12 — Phase 7 pulled ahead of Phase 6; first site release scoped to Phases 0–4 content; Quarto on GitHub Pages
+
+*2026-08-28. Category: sequencing and presentation stack (design Section 9 risk register, Section 10). Scope decided by the human in session; stack is the design's own recommendation, accepted by the agent; **ratification of this record requested at session end**.*
+
+**(a) Phase 7 (website) starts now, ahead of Phase 6 and ahead of D11 ratification.** Sanctioned by the risk register's cut-line ("site ships after Phase 4 regardless"). Phase 6 and the D11 ratification remain open and resume after the first site release.
+
+**(b) First release scope: Phases 0–4 content only** — the silo story, the ER scorecard (D9 numbers), cost engineering, and the six Phase 4 dashboards as embedded static exports. ML and strategy pages are held until D11 is ratified and Phase 6 closes, so the public site never cites unratified numbers. This is the "publish incrementally" mitigation applied to the site itself.
+
+**(c) Stack: Quarto rendering to a static site, published on GitHub Pages** (design 10.1's recommended option). The Astro/Next.js alternative buys a more designed feel at real maintenance cost — against instruction 10 (honesty over flash). Consistent with the 2026-08-20 directive, the site is a presentation layer of cacheable static artifacts; nothing on it computes. First deployment targets the default `github.io` address; the custom domain (Q1, still open) wires in via CNAME + DNS whenever purchased, blocking nothing.
+
 ## Q-series — Open questions (parked, non-blocking)
 
 | # | Question | Status |

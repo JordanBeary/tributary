@@ -117,3 +117,14 @@ Entry status values: `verbatim` (exact text, redactions marked) or `summary — 
   >
   > I attached some stats on duplicates - dup1 = same day, dup7 = within the last 7 days, dup30 = within the last 30 days, unique_dup30+ = either never seen before OR previously seen but outside of the 30 day lookback window. KPI's win_rate (sold divided by leads), earnings-per-lead (EPL), etc. are lower for consumers that return soon after the last lead instance for the same contact. [REDACTED: proprietary duplicate-performance KPI table (sent/sold/revenue/win-rate/EPL by recency bucket) — raw figures retained locally in `data/private/duplicate_performance.csv`, never committed; distilled ratio targets in `simulation/params/repeat_demand.json`]
 - **Shaped:** C19 — recency-dependent buyer demand (participation and valuation dials per recency bucket, fitted to the table's win-rate and price ratios) and a mean-preserving price gradient on the funded flag. Consequences accepted with it: overall sell-through moves from the invented ~60% to the table's own ~49%, and mean clearing price falls toward the C1 anchor.
+
+## P-012 — Phase 7 pulled forward; first site release scoped to Phases 0–4 (Phase 7)
+
+- **Date:** 2026-08-28
+- **Status:** candidate — session draft, pending human ratification
+- **Content:** (opening a session while Phase 6 and the D11 ratification were still open)
+  > I want to start working on the website. We will get that set up then loop back and finish the remaining unfinished items. Walk me through the steps.
+
+  and, choosing between ratifying D11 first versus scoping the release (the agent recommended the latter):
+  > Scope the first site release to Phases 0–4 content (silo story, ER scorecard, cost engineering, dashboards) and hold ML pages until D11/Phase 6 land.
+- **Shaped:** D12 and the Phase 7 scaffold. The sequencing exercised the risk register's cut-line ("site ships after Phase 4 regardless"); the scoping rule — the public site never cites unratified numbers — determined the site's information architecture (ML/strategy pages absent rather than stubbed with numbers, the overview saying so plainly).

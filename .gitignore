@@ -39,3 +39,10 @@ er/scorecard_local.json
 
 # Trained model binaries — reproducible from the warehouse, not versioned
 models/out/boosters/
+
+# Site — rendered output and pre-render copies (sources of truth live in
+# analysis/dashboards/out/ and docs/img/; see site/tools/prerender.sh)
+site/_site/
+site/.quarto/
+site/tributary/embedded/
+site/assets/img/

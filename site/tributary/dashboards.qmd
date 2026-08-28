@@ -1,0 +1,80 @@
+---
+title: "Dashboards"
+description: "Six static dashboards answering the nine questions no single silo could."
+toc: true
+---
+
+Six dashboards, built from the unified warehouse marts as fully static Plotly
+pages — no server, no live compute, nothing to break. Each panel is tagged
+with the audit question it answers; the full question-by-question checklist
+(nine questions, each unanswerable or wrong from any single silo) lives in the
+[silo audit memo](https://github.com/JordanBeary/tributary/blob/main/docs/silo_audit.md).
+
+Every frame below is the real artifact, embedded as-is; the source build is
+[analysis/dashboards](https://github.com/JordanBeary/tributary/tree/main/analysis/dashboards).
+
+## 1. Before and after: the silo audit
+
+What each silo believed alone versus what the unified view shows — headcount
+by system versus resolved consumers, and paid-channel ROI where the
+click-value ranking inverts once revenue is joined through the auction.
+
+<iframe class="dashboard-frame" src="embedded/01_silo_audit_before_after.html" title="Before/after silo audit dashboard" loading="lazy"></iframe>
+
+[Open full page](embedded/01_silo_audit_before_after.html){target="_blank"}
+
+## 2. The full funnel
+
+Message → application → auction → sale → funded loan in one view: stage
+volumes, stage-to-stage conversion by acquisition channel, and funded rate by
+tier and clearing-price band. 12.7% of sold leads fund, declining from 14.3%
+in tier 1 to 8.5% in tier 6.
+
+<iframe class="dashboard-frame" src="embedded/02_full_funnel.html" title="Full funnel dashboard" loading="lazy"></iframe>
+
+[Open full page](embedded/02_full_funnel.html){target="_blank"}
+
+## 3. Auction economics
+
+Earnings per lead offered by tier and FICO band, clearing-price spreads,
+sell-through against floors, and buyer concentration (revenue-share HHI) by
+tier. Tier-1 leads clear at a mean near $255; recent repeat applicants clear
+at 0.52–0.75x fresh prices.
+
+<iframe class="dashboard-frame" src="embedded/03_auction_economics.html" title="Auction economics dashboard" loading="lazy"></iframe>
+
+[Open full page](embedded/03_auction_economics.html){target="_blank"}
+
+## 4. Consumer identity
+
+The identity story quantified: 2.40M auction lead ids and 2.28M CRM lead ids
+resolve to 635,579 consumers; 69% of applications are repeats; 112,035
+orphaned applications restored from the lake; and $12.0M of buyer spend on
+consumers already bought within 30 days.
+
+<iframe class="dashboard-frame" src="embedded/04_consumer_identity.html" title="Consumer identity dashboard" loading="lazy"></iframe>
+
+[Open full page](embedded/04_consumer_identity.html){target="_blank"}
+
+## 5. Marketing attribution
+
+Revenue by channel through the auction — 93% of $209.2M attributable to a
+marketing contact, $104.5M to paid channels, ROAS from 0.94x (display, below
+break-even) to 3.06x (affiliate) — plus acquisition cost and last-touch
+campaign coverage.
+
+<iframe class="dashboard-frame" src="embedded/05_marketing_attribution.html" title="Marketing attribution dashboard" loading="lazy"></iframe>
+
+[Open full page](embedded/05_marketing_attribution.html){target="_blank"}
+
+## 6. The uplift experiment
+
+The nurture-campaign holdout, read honestly: +0.109pp application lift
+against an injected +0.115pp ground truth, with a confidence interval
+spanning zero — the experiment is underpowered for the pooled effect at this
+scale, and the dashboard says so rather than torturing significance out of
+it.
+
+<iframe class="dashboard-frame" src="embedded/06_uplift_experiment.html" title="Uplift experiment dashboard" loading="lazy"></iframe>
+
+[Open full page](embedded/06_uplift_experiment.html){target="_blank"}
