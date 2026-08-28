@@ -1,0 +1,8 @@
+/*-- scss:defaults --*/
+// Drop the theme's Google Fonts request (a render-blocking stylesheet plus
+// two font files on every page) in favor of the platform's system stack.
+// The data-URI trick is the documented way to suppress Bootswatch's
+// $web-font-path import without forking the theme.
+$web-font-path: "data:text/css;base64,";
+$font-family-sans-serif: -apple-system, BlinkMacSystemFont, "Segoe UI",
+  Roboto, "Helvetica Neue", Arial, sans-serif;

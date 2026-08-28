@@ -19,7 +19,7 @@ What each silo believed alone versus what the unified view shows — headcount
 by system versus resolved consumers, and paid-channel ROI where the
 click-value ranking inverts once revenue is joined through the auction.
 
-<iframe class="dashboard-frame" src="embedded/01_silo_audit_before_after.html" title="Before/after silo audit dashboard" loading="lazy"></iframe>
+<iframe class="dashboard-frame" data-src="embedded/01_silo_audit_before_after.html" title="Before/after silo audit dashboard" loading="lazy"></iframe>
 
 [Open full page](embedded/01_silo_audit_before_after.html){target="_blank"}
 
@@ -30,7 +30,7 @@ volumes, stage-to-stage conversion by acquisition channel, and funded rate by
 tier and clearing-price band. 12.7% of sold leads fund, declining from 14.3%
 in tier 1 to 8.5% in tier 6.
 
-<iframe class="dashboard-frame" src="embedded/02_full_funnel.html" title="Full funnel dashboard" loading="lazy"></iframe>
+<iframe class="dashboard-frame" data-src="embedded/02_full_funnel.html" title="Full funnel dashboard" loading="lazy"></iframe>
 
 [Open full page](embedded/02_full_funnel.html){target="_blank"}
 
@@ -41,7 +41,7 @@ sell-through against floors, and buyer concentration (revenue-share HHI) by
 tier. Tier-1 leads clear at a mean near $255; recent repeat applicants clear
 at 0.52–0.75x fresh prices.
 
-<iframe class="dashboard-frame" src="embedded/03_auction_economics.html" title="Auction economics dashboard" loading="lazy"></iframe>
+<iframe class="dashboard-frame" data-src="embedded/03_auction_economics.html" title="Auction economics dashboard" loading="lazy"></iframe>
 
 [Open full page](embedded/03_auction_economics.html){target="_blank"}
 
@@ -52,7 +52,7 @@ resolve to 635,579 consumers; 69% of applications are repeats; 112,035
 orphaned applications restored from the lake; and $12.0M of buyer spend on
 consumers already bought within 30 days.
 
-<iframe class="dashboard-frame" src="embedded/04_consumer_identity.html" title="Consumer identity dashboard" loading="lazy"></iframe>
+<iframe class="dashboard-frame" data-src="embedded/04_consumer_identity.html" title="Consumer identity dashboard" loading="lazy"></iframe>
 
 [Open full page](embedded/04_consumer_identity.html){target="_blank"}
 
@@ -63,7 +63,7 @@ marketing contact, $104.5M to paid channels, ROAS from 0.94x (display, below
 break-even) to 3.06x (affiliate) — plus acquisition cost and last-touch
 campaign coverage.
 
-<iframe class="dashboard-frame" src="embedded/05_marketing_attribution.html" title="Marketing attribution dashboard" loading="lazy"></iframe>
+<iframe class="dashboard-frame" data-src="embedded/05_marketing_attribution.html" title="Marketing attribution dashboard" loading="lazy"></iframe>
 
 [Open full page](embedded/05_marketing_attribution.html){target="_blank"}
 
@@ -75,6 +75,30 @@ spanning zero — the experiment is underpowered for the pooled effect at this
 scale, and the dashboard says so rather than torturing significance out of
 it.
 
-<iframe class="dashboard-frame" src="embedded/06_uplift_experiment.html" title="Uplift experiment dashboard" loading="lazy"></iframe>
+<iframe class="dashboard-frame" data-src="embedded/06_uplift_experiment.html" title="Uplift experiment dashboard" loading="lazy"></iframe>
 
 [Open full page](embedded/06_uplift_experiment.html){target="_blank"}
+
+```{=html}
+<script>
+// Load each dashboard iframe only as it approaches the viewport. Six eager
+// frames each pull their own copy of plotly.js; deferring to scroll keeps
+// initial load light while the "Open full page" links remain the no-JS path.
+(function () {
+  var frames = document.querySelectorAll("iframe[data-src]");
+  if (!("IntersectionObserver" in window)) {
+    frames.forEach(function (f) { f.src = f.dataset.src; });
+    return;
+  }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) {
+        e.target.src = e.target.dataset.src;
+        io.unobserve(e.target);
+      }
+    });
+  }, { rootMargin: "300px" });
+  frames.forEach(function (f) { io.observe(f); });
+})();
+</script>
+```
