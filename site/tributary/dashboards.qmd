@@ -97,7 +97,7 @@ it.
         io.unobserve(e.target);
       }
     });
-  }, { rootMargin: "300px" });
+  }, { rootMargin: "0px" });
   frames.forEach(function (f) { io.observe(f); });
 })();
 </script>
