@@ -17,5 +17,4 @@ cp "$REPO_ROOT"/analysis/dashboards/out/*.html "$SITE_DIR/tributary/embedded/"
 mkdir -p "$SITE_DIR/assets/img"
 cp "$REPO_ROOT"/docs/img/aws-cost-2026-08-14.png \
    "$REPO_ROOT"/docs/img/gcp-cost-2026-08-14.png \
-   "$REPO_ROOT"/docs/img/gcp-budget-thresholds.png \
    "$SITE_DIR/assets/img/"

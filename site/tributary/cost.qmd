@@ -17,9 +17,9 @@ Both accounts run $10/month budgets with 50/80/100% alerts, configured before
 any data moved — spend governance first, workload second.
 
 ::: {layout-ncol=2}
-![AWS billing console at phase close](../assets/img/aws-cost-2026-08-14.png)
+![AWS billing console at phase close](../assets/img/aws-cost-2026-08-14.png){loading="lazy"}
 
-![GCP billing console at phase close](../assets/img/gcp-cost-2026-08-14.png)
+![GCP billing console at phase close](../assets/img/gcp-cost-2026-08-14.png){loading="lazy"}
 :::
 
 The cheapness is engineered, not lucky. Four habits did the work.

@@ -97,8 +97,19 @@ it.
         io.unobserve(e.target);
       }
     });
-  }, { rootMargin: "0px" });
-  frames.forEach(function (f) { io.observe(f); });
+  }, { rootMargin: "200px" });
+  // Arm on first interaction: nothing heavy loads until the visitor starts
+  // reading (any scroll, tap, or keypress), then frames stream in as they
+  // approach the viewport.
+  var armed = false;
+  function arm() {
+    if (armed) return;
+    armed = true;
+    frames.forEach(function (f) { io.observe(f); });
+  }
+  ["scroll", "pointerdown", "keydown", "touchstart"].forEach(function (ev) {
+    window.addEventListener(ev, arm, { once: true, passive: true });
+  });
 })();
 </script>
 ```

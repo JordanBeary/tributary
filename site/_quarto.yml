@@ -7,6 +7,7 @@ project:
   type: website
   output-dir: _site
   pre-render: tools/prerender.sh
+  post-render: tools/postrender.sh
   resources:
     - tributary/embedded/*
     - assets/img/*
@@ -28,7 +29,9 @@ website:
       - href: tributary/index.qmd
         text: "Tributary: the case study"
     right:
-      - icon: github
+      # Text, not icon: the github icon alone pulls the 177KB bootstrap-icons
+      # font plus a render-blocking stylesheet on every page.
+      - text: GitHub
         href: https://github.com/JordanBeary/tributary
         aria-label: GitHub repository
   sidebar:
