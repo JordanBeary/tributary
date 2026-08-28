@@ -14,5 +14,7 @@ Quarto site (Phase 7, D12): profile, resume, case study, embedded dashboards.
   after the human review pass).
 - First-release scope (D12): Phases 0–4 content only. ML and strategy pages
   are added after D11 ratifies and Phase 6 closes.
-- Home and resume pages contain `TODO(human)` markers — the positioning
-  statement and resume are the author's voice, not agent copy.
+- The resume page renders HTML and the downloadable PDF from one source
+  (`resume.qmd`, html + typst formats). Per D13 it names employers but
+  carries no performance KPIs and no personal contact identifiers; the
+  full-KPI resume stays off-repo.

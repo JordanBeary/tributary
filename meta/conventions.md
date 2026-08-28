@@ -24,7 +24,7 @@ Provenance: H (instructions 1–12 are the human's standing instruction set, res
 
 The confidentiality constraint extends explicitly to `meta/`:
 
-- The author's **employer is never named** in any committed file — including prompt-log entries, history narratives, and intervention quotes. Where source material names the employer, the committed version redacts it and marks the redaction in place: `[REDACTED: employer]`.
+- The author's **employer is never named** in any committed file — including prompt-log entries, history narratives, and intervention quotes. Where source material names the employer, the committed version redacts it and marks the redaction in place: `[REDACTED: employer]`. **One exception (D13, 2026-08-28):** the site's resume/profile artifacts (`site/resume.qmd` and the PDF rendered from it) may name the author's employers, with actual performance KPIs scrubbed; all other committed content, the case study included, remains employer-free.
 - **Sensitive identifiers** (cloud account ids, personal email addresses) are never committed. Committed documents use pointer language ("the account id in the AWS console"); real values live in `.env`, `~/.aws/credentials`, and other git-ignored locations.
 - Prompt-log entries are recorded **verbatim minus marked redactions** — this is the reconciliation of instruction 9 (verbatim prompts) with the confidentiality constraint.
 - Fictionalization of the scenario itself is preserved (the simulated marketplace is not the author's employer), but per instruction 5 the scenario goes **unnamed**: descriptive terms ("the simulated marketplace", "the exchange") or structured identifiers (`buyer_t2_004`), never invented company names.

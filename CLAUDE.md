@@ -20,7 +20,7 @@ At session start, state which phase and which design-doc sections govern the ses
 - Quality over development cost; prefer simplicity, robustness, maintainability.
 - No emojis anywhere in the repository.
 - No fictional names for hypothetical entities — descriptive terms ("the simulated marketplace", "the exchange") or structured identifiers (`buyer_t2_004`) only.
-- Never name the author's employer in any committed file, including `meta/` logs. Redactions are marked in place.
+- Never name the author's employer in any committed file, including `meta/` logs. Redactions are marked in place. Sole exception: the site's resume artifacts (`site/resume.qmd` + rendered PDF) may name employers with performance KPIs scrubbed (D13).
 - No sensitive identifiers (account ids, personal emails) in committed files — use pointer language; real values live in `.env` and `~/.aws/credentials`.
 - Comment code blocks that perform distinct functions.
 - Fix what looks off, even outside the current task, and log the fix.

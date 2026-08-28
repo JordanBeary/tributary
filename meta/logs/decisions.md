@@ -388,6 +388,18 @@ Both exceed the band's 0.95 ceiling. The design's exit criterion (F1 >= 0.9) is 
 
 **(c) Stack: Quarto rendering to a static site, published on GitHub Pages** (design 10.1's recommended option). The Astro/Next.js alternative buys a more designed feel at real maintenance cost — against instruction 10 (honesty over flash). Consistent with the 2026-08-20 directive, the site is a presentation layer of cacheable static artifacts; nothing on it computes. First deployment targets the default `github.io` address; the custom domain (Q1, still open) wires in via CNAME + DNS whenever purchased, blocking nothing.
 
+### D13 — Resume carve-out: employer names allowed in the site's resume artifacts; actual KPIs scrubbed
+
+*2026-08-28. Category: conventions amendment (conventions Section 2 redaction rule; design Section 10.2 resume page). Options presented by the agent after flagging the conflict between the committed resume and the redaction rule; **decided by the human in session ("My current employer [REDACTED: employer] is fine to present but scrub actual KPIs"), recorded as ratified**. Conventions Section 2 and the CLAUDE.md digest are amended in the same commit.*
+
+**(a) Employer naming is permitted in resume/profile artifacts only** — `site/resume.qmd` and the PDF rendered from it. The current employer was approved explicitly; the prior employer appears as on the author's public resume. Everything else committed — the case study, meta/ logs, narrative copy — remains employer-free, and the case study never claims any connection to the author's employer.
+
+**(b) Actual performance KPIs are scrubbed from the committed resume copy.** Revenue figures and growth, dollar and percentage outcomes, volume-and-rate metrics, and model performance numbers are replaced with qualitative statements; engineering-scale descriptions (e.g., record counts that describe infrastructure, not business performance) may remain. Rationale: the exposure is not the employer's name — it is real marketplace KPIs sitting one click from a case study that simulates the same industry with invented numbers. The author's full-KPI resume stays an off-repo document distributed directly.
+
+**(c) HTML and PDF stay in sync by construction**: one source (`site/resume.qmd`) renders both the page and the downloadable PDF (Typst), satisfying design 10.2's "keep both in sync" structurally rather than procedurally.
+
+**(d) No personal contact identifiers committed** (conventions Section 2 unchanged on this point): the site resume carries no phone number or email; contact routes through LinkedIn and GitHub.
+
 ## Q-series — Open questions (parked, non-blocking)
 
 | # | Question | Status |
