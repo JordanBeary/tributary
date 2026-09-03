@@ -1,70 +1,225 @@
 ---
 title: "How this was built"
-description: "A human directing AI agents, with the direction kept as an auditable record."
+description: "A human directing AI agents, with the direction kept as an auditable record — shown here, not linked."
 ---
 
 Tributary is two projects sharing one repository. The data science build is
-the visible one. The primary one is the working method: demonstrating that a
-human can direct AI agents to produce real, reviewable work — and keeping
-enough of a record that an outside evaluator can decompose who contributed
-what. The build is the demonstration payload; the method is the exhibit.
+the visible one. The primary one is the working method: a human directing AI
+agents to produce real, reviewable work, and keeping enough of a record that
+an outside evaluator can decompose who contributed what. This page shows the
+method in two parts. **The harness** is the reusable system: what an agent
+loads before it starts, what events force a record, how a decision is put to
+the human, and what closes a phase. **The records** are its outputs: who
+authored each commit, one business problem traced from the human's seed to
+the published number, one decision the human amended rather than ratified,
+and four prompts with what each one changed.
 
-That record is not this page's summary of itself — it is in the repository,
-in [meta/](https://github.com/JordanBeary/tributary/tree/main/meta), and it
-is the part of the project I would most want an evaluator to open.
+Every vignette below ends in a work-product consequence — a number on another
+page of this site, a file in the repository, or a rule that bound every later
+session. Nothing here is a description of the logging schema.
 
 ## The harness
 
-Agents in this repo do not start from a blank prompt. They start from a
-harness built to make them more effective than out-of-the-box:
+### How a phase runs
 
-- **A charter and standing instruction set** —
-  [twelve working agreements](https://github.com/JordanBeary/tributary/blob/main/meta/conventions.md)
-  fixed at the start (quality over development cost, no invented company
-  names, honesty over flash, comment the code, index the repo for agents)
-  plus a mandatory trigger table: *this* event requires *that* record, every
-  session.
-- **A knowledge graph** —
-  [a machine-readable index](https://github.com/JordanBeary/tributary/blob/main/meta/graph/graph.yaml)
-  of every document, package, silo, phase, and decision, validated in CI on
-  every push. Agents load it at session start and navigate the repo cheaply
-  instead of re-discovering it.
-- **A design document as the seed** — the
-  [full build design](https://github.com/JordanBeary/tributary/blob/main/docs/design.md)
-  was written first and is kept alive: every change to it cites the decision
-  or intervention that caused it, in its changelog.
+```{mermaid}
+%%| fig-cap: "The operating loop every session runs under (meta/conventions.md Section 3; meta/charter.md Section 2). Agents propose; the human ratifies, amends, or rejects; a phase closes only when its records are current."
+flowchart TD
+  S["Session start<br/>CLAUDE.md auto-loads; the agent reads the conventions and the knowledge graph,<br/>then states which phase and design sections govern the session"] --> W["Work under the twelve standing agreements"]
+  W --> T{"Trigger table fires?"}
+  T -- "human corrects a misread" --> INT["interventions.md entry, classified"]
+  T -- "choice between real alternatives" --> DEC["decisions.md entry"]
+  T -- "a prompt shaped an artifact" --> PR["prompts.md candidate, verbatim minus marked redactions"]
+  T -- "repo structure changed" --> G["graph.yaml diff in the same commit"]
+  T -- "design doc changed" --> CL["design.md changelog row citing the trigger id"]
+  INT & DEC & PR & G & CL --> E["Session end: the agent drafts candidate records<br/>as explicit asks: what was decided, the question, consequences, recommendation"]
+  E --> R{"Human"}
+  R -- "accept" --> C["Commit with a Provenance trailer: H, HD, or A"]
+  R -- "amend" --> W
+  R -- "reject" --> X["Record kept and marked rejected"]
+  C --> GATE{"Phase gate"}
+  GATE -- "local exit criteria met AND logs current, graph validates, provenance recorded" --> NEXT["Handoff note for the next phase"]
+  GATE -- "not met" --> W
+  classDef human fill:#f1e6d4,stroke:#8a5a2b,color:#1f2933;
+  class R,GATE human;
+```
+
+Agents in this repository do not start from a blank prompt. `CLAUDE.md` is
+auto-loaded and points at a read-first list: the
+[twelve working agreements](https://github.com/JordanBeary/tributary/blob/main/meta/conventions.md)
+(quality over development cost, no invented company names, honesty over
+flash, comment the code, index the repository for agents), the
+[knowledge graph](https://github.com/JordanBeary/tributary/blob/main/meta/graph/graph.yaml)
+that indexes every document, package, silo and phase and is validated in CI on
+every push, and the
+[design document](https://github.com/JordanBeary/tributary/blob/main/docs/design.md)
+that seeded the build and is kept alive by a changelog in which every row
+cites the decision or intervention that caused it.
+
+### The trigger table
+
+The rule that keeps the record honest is mechanical: certain events during
+work *require* a record, and the session does not end until the candidates
+are drafted for the human to accept, edit, or reject.
+
+| Event during work | Required record |
+| --- | --- |
+| The human corrects an agent misunderstanding of the design doc | `interventions.md` entry, with a classification (misread, ambiguity, overrule, omission, en-route fix) |
+| The design doc changes for any reason | `design.md` changelog row citing an intervention or decision id |
+| A choice is made between real alternatives | `decisions.md` entry |
+| Repository structure changes | `graph.yaml` diff in the same commit |
+| A prompt materially shaped an artifact | `prompts.md` candidate, verbatim minus marked redactions |
+| Something off-topic is found and fixed | `interventions.md` entry flagged "en-route fix" |
+
+### How a decision is put to the human
+
+Early in Phase 1 the agent ended a session with "Pending your ratification:
+C10, C15, C16, C17" and the human had to ask what was actually being
+requested. The correction (intervention INT-015) became the standing form for
+every decision request since, and it is the form the handoff notes for Phases
+4, 5 and 6 open with:
+
+1. one sentence stating what was decided and why;
+2. the concrete question, usually accept / amend / reject;
+3. what each answer entails downstream;
+4. the agent's recommendation.
+
+A bare list of ids is not a decision request. The consequence of that rule is
+visible on this page: the decision rendered in full below ends in an explicit
+ask, and the human's answer changed the work.
 
 ## The records
 
-- **Decision log** —
-  [an ADR series](https://github.com/JordanBeary/tributary/blob/main/meta/logs/decisions.md)
-  for every choice between real alternatives, from cloud naming to why the
-  auction linkage is deterministic SQL while the dedupe is probabilistic.
-  Agents propose; the human ratifies, amends, or rejects — and the log says
-  which happened.
-- **Intervention log** —
-  [agent errors and the corrections that fixed them](https://github.com/JordanBeary/tributary/blob/main/meta/logs/interventions.md),
-  classified. Kept deliberately: a record of only successes would be
-  advertising, not evidence.
-- **Prompt log** — the prompts that materially shaped artifacts, recorded
-  verbatim minus marked redactions.
-- **Per-commit provenance** — every commit carries a trailer classifying its
-  content: `H` (human-authored), `HD` (human-directed), `A` (agent-executed),
-  per the [provenance spec](https://github.com/JordanBeary/tributary/blob/main/meta/provenance.md).
-  `git log` itself is the contribution ledger.
+### Who authored what: provenance by phase
 
-## The discipline that makes it real
+Every commit carries a trailer classifying its content: `H` (human-authored),
+`HD` (human-directed: the agent drafted from specific human instructions and
+the human edited and approved), or `A` (agent-drafted, human-reviewed). The
+chart is generated from `git log` by a
+[script in the repository](https://github.com/JordanBeary/tributary/blob/main/meta/tools/provenance_by_phase.py),
+so it cannot drift from the commits.
 
-A phase is not done when the code works. It is done when the logs are
-current, the graph validates, and provenance is recorded — that global exit
-criterion gates every phase alongside its technical one. Several phases
-closed only after a ratification round in which proposed decisions were
-accepted, amended, or sent back.
+![Commits per phase by provenance level, generated from commit trailers.](../assets/img/provenance_by_phase.svg){fig-alt="Horizontal stacked bars, one per project phase, showing counts of human-directed and agent-drafted commits; no bar contains a human-authored segment."}
 
-Two working rules worth naming because they are easy to fake and expensive to
-keep: numbers over adjectives (the ER band was *tuned down* to 0.8–0.9 when
-early versions were suspiciously clean, and the uplift experiment is reported
-as underpowered because it is), and fictionalization without fictional names
-(the simulated marketplace resembles the real world's mechanics but names no
-company and reuses no proprietary numbers — every statistic traces to a
-public dataset or a declared assumption).
+Read it plainly: **no commit is `H`**. The human's authored contribution
+enters through the `HD` commits — the prompts, the ratification text, and on
+two occasions the author's own industry data — rather than through commits of
+the human's own. That is an honest description of how a director works with
+agents, and the record says so rather than leaving a reader to infer it. Of
+52 commits, 29 are `HD`, 19 are `A`, and 4 predate the harness; 21 carry a
+`Directs:` trailer naming the prompt that produced them. Phase 1 (the
+simulation engine) is the most human-directed phase; the Phase 7 site
+performance passes were agent work.
+
+### One business problem, end to end
+
+The question the marketplace could not answer before unification: how many
+distinct consumers do we actually have, and what does buying the same
+consumer twice cost? The chain below is every record on the way to the
+published answer, in order. It is rendered from the
+[interaction ledger](https://github.com/JordanBeary/tributary/blob/main/meta/logs/ledger.md),
+a small index that links existing records rather than restating them.
+
+{{< include _includes/chain_identity.qmd >}}
+
+What the chain shows. The human seeded the idea ("impose/add unifying keys"
+on simulated data); the agent turned it into a scoring mechanism. When the
+agent's first entity-resolution run scored F1 0.976 and 0.997, it flagged
+its own result as too clean and recommended turning the difficulty up; the
+human did that, but not the way the agent proposed — the author supplied a
+one-year leads-per-contact distribution from industry experience and a
+channel-dependent drift mechanism, and moved the target band down to
+0.8–0.9. The next run landed at 0.879 and 0.873 on the default dials. When the
+resulting dashboards showed $40.0M of duplicate spend with no demand penalty,
+the human called that "troublesome" and supplied a second table; the engine
+learned buyer-side suppression, and the published figure became **$12.0M**
+(5.7% of revenue) still paid for consumers bought within the prior 30 days,
+against **635,579** resolved consumers behind 2.40M lead ids. Every number on
+the [findings page](dashboards.qmd) sits downstream of those two human
+inputs.
+
+### One decision the human amended
+
+Decision records are where the agent proposes and the human disposes. Most
+end "ratified as proposed"; the value of the log is the ones that do not.
+D8 is rendered below exactly as it stands in the repository, including the
+agent's recommendation and the human's amended answer. Its consequence is
+the entity-resolution scorecard on the [identity page](silo-problem.qmd) and
+the 0.8–0.9 band in the design document's exit criteria.
+
+::: {.callout-note collapse="false" title="D8, verbatim from meta/logs/decisions.md"}
+{{< include _includes/record_D8.qmd >}}
+:::
+
+### Four prompts and what each one changed
+
+The prompt log records prompts verbatim, minus marked redactions, when they
+materially shaped an artifact. These four are the ones a reader of the
+technical pages is standing on. Each is rendered from the log; the one-line
+annotation names the consequence.
+
+**P-005 — every data mutation made visible.** Consequence: the data-mutation
+ledger convention in `calibration_spec.md`, applied to every profiling
+notebook since; it immediately exposed a sentinel covering 4.3% of one
+dataset's rows.
+
+::: {.callout-tip collapse="true" title="P-005, verbatim from meta/logs/prompts.md"}
+{{< include _includes/record_P-005.qmd >}}
+:::
+
+**P-008 — where the never-applier prospects come from.** Consequence: the
+seven-channel acquisition layer with full-funnel unit economics, which is why
+the [attribution dashboard](dashboards.qmd) has a channel that runs below
+break-even and one that runs above 3x.
+
+::: {.callout-tip collapse="true" title="P-008, verbatim from meta/logs/prompts.md"}
+{{< include _includes/record_P-008.qmd >}}
+:::
+
+**P-010 — the author's repeat-application distribution.** Consequence: the
+simulated world's heavy-tailed repeat behaviour (mean 3.8 applications per
+person) and channel-dependent identity drift; the entity-resolution band
+moved to 0.8–0.9; the raw table never entered the repository (its fitted form
+did).
+
+::: {.callout-tip collapse="true" title="P-010, verbatim minus one marked redaction"}
+{{< include _includes/record_P-010.qmd >}}
+:::
+
+**P-011 — duplicates should win less and clear lower.** Consequence: buyer
+demand responds to recency, the funded flag carries a modest price gradient,
+overall sell-through moved from the invented ~60% to the source data's 49%,
+and every headline number on this site changed.
+
+::: {.callout-tip collapse="true" title="P-011, verbatim minus one marked redaction"}
+{{< include _includes/record_P-011.qmd >}}
+:::
+
+### The corrections, kept
+
+Sixteen interventions preceded this reframe, from the agent's fictional
+company name (overruled as meaningless) and its default AI co-author trailer
+(rejected in favour of the provenance trailers above) to the two that matter
+most for the science: the agent labelled a valid out-of-domain estimate as
+"wrong-sign" and the human reframed it (INT-013), and the agent then ratified
+a parameter together with its verification gate without one line of
+feasibility arithmetic — the gate falsified the parameter the same day and
+the falsified record was kept and superseded, not rewritten (INT-014). The
+seventeenth intervention is this page's reason for existing: after reading
+the first release of this site start to finish, the human recorded that it
+read like data engineering and that the method was asserted rather than
+shown. The reframe was run through the harness like any other correction,
+and its records are in the log.
+
+### Where the record lives
+
+The full record is in
+[meta/](https://github.com/JordanBeary/tributary/tree/main/meta): the
+[charter](https://github.com/JordanBeary/tributary/blob/main/meta/charter.md),
+the [decision log](https://github.com/JordanBeary/tributary/blob/main/meta/logs/decisions.md),
+the [intervention log](https://github.com/JordanBeary/tributary/blob/main/meta/logs/interventions.md),
+the [prompt log](https://github.com/JordanBeary/tributary/blob/main/meta/logs/prompts.md),
+the [interaction ledger](https://github.com/JordanBeary/tributary/blob/main/meta/logs/ledger.md),
+the [provenance ledger](https://github.com/JordanBeary/tributary/blob/main/meta/provenance.md),
+and the verbatim [session logs](https://github.com/JordanBeary/tributary/tree/main/meta/logs/sessions).
+It is the part of the project I would most want an evaluator to open.
