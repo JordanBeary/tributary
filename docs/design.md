@@ -1,24 +1,24 @@
 # Project "Tributary" — Portfolio Project Design Document
 
-**An end-to-end data science build: engineering fractured marketplace data into unified analytics and ML-driven auction optimization.**
+**A data science case study: a lead marketplace's business questions turned into decisions, backed by identity modeling scored against hidden ground truth, calibrated models, and an honestly read experiment, on data linked from three systems that share no key.**
 
-Author: Jordan Beary · Role: Data Science Project Manager / Lead DS · Status: v1.1 (changelog in Section 13) · Companion: calibration_spec.md v0.1
+Author: Jordan Beary · Role: Data Science Project Manager / Lead DS · Status: v1.8 (changelog in Section 13) · Companion: calibration_spec.md v0.13
 Provenance: HD — drafted by the agent from the author's design brief (prompt P-002 in `../meta/logs/prompts.md`); the silo-simulation-with-hidden-crosswalk concept is jointly attributable (author's seed, agent's elaboration)
 
 ---
 
 ## 1. Executive Summary
 
-Tributary is a self-contained portfolio project that simulates the data environment of a fictional two-sided lead-generation marketplace — referred to throughout as *the simulated marketplace* or *the exchange* — which sells personal-loan leads to lender networks through a sequential waterfall auction. This document is the seed of the project's *local* track; the project's primary objective, the working method itself, is defined in [../meta/charter.md](../meta/charter.md). The project demonstrates the full data science lifecycle:
+Tributary is a self-contained data science case study that simulates the data environment of a fictional two-sided lead-generation marketplace — referred to throughout as *the simulated marketplace* or *the exchange* — which sells personal-loan leads to lender networks through a sequential waterfall auction. This document is the seed of the project's *local* track; the project's primary objective, the working method itself, is defined in [../meta/charter.md](../meta/charter.md). The project demonstrates the full data science lifecycle:
 
-1. **Simulate** realistic operational data grounded in three public datasets (iPinYou RTB, LendingClub loans, Criteo Uplift), deliberately fractured into three incompatible data silos.
-2. **Store** each silo in a different cloud system (object storage, transactional Postgres, analytical warehouse), mirroring how silos actually arise in companies.
-3. **Unify** the silos with an entity-resolution and dimensional-modeling layer, quantifying the cost of the silo problem before and after.
-4. **Analyze** marketplace health: funnel economics, earnings-per-lead (EPL) by auction tier, buyer concentration, bid landscapes.
-5. **Optimize** with machine learning: conversion propensity, censored winning-price models, reserve-price simulation, uplift modeling, and a multi-armed bandit for waterfall ordering.
-6. **Publish** the entire project on a public personal website that doubles as a professional profile (resume, positioning statement, case study, live dashboards).
+1. **Frame** the marketplace's business questions as decisions with a metric and a counterfactual: which channels earn their spend, what duplicate consumers cost, where reserve floors should sit, whom to message (`docs/problem_framing.md`).
+2. **Simulate** realistic operational data grounded in three public datasets (iPinYou RTB, LendingClub loans, Criteo Uplift), deliberately fractured into three incompatible data silos — each stored in a different cloud system (object storage, transactional Postgres, analytical warehouse), mirroring how silos arise in companies — so the identity problem is real and scorable.
+3. **Link** the silos with identity modeling (probabilistic where identity is fuzzy, deterministic where an exact key exists, clustered at a stated operating point) and wide analytical marts, scoring every linkage claim against the hidden crosswalk.
+4. **Analyze** marketplace health through the unified view: funnel economics, EPL by tier and credit band, duplicate-consumer cost in dollars, channel ROAS through to auction revenue.
+5. **Optimize** with models and experiments: calibrated sale propensity, a censored winning-price landscape, counterfactual reserve-floor optimization validated by engine re-run, uplift modeling on a randomized holdout; the bandit and off-policy evaluation as stretch items.
+6. **Recommend and publish**: a strategy memo for the simulated executive team with expected value, uncertainty, risks, and a test-first rollout; the case study published as a static site whose infrastructure (three cloud systems on free tiers) is presented as how the lab was built, linked from the author's separately maintained portfolio site (the profile and resume live there, not here).
 
-Total cash cost target: **under $5/month** during development, ~$15/year steady-state (domain name only), by designing around cloud free tiers.
+Total cash cost target: **under $5/month** during development, and effectively $0 at steady state (a personal domain, if bought, is a portfolio-site cost, not a case-study cost), by designing around cloud free tiers.
 
 > **Confidentiality note:** Because this project is public, everything is fictionalized. The simulated marketplace is not your employer; all volumes, tier structures, buyer identifiers, prices, and problem statements are invented or derived from public datasets. Do not reuse proprietary numbers, internal system names, or verbatim descriptions of your employer's auction mechanics. The scenario should be *inspired by* the industry, not a copy of your day job. Per the no-fictional-names convention, the marketplace is deliberately unnamed; simulated buyers use structured identifiers (e.g. `buyer_t2_004`).
 
@@ -47,7 +47,7 @@ The pain: no shared key, three grains, three timezones, duplicate consumers, and
 The simulator injects **parameterized, realistic defects** so the unification work is genuinely hard and measurable:
 
 - **Incompatible keys:** Auction silo uses `lead_uuid` (UUIDv4). CRM uses `lead_id` (integer sequence) + `email_sha256`. Marketing uses `contact_id` (MD5 of lowercased email) + campaign IDs. No silo contains another silo's key.
-- **Duplicate consumers (~8%):** the same person applies multiple times with slightly different data (nickname vs. legal name, typo'd email, new phone) — echoing real duplicate-flooding problems in lead marketplaces.
+- **Repeat applicants with drifting identities (C18, supersedes the original ~8% one-shot duplicate rate):** applications per person follow a fitted heavy-tailed distribution (mean 3.8, 100+ tail; `simulation/params/repeat_applications.json`), and identity drifts between returns at a channel-dependent hazard (new phone, new email, name form, moved zip), so about 51% of applications arrive under a drifted variant — the duplicate-flooding problem real lead marketplaces face, at a difficulty tuned to land ER F1 in 0.8–0.9 (D8).
 - **Orphans (~5%):** auction events with no CRM record (data loss during a fictional "migration"), marketing contacts who never converted to leads.
 - **Grain mismatches:** auction silo is event-grain (one row per bid), CRM is entity-grain (one row per lead, mutable/overwritten), marketing is message-grain.
 - **Timezone chaos:** auction logs in UTC, CRM in US/Pacific naive timestamps, marketing exports in US/Eastern.
@@ -55,7 +55,7 @@ The simulator injects **parameterized, realistic defects** so the unification wo
 
 ### 2.4 The hidden ground truth (your evaluation trick)
 
-The simulator generates every consumer with a true `consumer_key`, then **strips it from all three silos** and saves it to a private crosswalk file that never enters the cloud environment. Entity-resolution accuracy (precision/recall of matched identities) is later scored against this crosswalk. This is the single most impressive artifact of the project: *you can prove your silo unification worked, with numbers.*
+The simulator generates every consumer with a true `consumer_key`, then **strips it from all three silos** and saves it to a private crosswalk file that never enters the cloud environment. Entity-resolution accuracy (precision/recall of matched identities) is later scored against this crosswalk. This is what makes the identity layer a measured model rather than a claim: every downstream finding inherits a known linkage error, and the case study shows how that error propagates into a decision.
 
 ---
 
@@ -136,7 +136,7 @@ Design choices, and why:
 
 - **Three genuinely different systems** is the point — the silo problem must be *architecturally real*, not just three folders. Object store + OLTP database + cloud warehouse is the canonical trio.
 - **DuckDB as the local unification engine.** DuckDB reads S3 Parquet directly (`httpfs`), attaches Postgres directly (`postgres` extension), and reads local exports from BigQuery. You can develop the entire dbt project locally against real cloud silos for $0 compute, then run "production" transforms in BigQuery.
-- **dbt** structures the transformation story recruiters recognize: `staging` (per-silo cleaning, timezone normalization, semantic alignment) → `intermediate` (entity resolution outputs) → `marts` (star schema: `fct_auction_events`, `fct_lead_sales`, `fct_messages`, `dim_consumer`, `dim_buyer`, `dim_campaign`).
+- **dbt** structures a transformation structure reviewers recognize: `staging` (per-silo cleaning, timezone normalization, semantic alignment) → `intermediate` (entity resolution outputs) → `marts` (star schema: `fct_auction_events`, `fct_lead_sales`, `fct_messages`, `dim_consumer`, `dim_buyer`, `dim_campaign`).
 - **Splink** (open-source probabilistic record linkage, runs on DuckDB) does the entity resolution — blocking rules on email hash/phone/name+zip, Fellegi-Sunter model, match probability thresholds. Scored against the hidden crosswalk.
 
 ### 4.2 Alternative: all-AWS variant (if you want a pure-AWS story)
@@ -210,9 +210,9 @@ For the heavier ML phases you can rent an EC2 spot instance, and VS Code's **Rem
 
 ### 6.3 Pattern C — Dev Containers / GitHub Codespaces (reproducibility flex)
 
-Ship a `.devcontainer/devcontainer.json` (Python version, DuckDB, dbt, Splink pre-installed). Anyone — including an interviewer — can open the repo in GitHub Codespaces and run your pipeline in one click. Codespaces has a meaningful free monthly allowance for personal accounts.
+Ship a `.devcontainer/devcontainer.json` (Python version, DuckDB, dbt, Splink pre-installed). Anyone — including an outside reader — can open the repo in GitHub Codespaces and run your pipeline in one click. Codespaces has a meaningful free monthly allowance for personal accounts.
 
-### 6.4 Secrets & security hygiene (mention this on the site; recruiters notice)
+### 6.4 Secrets & security hygiene (mention this on the site; reviewers notice)
 
 - Least-privilege IAM: one user/role per silo, read-only where possible.
 - No credentials in git — `.env` + `.gitignore`, plus a committed `.env.example`.
@@ -221,9 +221,9 @@ Ship a `.devcontainer/devcontainer.json` (Python version, DuckDB, dbt, Splink pr
 
 ---
 
-## 7. Analytics Workstream (the "so what" of unification)
+## 7. Analytics Workstream (business questions first)
 
-Structure the analysis as **before vs. after unification** — this makes the silo problem visceral.
+Structure the analysis as decisions, not as before/after plumbing: each dashboard opens with the decision it informs (site: Findings page), and the before/after silo audit closes the sequence as the evidence that no single system could have produced the findings. The nine audit questions (`docs/silo_audit.md` Section 2) remain the checklist.
 
 ### 7.1 Before: what each silo can (and can't) answer alone
 - Auction silo: sell-through rate and EPL by tier — but can't segment by consumer credit profile (that's in the CRM).
@@ -236,11 +236,14 @@ Structure the analysis as **before vs. after unification** — this makes the si
 - **Scorecard vs. hidden crosswalk:** precision, recall, F1 of consumer matching; duplicate-cluster purity; orphan detection rate.
 - Reconciliation stats: % of auction events joinable to a consumer before ER (should be ~0%) vs. after (target >95%); revenue attributable to marketing before vs. after.
 
-### 7.3 After: unified marketplace analytics
+### 7.3 After: unified marketplace analytics, ordered by the decision each informs
+- Duplicate-consumer cost quantified in dollars, and the identity count behind it (how many consumers, at what linkage error).
+- Marketing → revenue attribution: campaign and channel ROI measured through to auction sale price, only possible post-unification.
+- The uplift holdout: nurture lift read at its actual power; targeting evaluated on ranking (Qini), not on the pooled level.
+- EPL by tier × credit band; buyer concentration (HHI) by tier.
 - Full-funnel: impressions → applications → auction offered → sold → (simulated) funded, with drop-off economics.
-- EPL by tier × credit band; buyer concentration (HHI) by tier; duplicate-consumer cost quantified in dollars.
-- Marketing → revenue attribution: campaign ROI measured through to auction sale price, only possible post-unification.
-- Deliverables: 4–6 static interactive dashboards (Plotly HTML) embedded on the website.
+- Before vs. after unification: the silo audit as the closing evidence that no single system could have produced the findings above (the framing that opened this section in v1.0).
+- Deliverables: 4–6 static interactive dashboards (Plotly HTML) embedded on the website, each opening with the decision it informs.
 
 ## 8. ML Optimization Workstream
 
@@ -257,7 +260,9 @@ Ordered by increasing sophistication; each model gets a one-page model card on t
 
 The censoring in #2 and the OPE in #6 mirror genuinely hard problems in auction data science — they signal senior-level judgment far more than another CTR model.
 
-Strategy deliverable: a **3-page "Optimization Strategy Memo"** written for the marketplace's (simulated) exec team — expected EPL lift, risk register, rollout/gating plan, and what you'd A/B test first. This is the artifact that shows DS *management*, not just modeling.
+Realized (Phase 5, D11): model 3 was built as an exact counterfactual replay of logged bids (every bid is logged, sub-reserve included) rather than a simulation over the model-2 landscape, with hot-deck imputation for tiers never reached; Phase 6 removes the imputation by re-running the engine at the recommended schedule (`models/validate_floors.py`, D18) and adds a bid-shading stress test. The natural follow-on is a segment-level (tier × FICO band × recency) schedule seeded from the model-2 landscape, which the replay machinery already stratifies on.
+
+Strategy deliverable: a **3-page "Optimization Strategy Memo"** written for the marketplace's (simulated) exec team — expected EPL lift, risk register, rollout/gating plan, and what you'd A/B test first. This is the artifact that shows DS *management*, not just modeling. Written as `models/strategy_memo.md` (drafted 2026-09-01 as interim; final on the D18 seed band, ratified 2026-09-02).
 
 ---
 
@@ -275,7 +280,7 @@ Assumes ~8–10 focused hours/week; ~14 weeks total. Phases gate on exit criteri
 | 4 | 2 | Analytics | Wide denormalized marts (event/lead/contact grain, D10/P-009); 4–6 dashboards as static exports; before/after silo analysis | Every §7.1 "unanswerable" question now answered with a chart |
 | 5 | 3 | ML models 1–4 | Trained models + model cards; evaluation scripts with static reports (D11) | Beats naive baselines; calibration & uplift Qini curves documented |
 | 6 | 1–2 | Optimization & strategy | Floor-price simulation; bandit experiment; Strategy Memo | Simulated EPL lift quantified with uncertainty bands |
-| 7 | 2 | Website & launch | Site live: profile, resume, case study, dashboards, repo | Domain live; Lighthouse ≥ 90; case study reviewed by 2 peers |
+| 7 | 2 | Website & launch | Case-study site live: overview, findings, models and experiments, strategy memo, identity modeling, how this was built, appendix, run it yourself; linked from the author's portfolio site (D15) | Case study reachable from the portfolio site; Lighthouse ≥ 90; case study reviewed by 2 peers; every page opens with the decision it informs (D14) |
 
 **Global exit criterion (every phase, in addition to the table above):** a phase is not done until `meta/logs/` is current for the phase, `meta/graph/graph.yaml` validates, and provenance is recorded for the phase's artifacts. See [../meta/charter.md](../meta/charter.md) Section 2.
 
@@ -297,26 +302,26 @@ Assumes ~8–10 focused hours/week; ~14 weeks total. Phases gate on exit criteri
 
 - **Recommended: Quarto** — Markdown + rendered Jupyter notebooks → static site; publishes to **GitHub Pages** free; DS-native and low-maintenance. (Alternative: Astro/Next.js on Vercel or Netlify free tiers if you want a more designed feel.)
 - Interactive charts: export Plotly figures as self-contained HTML and embed — interactivity with zero servers. If you want one *live* app (e.g., the bandit simulator), Streamlit Community Cloud hosts it free.
-- Custom domain: ~$10–15/year (the project's only mandatory recurring cost). Point it at GitHub Pages/Vercel.
+- Custom domain: none required for the case study. A personal domain, if bought, is configured on the author's portfolio user site and, per GitHub's documented behavior, applies to this project site too (verify at setup). Q1 transferred to the portfolio repository by D15.
 
 ### 10.2 Site architecture
 
 ```
-yourname.com
-├── /            Home: positioning statement ("cover letter" voice) —
-│                who you are, how you create value, 3 proof points
-├── /resume      HTML resume + downloadable PDF (keep both in sync)
-├── /tributary   The case study (the main event)
-│   ├── Overview: problem → architecture diagram → results in 60 seconds
-│   ├── The Silo Problem: before/after, ER scorecard
-│   ├── Cost engineering: the $3/month architecture + 100× scale analysis
-│   ├── Dashboards (embedded)
-│   ├── ML & Strategy Memo
-│   ├── "How this was built": the human-directs-agents working method,
-│   │       generated from meta/ (charter, interventions, provenance)
-│   └── "Run it yourself": Codespaces badge + repo link
-└── /writing     (optional) short posts: censored price modeling, FinOps for DS, etc.
+jordanbeary.github.io/tributary/     project site; the portfolio site at the root links here
+├── /            Case-study landing: one paragraph, links to the overview and to the author
+├── /resume      Redirect stub to the portfolio site's resume (kept so published links survive)
+└── /tributary   The case study
+    ├── Overview: four decisions, the problem-framing table, results in sixty seconds
+    ├── Findings: six dashboards ordered by the decision each informs
+    ├── Models and experiments: floors, send policy, lead valuation, lead decisioning
+    ├── Strategy memo: the exec recommendation with expected value, uncertainty, rollout
+    ├── Identity modeling: linkage choices, operating points, scorecard vs. hidden truth
+    ├── "How this was built": the human-directs-agents method, rendered from meta/
+    ├── Appendix: how the lab was built (architecture, the three systems, cost engineering)
+    └── "Run it yourself": Codespaces badge + repo link
 ```
+
+The home page (positioning statement in cover-letter voice), the resume (HTML + PDF from one source), the project index, and the optional writing section live in the author's portfolio repository (`JordanBeary/JordanBeary.github.io`), served at the root of the same github.io address. Nothing there duplicates the case study; it links here.
 
 ### 10.3 Case study writing guidance
 
@@ -364,7 +369,8 @@ Per-document versioning (`../meta/plan.md` Section 7): every change cites the in
 | v1.1 | 2026-08-03 | Fictional company name replaced with descriptive terms; confidentiality-note emoji removed; author placeholder resolved; example S3 path corrected to the real bucket; provenance front matter added; reframing sentence linking `meta/charter.md`; Phase 0.5 and the global exit criterion added to the roadmap; "How this was built" page added to the site plan; companion-version discipline adopted | INT-001, INT-003, INT-004, INT-007, INT-008; D1–D3 |
 | v1.2 | 2026-08-07 | Section 3.2: identity attributes described as synthetic data — the narrative names the data, not the generating library (ratification amendment to C13b) | C13, P-007 |
 | v1.3 | 2026-08-10 | Section 3.2 stage 4: acquisition-channel layer added — intent-laddered channel mix with full-funnel economics and a monthly spend ledger, making unified ROAS-by-channel computable end to end | C16, P-008 |
-| v1.7 | 2026-08-24 | Section 9 Phase 5 row: "evaluation notebooks" replaced by evaluation scripts with static reports (metrics JSON + static Plotly pages), matching the 2026-08-20 static-artifact site directive; model 2 realized via the row's survival framing with the Tobit retained as a documented specification test | D11 |
-| v1.6 | 2026-08-24 | Recency-dependent buyer demand added to the waterfall (recent repeat consumers win less and clear lower, calibrated from the author's industry duplicate-performance data) and the CRM funded flag gains a modest price gradient; overall sell-through moves from the invented ~60% to the source data's ~49% | C19, P-011 |
-| v1.5 | 2026-08-20 | Section 9 Phase 4 row: "star schema marts" replaced by wide denormalized marts at event/lead/contact grain, dashboards as static exports (the build as made) | D10, P-009 |
 | v1.4 | 2026-08-20 | Sections 2.3/3.3/9: repeat applications heavy-tailed per the author's industry data (mean ~3.8, 100+ tail) with channel-dependent identity drift replacing one-shot duplicate corruption; ER target band 0.8–0.9 in the Phase 3 exit row and risk register (supersedes 0.85–0.95 and the F1 >= 0.9 criterion); marketing volumes halved (fewer, heavier persons) | D8, C18, P-010 |
+| v1.5 | 2026-08-20 | Section 9 Phase 4 row: "star schema marts" replaced by wide denormalized marts at event/lead/contact grain, dashboards as static exports (the build as made) | D10, P-009 |
+| v1.6 | 2026-08-24 | Recency-dependent buyer demand added to the waterfall (recent repeat consumers win less and clear lower, calibrated from the author's industry duplicate-performance data) and the CRM funded flag gains a modest price gradient; overall sell-through moves from the invented ~60% to the source data's ~49% | C19, P-011 |
+| v1.7 | 2026-08-24 | Section 9 Phase 5 row: "evaluation notebooks" replaced by evaluation scripts with static reports (metrics JSON + static Plotly pages), matching the 2026-08-20 static-artifact site directive; model 2 realized via the row's survival framing with the Tobit retained as a documented specification test | D11 |
+| v1.8 | 2026-09-02 | Body aligned to the v1.0 tagline after INT-009's correction had reached only the headline: subtitle rewritten; Section 1 lifecycle reordered (frame, simulate, link, analyze, optimize, recommend and publish) with the storage step folded into simulation; Section 2.3 duplicate bullet updated to C18 (stale since v1.4 — that row claimed an amendment the text never received; en-route fix); Section 2.4 closing sentence reframed as error propagation; Section 7 retitled and 7.3 ordered decision-first with the before/after audit closing; Section 8 gains the realized replay note, the Phase 6 validation (D18) and the interim memo pointer; Section 9 Phase 7 row rewritten; Section 10.1 domain bullet and 10.2 tree rewritten with the profile, resume and writing pages moved to the portfolio repository; three "recruiter"/"interviewer" phrasings reworded; header stamp corrected from v1.1/spec v0.1 to v1.8/spec v0.13 (stale since v1.2, en-route fix); changelog rows put in ascending order | INT-017, D14, D15, D18; P-013 (conditional) |

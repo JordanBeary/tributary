@@ -25,27 +25,58 @@ nodes:
   - {id: phase5-handoff,  type: document, path: meta/logs/sessions/2026-08-20_phase5_handoff.md, title: "Phase 4 -> 5 handoff: session-start context for ML models"}
   - {id: phase6-handoff,  type: document, path: meta/logs/sessions/2026-08-24_phase6_handoff.md, title: "Phase 5 -> 6 handoff: session-start context for optimization + strategy memo"}
   - {id: graph-dir,       type: directory, path: meta/graph,                title: "This graph + validator"}
+  - {id: meta-tools,      type: directory, path: meta/tools,                title: "Harness tools: provenance ledger generator, interaction-ledger validator and renderer"}
+  - {id: ledger,          type: log-entry, path: meta/logs/ledger.yaml,     title: "Interaction ledger: per-business-problem chains of existing records (source of truth)"}
+  - {id: ledger-view,     type: document,  path: meta/logs/ledger.md,       title: "Interaction ledger rendered: Mermaid chains, step tables, open items (generated)"}
+  - {id: provenance-chart, type: document, path: meta/provenance_by_phase.svg, title: "Commits per phase by provenance level (generated from git trailers)"}
+  - {id: session-log-reframe, type: log-entry, path: meta/logs/sessions/2026-09-01_reframe_session.md, title: "Verbatim session log: 2026-08-31 three-reader review and 2026-09-01 four-unit reframe round"}
+  - {id: decision-packet, type: document,  path: meta/logs/sessions/2026-09-01_decision_requests.md, title: "Decision packet for the reframe: Q-A to Q-K in INT-015 form"}
+  - {id: fresh-eyes-note, type: log-entry, path: meta/logs/sessions/2026-08-31_fresh_eyes_note.md, title: "Fresh-eyes repository review of 2026-08-31 — the note attached to P-013 that triggered the reframe"}
+  - {id: architect-plan, type: document,  path: meta/logs/sessions/2026-09-01_architect_plan.md, title: "Architect plan for the 2026-09-01 reframe: synthesis, grouping, priorities, assignments, commit plan"}
 
   # ── Local track: documents ──
-  - {id: design-doc,      type: document, path: docs/design.md,             title: "Local seed: what to build (v1.1)"}
-  - {id: calibration-spec, type: document, path: docs/calibration_spec.md,  title: "Source datasets -> simulator parameters (v0.1)"}
-  - {id: project-guide,   type: document, path: project_guide.md,           title: "Local working companion: current state + guidance (v2.0)"}
+  - {id: design-doc,      type: document, path: docs/design.md,             title: "Local seed: what to build (version and companion in its header; changelog Section 13)"}
+  - {id: calibration-spec, type: document, path: docs/calibration_spec.md,  title: "Source datasets -> simulator parameters (version in its header; changelog Section 6)"}
+  - {id: project-guide,   type: document, path: project_guide.md,           title: "Local working companion: current state + guidance (version in its status line)"}
   - {id: silo-audit,      type: document, path: docs/silo_audit.md,         title: "Silo audit memo: as-deployed state, per-silo limits, cost receipts (Phase 2)"}
+  - {id: problem-framing, type: document,  path: docs/problem_framing.md,   title: "Problem-framing table: problem, decision, metric, counterfactual, data, method, artifact, status (D14)"}
+  - {id: experiment-readout, type: document, path: docs/experiment_readout.md, title: "Nurture experiment read-out: recomputed power arithmetic, decision rule, follow-up test design"}
   - {id: docs-img,        type: directory, path: docs/img,                  title: "Doc assets (budget screenshots)"}
+  - {id: analysis-profiling, type: directory, path: analysis/profiling,    title: "Calibration notebooks (fits + narrated EDA companions, INT-012); they write simulation/params"}
+  - {id: sim-params,      type: directory, path: simulation/params,         title: "Fitted parameter artifacts the simulator reads (A1); the only calibration inputs at run time"}
 
   # ── Local track: code and infrastructure ──
   - {id: simulation-pkg,  type: directory, path: simulation,                title: "Seeded generators + silo fracturing (stage contracts frozen)"}
   - {id: infra,           type: directory, path: infra,                     title: "Cloud setup scripts: bucket, IAM, budgets"}
   - {id: silos-dir,       type: directory, path: silos,                     title: "Silo loaders (Phase 2)"}
+  - {id: silo-loader-s3,  type: directory, path: silos/s3_lake,             title: "Auction-lake loader: Hive-partitioned Parquet sync to S3 (D5d)"}
+  - {id: silo-loader-crm, type: directory, path: silos/crm_postgres,        title: "CRM loader: trimmed columns, BYTEA hash, free-tier fit (D6a)"}
+  - {id: silo-loader-bq,  type: directory, path: silos/marketing_bq,        title: "Marketing loader + partition/cluster optimizer with the bytes-scanned receipt (D5c)"}
   - {id: warehouse,       type: directory, path: warehouse,                 title: "dbt project: staging -> ER -> marts (Phases 3-4)"}
   - {id: er-dir,          type: directory, path: er,                        title: "Splink pipeline + crosswalk scoring (Phase 3)"}
+  - {id: er-scorecard,    type: document,  path: er/scorecard.json,         title: "ER scorecard against the hidden crosswalk (link F1 0.879, dedupe 0.873; C19 run)"}
+  - {id: warehouse-staging, type: directory, path: warehouse/models/staging, title: "dbt staging: one model per silo table, naive-UTC convention (D7)"}
+  - {id: warehouse-intermediate, type: directory, path: warehouse/models/intermediate, title: "dbt spine: consumer entities + auction-consumer map over the ER tables (D9c)"}
   - {id: analysis,        type: directory, path: analysis,                  title: "Notebooks + dashboard exports (Phase 4)"}
   - {id: marts,           type: directory, path: warehouse/models/marts,    title: "Wide denormalized marts: event/lead/contact facts + consumer dim (Phase 4, D10)"}
   - {id: dashboards,      type: directory, path: analysis/dashboards,       title: "Static Plotly dashboards + aggregate JSON, built from the marts (Phase 4)"}
-  - {id: models-dir,      type: directory, path: models,                    title: "ML training scripts: feature contract, models 1-4 (Phase 5, D11)"}
+  - {id: models-dir,      type: directory, path: models,                    title: "ML training scripts: feature contract, models 1-4 (Phase 5, D11), floor validation runner and experiment power script (Phase 6, D18)"}
   - {id: models-cards,    type: directory, path: models/cards,              title: "One-page model cards for models 1-4 (Phase 5)"}
-  - {id: models-out,      type: directory, path: models/out,                title: "Model metrics JSON + static evaluation reports (Phase 5; boosters git-ignored)"}
-  - {id: site,            type: directory, path: site,                      title: "Quarto site: first release scaffolded, Phases 0-4 scope (Phase 7, D12)"}
+  - {id: models-out,      type: directory, path: models/out,                title: "Model metrics JSON + static evaluation reports (Phase 5), the Phase 6 floor-validation JSON/page (D18) and the experiment power JSON; boosters git-ignored"}
+  - {id: validate-floors, type: document,  path: models/validate_floors.py, title: "Phase 6 validation runner: deployed vs recommended floors, five seeds, bid-shading sweep (D18, ratified 2026-09-02)"}
+  - {id: m3-validation,   type: document,  path: models/out/m3_validation.json, title: "Floor-validation results: +2.98% lift (range +2.88..+3.15%), break-even shading ~0.19 — the Phase 6 exit measurement (D18)"}
+  - {id: experiment-power, type: document, path: models/experiment_power.py, title: "Emits the experiment power arithmetic cited by the read-out (models/out/experiment_power.json)"}
+  - {id: strategy-memo,   type: document,  path: models/strategy_memo.md,   title: "Optimization strategy memo (Phase 6 exit deliverable; final numbers from the D18 seed band)"}
+  - {id: derived-figures, type: document,  path: analysis/dashboards/derived_figures.py, title: "Emits every derived figure quoted on the site (analysis/dashboards/data/derived_figures.json)"}
+  - {id: model-1, type: model, title: "Model 1 — sale propensity: calibrated LightGBM + tier head (D11, ratified 2026-09-02)"}
+  - {id: model-2, type: model, title: "Model 2 — winning-price landscape: discrete-time survival x price head; Tobit kept as a failed specification test (D11, ratified)"}
+  - {id: model-3, type: model, title: "Model 3 — reserve-floor optimization: exact counterfactual replay + hot-deck imputation; engine-validated in Phase 6 (D11, D18, both ratified)"}
+  - {id: model-4, type: model, title: "Model 4 — nurture uplift: cross-fitted T-learner on the action space (D11, ratified)"}
+  - {id: site,            type: directory, path: site,                      title: "Quarto case-study site (Phase 7, D12); profile and resume moved to the portfolio repository JordanBeary.github.io (D15, pending)"}
+  - {id: site-tributary,  type: directory, path: site/tributary,            title: "Case-study pages (Quarto): overview, findings, identity, method, appendix, run-it; _includes/ generated by meta/tools"}
+  - {id: site-includes,   type: directory, path: site/tributary/_includes,  title: "Generated Quarto includes: ledger chain diagrams and verbatim record extracts (render_ledger.py)"}
+  - {id: site-models-page, type: document, path: site/tributary/models.qmd, title: "Models and experiments page (D11 ratified 2026-09-02; business-problem framing per INT-018)"}
+  - {id: site-memo-page,  type: document,  path: site/tributary/strategy-memo.qmd, title: "Strategy memo page, single-sourced from models/strategy_memo.md (D11 and D18 ratified)"}
   - {id: scripts,         type: directory, path: scripts,                   title: "Dataset download helpers"}
   - {id: tests-dir,       type: directory, path: tests,                     title: "Engine tests: Section 2 gates reproduced from artifacts alone"}
   - {id: devcontainer,    type: directory, path: .devcontainer,             title: "One-click reproducible environment"}
@@ -118,12 +149,76 @@ edges:
   - [models-out, depends-on, models-dir]
   - [tests-dir, depends-on, models-dir]
   - [site, implements, phase-7]
+  - [site-tributary, implements, phase-7]
+  - [site-tributary, depends-on, dashboards]
+  - [site-tributary, depends-on, er-scorecard]
+  - [site-tributary, depends-on, ledger-view]
+  - [site-tributary, depends-on, provenance-chart]
+  - [analysis-profiling, implements, phase-1]
+  - [sim-params, depends-on, analysis-profiling]
+  - [simulation-pkg, depends-on, sim-params]
+  - [silo-loader-s3, implements, phase-2]
+  - [silo-loader-crm, implements, phase-2]
+  - [silo-loader-bq, implements, phase-2]
+  - [silo-loader-s3, depends-on, simulation-pkg]
+  - [silo-loader-crm, depends-on, simulation-pkg]
+  - [silo-loader-bq, depends-on, simulation-pkg]
+  - [silo-loader-s3, documents, auction-lake]
+  - [silo-loader-crm, documents, crm-postgres]
+  - [silo-loader-bq, documents, marketing-bq]
+  - [warehouse-staging, implements, phase-3]
+  - [warehouse-intermediate, implements, phase-3]
+  - [warehouse-intermediate, depends-on, er-dir]
+  - [marts, depends-on, warehouse-intermediate]
+  - [er-scorecard, depends-on, er-dir]
+  - [er-scorecard, documents, phase-3]
+  - [model-1, implements, phase-5]
+  - [model-2, implements, phase-5]
+  - [model-3, implements, phase-5]
+  - [model-4, implements, phase-5]
+  - [model-1, depends-on, marts]
+  - [model-2, depends-on, marts]
+  - [model-3, depends-on, marts]
+  - [model-4, depends-on, marts]
+  - [models-cards, documents, model-1]
+  - [models-cards, documents, model-2]
+  - [models-cards, documents, model-3]
+  - [models-cards, documents, model-4]
+  - [models-out, documents, model-1]
+  - [models-out, documents, model-2]
+  - [models-out, documents, model-3]
+  - [models-out, documents, model-4]
+  - [validate-floors, implements, phase-6]
+  - [validate-floors, depends-on, simulation-pkg]
+  - [validate-floors, depends-on, model-3]
+  - [m3-validation, depends-on, validate-floors]
+  - [strategy-memo, implements, phase-6]
+  - [strategy-memo, depends-on, m3-validation]
+  - [strategy-memo, depends-on, models-cards]
+  - [experiment-power, depends-on, marts]
+  - [experiment-readout, depends-on, experiment-power]
+  - [experiment-readout, documents, model-4]
+  - [derived-figures, depends-on, marts]
+  - [problem-framing, documents, design-doc]
+  - [site-tributary, depends-on, problem-framing]
+  - [site-tributary, depends-on, derived-figures]
+  - [site-tributary, depends-on, experiment-readout]
+  - [site-includes, depends-on, ledger]
+  - [site-tributary, depends-on, site-includes]
+  - [site-models-page, implements, phase-7]
+  - [site-models-page, depends-on, models-out]
+  - [site-memo-page, implements, phase-7]
+  - [site-memo-page, depends-on, strategy-memo]
 
   # Calibration lineage
   - [ipinyou, calibrates, simulation-pkg]
   - [lendingclub, calibrates, simulation-pkg]
   - [criteo-uplift, calibrates, simulation-pkg]
   - [calibration-spec, documents, simulation-pkg]
+  - [calibration-spec, documents, analysis-profiling]
+  - [ipinyou, calibrates, analysis-profiling]
+  - [lendingclub, calibrates, analysis-profiling]
+  - [criteo-uplift, calibrates, analysis-profiling]
 
   # Silo lineage: loaders depend on the simulator; silos are documented by infra
   - [silos-dir, depends-on, simulation-pkg]
@@ -165,6 +260,21 @@ edges:
   - [session-log-founding, documents, design-doc]
   - [session-log-founding, documents, prompts]
   - [decisions, documents, project-guide]
+  - [meta-tools, documents, provenance]
+  - [meta-tools, documents, ledger]
+  - [provenance-chart, documents, provenance]
+  - [ledger, documents, decisions]
+  - [ledger, documents, interventions]
+  - [ledger, documents, prompts]
+  - [ledger-view, documents, ledger]
+  - [session-log-reframe, documents, phase-7]
+  - [session-log-reframe, documents, design-doc]
+  - [decision-packet, documents, phase-7]
+  - [fresh-eyes-note, documents, phase-7]
+  - [fresh-eyes-note, documents, prompts]
+  - [architect-plan, documents, phase-7]
+  - [architect-plan, documents, decisions]
+  - [session-log-reframe, documents, architect-plan]
 
   # Corrections (INT-001: fictional naming reversed across these artifacts)
   - [design-doc, corrected-by, interventions]
