@@ -50,6 +50,19 @@ Proposals to be validated or revised in the Phase 1 profiling notebooks.
 | C9 | iPinYou CTR-price elasticity: **valid estimate, non-transferable** to the lead marketplace (expanded record below) | Empirical −0.149 recorded in the artifact as a correct in-domain estimate; simulator uses a **declared elasticity of +1.0** log-price units per unit `q` — a full parameter override, sign and level | **Ratified 2026-08-07** with human reframing (INT-013); end-to-end QA gate added |
 | C10 | Winning-price distribution model: iPinYou's advertiser-standardized log prices deviate from lognormal by up to 24% pooled / 40% per advertiser at deciles 1–9 — the spec's original "lognormal + ±10% Q-Q gate" pair is unsatisfiable with its own model | Valuation noise drawn from the **empirical standardized log-price shape** (1000-point inverse-CDF table in the artifact, house style per A1/01); per-advertiser (mu, sigma) retained for location/scale; lognormal-adequacy measurements kept as a documented finding | **Ratified 2026-08-12**, accepted as proposed (all downstream calibration — C11, C12, the waterfall engine and its gates — was built on the empirical shape) |
 
+**Dispositions (C1–C10, one line per record; vocabulary: proposed / ratified-as-proposed / amended / rejected / superseded / pending):**
+
+- **Disposition:** C1 — **closed 2026-09-02** (decision packet Q-E, option 1): the declared scale is accepted for a simulated marketplace whose statistics are shapes from public data and declared levels; the engine is not re-run and no headline figure changes. The tier-1 mean sits near $255 against the $120 anchor and model 3 recommends raising the tier-1 floor further, so the strategy memo's price-scale caveat stands as the honest statement of the drift, and the relative claims (ROAS ordering, break-even bid shading 0.19) do not depend on the level. The watch item is off the open list.
+- **Disposition:** C2 — superseded by C19 (pipeline-level ~60% target); the engine-level fresh-pool gate stands
+- **Disposition:** C3 — superseded by C14, then by C18
+- **Disposition:** C4 — ratified-as-proposed (gates in use since Phase 1)
+- **Disposition:** C5 — ratified-as-proposed (declared; unchanged)
+- **Disposition:** C6 — amended by measurement 2026-08-04 (heterogeneity 7.04x, not 3-5x)
+- **Disposition:** C7 — superseded by C18 (one-shot corruption replaced by channel-hazard drift)
+- **Disposition:** C8 — ratified-as-proposed
+- **Disposition:** C9 — amended (INT-013), then superseded by C11; expanded record below
+- **Disposition:** C10 — ratified-as-proposed (2026-08-12)
+
 #### C9 — expanded record: iPinYou CTR-price elasticity, valid estimate, non-transferable
 
 *Ratified 2026-08-07. Human-drafted in a review session (as `D-007`, merged here with ids mapped); category: declared-assumption override; initiated by human decision, agent-assisted analysis. Cross-ref: INT-013 (the framing of this finding was itself corrected).*
@@ -75,6 +88,8 @@ Proposals to be validated or revised in the Phase 1 profiling notebooks.
 
 *2026-08-07. Category: declared-assumption revision + q-scale repair. Initiated by the C9 gate falsification (INT-013/INT-014); component selection by human decision, verification by agent harness. Supersedes C9's parameter values; C9's transferability rationale stands.*
 
+**Disposition:** ratified-as-proposed (human selected the components; verification by harness)
+
 **Finding (from the falsification diagnosis).** Three compounding causes kept lead quality out of realized prices: (1) the Section 1 quality score was nominally in [0,1] but practically squashed into 0.6–1.0 (mean 0.787, sd 0.164) — the logistic rescaling wasted the range; (2) the declared elasticity (+1.0) was too small relative to valuation noise (signal ratio ~0.18); (3) the pooled sigma (0.912) conflates between-vertical dispersion with within-auction dispersion, overstating the noise each tier's buyers exhibit.
 
 **Decision — the triple:**
@@ -95,6 +110,8 @@ Proposals to be validated or revised in the Phase 1 profiling notebooks.
 
 *2026-08-07. Category: realism mechanism, layered after the C11 repair per the human's standing direction ("it can't carry the gate but it's the mechanism real marketplaces actually exhibit"). Agent-selected strength from a gate-verified dose-response grid; floors recalibrated with the mechanism active.*
 
+**Disposition:** ratified-as-proposed (agent-selected strength; ratified with the Phase 1 close, 2026-08-12)
+
 **Mechanism.** Real buyers see quality signals and choose what to bid on. Each seated buyer's participation odds shift with lead quality: logit(p_seat) + kappa (q − 0.5). At kappa = 2.0 the odds swing is e^(±1) ≈ 2.7x across the quality range — substantial selection without the aggressive end of the grid.
 
 **Dose-response (harness, floors re-bisected per kappa, all gates passing at every point):**
@@ -114,6 +131,8 @@ Proposals to be validated or revised in the Phase 1 profiling notebooks.
 
 *2026-08-07. Category: engine semantics for `generate_consumers`, resolved while implementing the frozen stage contract. Proposed by the agent; **ratified same day (P-007)** — (a) and (c) as proposed, (b) with a terminology amendment. Alternatives were real in each case; the artifact and gates were the tiebreakers.*
 
+**Disposition:** amended — (a) and (c) as proposed, (b) terminology amended (P-007)
+
 **(a) `n_consumers` counts records, duplicates included.** The stage emits exactly `cfg.n_consumers` rows, of which ~`duplicate_rate` are duplicate records of another row's person (`consumer_key` shared, credit profile copied verbatim, identity corrupted per C7). Alternative rejected: n base persons plus 8% extra rows, which would inflate every downstream volume past the design's Section 3.3 table (1.5M records × 1.6 apps = 2.4M leads holds exactly under the chosen reading). Duplicate sources are drawn with replacement, so some persons carry 3+ records — duplicate flooding is not pairwise-only. *Ratified with domain confirmation (P-007): person-to-lead ratios are 1:many in real small-loan marketplaces because borrowers return for more.*
 
 **(b) Synthetic identity data: library as vocabulary, stage RNG as sampler.** Identity fields draw from frequency-weighted en_US name/street/city/domain vocabularies (and per-state zip ranges) through vectorized numpy sampling on the stage's seeded stream rather than per-row library calls. Rationale: single-seed determinism stays in the one RNG-stream family the pipeline already uses ([seed, stage]), and full scale runs in ~11 s instead of minutes. Frequency-weighted names are load-bearing for ER difficulty: common names collide across distinct persons, as in real CRM data. *Ratification amendment (P-007): the narrative term for these attributes is **synthetic identity data** — the `faker` package remains the vocabulary source in the implementation, but documents and site copy describe the data, not the library.*
@@ -126,6 +145,8 @@ Proposals to be validated or revised in the Phase 1 profiling notebooks.
 
 *2026-08-07. Category: arithmetic error in a backfilled assumption, found while implementing `generate_leads` against it. Supersedes C3's mix values; C3's target stands.*
 
+**Disposition:** ratified-as-proposed (arithmetic correction; ratified with the Phase 1 close)
+
 **The error.** C3 declares P(1)=0.75, P(2)=0.18, P(3)=0.07 "tuned so total leads ≈ 1.6× consumers" — but that mix has expectation 0.75 + 0.36 + 0.21 = **1.32**, which at full scale yields ~1.98M leads against the design Section 3.3 target of 2.4M. The mix never satisfied its own stated goal; the feasibility arithmetic was one line and was never run (the INT-014 lesson, caught on paper this time).
 
 **The correction.** P(1)=0.55, P(2)=0.30, P(3)=0.15 → mean exactly 1.60, so 1.5M records × 1.60 = 2.4M leads. The heavier reapplication tail is independently supported by the human's domain confirmation (P-007): person-to-lead is 1:many in real small-loan marketplaces because borrowers return for more. The 1–3 range from the frozen stage contract is unchanged.
@@ -133,6 +154,8 @@ Proposals to be validated or revised in the Phase 1 profiling notebooks.
 ### C15 — Marketing experiment structure: inverse construction, contact pool, ITT semantics
 
 *2026-08-10. Category: engine semantics for `generate_marketing`, resolved while implementing the stage against already-fixed application outcomes. Proposed by the agent; **ratified 2026-08-12**, accepted as proposed (the C16 channel layer, human-directed, was built on this structure).*
+
+**Disposition:** ratified-as-proposed (2026-08-12)
 
 **The structural problem.** The pipeline generates applications (leads) before marketing, so the stage cannot forward-simulate "treatment raises application probability" — outcomes already exist. And since every consumer record carries at least one lead, a pool of consumer contacts alone has conversion rate 1.0: no non-converters, no measurable uplift.
 
@@ -151,6 +174,8 @@ Proposals to be validated or revised in the Phase 1 profiling notebooks.
 ### C16 — Acquisition channels: declared full-funnel economics (human-directed, P-008)
 
 *2026-08-10. Category: marketing-silo realism extension, directed by the human (P-008): surface where the never-applier prospects come from via a natural channel mix with realistic per-channel conversion, KPIs, ROAS, and profitability — "PPC likely has low intent and conversion - organic has higher intent and conversion."*
+
+**Disposition:** ratified-as-proposed (human-directed structure, P-008; agent values)
 
 **Structure.** Every contact enters the pool through one of seven acquisition channels; intent drives the whole funnel. The declared table (`ACQ_CHANNELS` in `simulation/marketing.py`):
 
@@ -184,6 +209,8 @@ The spread is the point: an unprofitable channel (display), a thin one (paid sea
 
 *2026-08-10. Category: engine semantics for `fracture_into_silos`, resolved while implementing the Section 2.3 pathologies. Proposed by the agent; **ratified 2026-08-12 (P-009)**. Closes the five-stage engine.*
 
+**Disposition:** amended — ratified with a second rationale added by the human (P-009)
+
 **(a) Auction bid_request rows carry the offer payload** (state, loan amount, purpose, FICO band). Real lead auctions transmit the lead to buyers, and the feasibility argument is structural: by design no key survives between the auction silo and the CRM, so without the payload the two silos would be unlinkable *in principle* and the north-star question (marketing ROI through auction revenue) unanswerable. With it, auction↔CRM linkage is fuzzy-but-feasible (state + amount + submission-time proximity), which is the intended difficulty. *Ratification added a second rationale (P-009): from an OLAP perspective, wide event-grain fact rows carrying consumer attributes row-wise are the analytically preferred shape — a preference that also informs the Phase 4 mart design.*
 
 **(b) CRM ships as `leads.csv` + `schema.sql`** (DDL + copy instructions) rather than literal INSERT statements — 2.4M INSERTs would be a ~1 GB SQL file with no realism gain. The design's "CSV + SQL inserts" is read as data + loader.
@@ -203,6 +230,8 @@ The spread is the point: an unprofitable channel (display), a thin one (paid sea
 ### C18 — Heavy-tailed repeat applications with channel-dependent identity drift
 
 *2026-08-20. Category: engine amendment (consumers/leads/marketing stages), implementing the ratified D8 option (a). Human-directed: the repeat-application distribution and the drift-by-channel mechanism are the author's domain knowledge (P-010); implementation and dial values agent-proposed. Supersedes C14 (1-3 application mix) and C7's one-shot duplicate corruption; amends C16's assignment grain.*
+
+**Disposition:** ratified-as-proposed (implements the amended D8; human-supplied distribution, P-010)
 
 **(a) Applications per person are heavy-tailed, fitted from the author's industry data.** A one-year leads-per-contact table from the author's experience in personal-loan lead marketplaces (P-010; raw table git-ignored in `data/private/`, per the conventions Section 2 redaction rule) is distilled by `analysis/profiling/04_repeat_applications.py` into `simulation/params/repeat_applications.json`: a discrete power law with exponential cutoff (alpha 1.46, lambda 22.1, cap 150), mean 3.76 applications per person, with QA targets rounded to two significant figures. The committed artifact is the declared assumption; the raw histogram never enters the repository.
 
@@ -228,6 +257,7 @@ The spread is the point: an unprofitable channel (display), a thin one (paid sea
 ### D1 — Repository visibility: public, with git history rewrite
 
 - **Date:** 2026-08-03 · **Decider:** human · **Resolves:** Q2; plan Section 8 item 2
+- **Disposition:** amended — the plan's recommendation (a) was rejected; the human chose (b)
 - **Context:** The repo was public with the AWS account id and personal emails in committed history (INT-002). Options: (a) private until first publishable milestone (the plan's recommendation), (b) stay public and rewrite history to scrub the identifiers, (c) stay public as-is.
 - **Decision:** (b) — stay public; rewrite history with replace-text filters and force-push. The git author email remains in commit metadata as the author's public git identity, by acceptance.
 - **Consequence:** All commit hashes prior to the migration changed once. The redaction rule (`meta/conventions.md` Section 2) prevents recurrence.
@@ -235,18 +265,21 @@ The spread is the point: an unprofitable channel (display), a thin one (paid sea
 ### D2 — GCP project id: replaced
 
 - **Date:** 2026-08-03 · **Decider:** human · **Resolves:** plan Section 8 item 1 (project-id sub-decision)
+- **Disposition:** ratified-as-proposed (human chose "replace" between two options presented without a recommendation)
 - **Context:** The project id carried the fictional name and is immutable. Options: replace the project (new project, billing re-link, budget, re-auth; nothing to migrate while empty) or accept-and-document.
 - **Decision:** Replace now, while the dataset was empty. New project `tributary-jb`; billing linked; the existing account-wide $10 budget (50/80/100% thresholds) covers it without a new budget object; ADC quota project updated; old project deleted (30-day undelete window from 2026-08-03).
 
 ### D3 — Cloud resource names (supersedes B1, B2)
 
 - **Date:** 2026-08-03 · **Decider:** human · **Resolves:** plan Section 8 item 1
+- **Disposition:** ratified-as-proposed
 - **Context:** Bucket and dataset carried the fictional name; both were empty, so recreation was cheap (the window the plan identified). Naming options: plan's suggestion (short dataset name, project provides context) versus prefixing everything.
 - **Decision:** Plan's suggestion — S3 bucket `tributary-auction-lake-jb`, BigQuery dataset `marketing` (in project `tributary-jb`, per D2). Old bucket and dataset deleted after verification; IAM policy for the `tributary` user re-scoped to the new bucket (B5).
 
 ### D4 — iPinYou acquisition: Kaggle mirror, sampled days (resolves Q5)
 
 - **Date:** 2026-08-03 · **Decider:** human (source) + agent (sampling detail) · **Resolves:** Q5
+- **Disposition:** ratified-as-proposed (human supplied the source; agent the sampling)
 - **Context:** The academic mirror (data.computational-advertising.org) was unreachable; the human located the canonical `ipinyou.contest.dataset` tree mirrored on Kaggle (`lastsummer/ipinyou`, ~6.3 GB compressed). The calibration spec needs distribution shapes, not the full ~35 GB uncompressed corpus.
 - **Decision:** Download from the Kaggle mirror, sampled per day: season 2 (`training2nd`) gets a weekend day plus two weekdays (20130608, 20130610, 20130612); season 3 (`training3rd`) gets its weekend plus three weekdays (20131019–20131023, whose per-day files are much smaller). All four record types (bid/imp/clk/conv) per sampled day, plus README/checksums/lookup tables. ~1.5 GB compressed total. Encoded in `scripts/download_datasets.sh` so the sample is reproducible.
 - **Consequence:** If a profiling QA gate later shows the sample is unrepresentative (e.g., day-of-week price effects), widen the day list in the script — the fitting notebooks re-run unchanged.
@@ -254,6 +287,7 @@ The spread is the point: an unprofitable channel (display), a thin one (paid sea
 ### D5 — Silo deployment mechanics (Phase 2 load choices)
 
 - **Date:** 2026-08-13 · **Decider:** agent (proposed); **ratified by the human 2026-08-14**
+- **Disposition:** ratified-as-proposed (2026-08-14)
 - **Context:** Loading the fracture outputs into the three clouds surfaced choices the design leaves open. All are load-layer decisions: `simulation/` outputs and their tests are untouched.
 - **Decision:**
   - **(a) BigQuery timestamps load as `DATETIME`, not `TIMESTAMP`.** The marketing export carries naive US/Eastern wall-clock times (C17 timezone pathology). `TIMESTAMP` would stamp a UTC assumption onto them and silently "fix" the defect Phase 3 is supposed to confront; `DATETIME` stores the naive values as exported.
@@ -266,6 +300,7 @@ The spread is the point: an unprofitable channel (display), a thin one (paid sea
 ### D6 — CRM free-tier fit: measurement done, trim decision requested
 
 - **Date:** 2026-08-13 · **Decider:** human (requested; options below) · **Resolves:** C17 Phase 2 watch item
+- **Disposition:** ratified-as-proposed (recommended option (a) chosen 2026-08-14)
 - **Measurement (the C17 ask):** scale-0.01 probe on Neon (22,716 rows COPYed into a throwaway table, measured, dropped): 270.8 B/row heap+PK-index. Extrapolated to the full 2,279,540 rows: **~0.62 GB against the ~0.5 GB free tier** (~24% over, before any secondary index). Column weight: `email_sha256` as hex `CHAR(64)` is the fattest column (27.4% of data bytes); `street_address`+`city` total 13.3%; names 5.9%; phone 5.5%. The handoff's guess (street/city fattest) is falsified: dropping them alone projects ~0.55 GB — still over.
 - **Options:**
   - **(a) Trim + recode at load (recommended):** drop `street_address`/`city` (not in the C17e ER ladder of names/phones/zips) and store `email_sha256` as 32-byte `BYTEA` (loader hex-decodes in-stream; the generated CSV is untouched; staging can re-encode losslessly). Feasibility arithmetic: 0.617 − ~0.066 (street/city) − ~0.068 (hash recode) ≈ **0.48 GB projected, ~96% of quota** — viable but thin; Neon counts history/WAL toward storage, so set history retention to minimum and re-measure immediately after load. Fallback if it lands over: option (c).
@@ -278,6 +313,8 @@ The spread is the point: an unprofitable channel (display), a thin one (paid sea
 ### D7 — Warehouse staging wiring: silo access patterns and staging conventions
 
 *2026-08-20. Category: Phase 3 architecture, resolved while standing up the dbt staging layer. Proposed by the agent; **ratified 2026-08-20, accepted as recorded**.*
+
+**Disposition:** ratified-as-proposed (2026-08-20)
 
 **(a) Marketing silo reads from local Parquet exports** (`warehouse/export_marketing.py`, BigQuery Storage read into git-ignored `data/silo_exports/marketing/`), refreshed only when the silo itself is reloaded. Design 4.1 names this pattern ("DuckDB reads local exports from BigQuery"); the rejected alternatives were the DuckDB BigQuery community extension (an unvetted dependency in the critical path) and per-run live queries (dbt-duckdb has no BigQuery transport, and re-scanning a static silo every run buys nothing). Adds `google-cloud-bigquery-storage` to `[dev]`.
 
@@ -292,6 +329,8 @@ The spread is the point: an unprofitable channel (display), a thin one (paid sea
 ### D8 — ER difficulty: both tasks score above the design band (decision pending)
 
 *2026-08-20. Category: pathology calibration (C7/C17e watch item landing). Finding by the agent; decision is the human's per the standing rule ("tune until ER F1 lands in 0.85-0.95", C7) and INT-015.*
+
+**Disposition:** amended — option (a) as recommended, with the human's distribution, drift mechanism, and band 0.8-0.9 (P-010)
 
 **Finding.** First full Splink run over the staged silos, scored against the crosswalk:
 
@@ -314,6 +353,8 @@ Both exceed the band's 0.95 ceiling. The design's exit criterion (F1 >= 0.9) is 
 
 *2026-08-20. Category: Phase 3 unification architecture, resolved while completing the ER pipeline. Proposed by the agent; **ratified 2026-08-20, accepted as recorded**. Phase 3 closed with this ratification.*
 
+**Disposition:** ratified-as-proposed (2026-08-20)
+
 **(a) The auction-CRM linkage is deterministic SQL, not a Splink model** (`er/link_auction_crm.py`). The C17a payload (state, loan amount, purpose, FICO band) agrees exactly for 100% of true pairs, and the submission-to-auction lag is 0-540 s (shifted -3600 s inside the DST fall-back hour, which the window accommodates rather than repairs) -- with an exact composite key and a nine-minute window, nearest-to-center-in-time is the honest tool; a probabilistic model would only obscure that the residual failures are payload doppelgangers inside the window, which no model can separate. Measured: lead precision 0.995, non-orphan recall 0.998, orphan specificity 0.934.
 
 **(b) Consumer clusters are connected components over dedupe pairs at threshold 0.9** (`er/build_clusters.py`), where pairwise precision is 0.9998 -- transitive closure amplifies any false edge, so clustering runs at the high-precision operating point rather than the F1-optimal 0.5. The node universe is every CRM lead, so match-less leads form singleton entities. Measured: 636,164 clusters vs 623,470 true persons-with-CRM-presence, weighted purity 0.9998, 98.1% of persons unsplit.
@@ -325,6 +366,8 @@ Both exceed the band's 0.95 ceiling. The design's exit criterion (F1 >= 0.9) is 
 ### D10 — Phase 4 marts: wide facts over a star schema; stated operating points; dashboards as static exports
 
 *2026-08-20. Category: analytics-layer architecture (design Sections 7.3 and 9, Phase 4 row). Proposed by the agent under the human's standing P-009 preference. **Ratified 2026-08-24 ("Approve D10"), accepted as recorded — no amendments; the two 30-day windows and the unfiltered best-match contact stand as the operating points. Phase 4 is closed** (exit: all nine silo-audit questions answered with a chart, silo_audit Section 6; logs current; graph validates; provenance recorded). The C16 ROAS staleness note and the two C19-superseded findings are resolved per the C19 record.*
+
+**Disposition:** ratified-as-proposed (2026-08-24); two findings then superseded by C19
 
 **(a) Wide denormalized facts, not a star schema.** The design's Phase 4 row says "star schema marts"; P-009 (human, 2026-08-12) states the OLAP preference for event-grain rows carrying consumer attributes row-wise. The marts layer (`warehouse/models/marts/`) follows P-009: `fct_auction_events` (24.5M rows, 37 columns: every event hydrated with payload, consumer entity, CRM outcome, marketing acquisition), `fct_leads` (2.40M rows, 54 columns: one row per auctioned lead with the auction outcome, CRM record, marketing contact, last-touch campaign, and the consumer-entity sequence), `fct_marketing_contacts` (859k: contact attributes + message funnel + post-ER applications and revenue), `fct_channel_month` (84: the spend ledger joined to cohort revenue), and one dimension, `dim_consumer` (635,580 resolved persons). Dashboards read these tables only; no dashboard query joins more than one mart. Design Section 9 amended (v1.5) to say "wide denormalized marts" so the document matches the build.
 
@@ -341,6 +384,8 @@ Both exceed the band's 0.95 ceiling. The design's exit criterion (F1 >= 0.9) is 
 ### C19 — Recency-dependent buyer demand and price-dependent funding (human-directed, P-011)
 
 *2026-08-24. Category: engine amendment (leads, waterfall, fracture stages), directed by the human with calibration data: a duplicate-performance table from the author's industry experience (P-011; raw table git-ignored in `data/private/duplicate_performance.csv`, per the conventions Section 2 redaction rule). Supersedes C17d's uniform funded draw and C2's pipeline-level ~60% sell-through target; the engine-level C2 gate (fresh pool, censored 35-45%) is unchanged. **Ratified 2026-08-24, accepted as recorded** (including the level consequence, (c)); redeploy authorized in the same reply.*
+
+**Disposition:** ratified-as-proposed (human-directed, P-011; level consequence accepted)
 
 **The problem (found by the Phase 4 dashboards, D10).** Two D10 findings were flagged troublesome by the human: the funded rate was flat by construction, and duplicate-consumer sales carried no demand penalty — a buyer paid full price for a consumer it had bought days earlier. The human's data says otherwise: leads whose consumer returned within the lookback window win less and clear lower — same-day and last-7d repeats at ~0.48x the fresh win rate and ~0.53-0.56x the fresh price, 8-30d repeats at 0.70x / 0.75x, and higher purchase price should carry a modestly higher funded rate.
 
@@ -362,7 +407,11 @@ Both exceed the band's 0.95 ceiling. The design's exit criterion (F1 >= 0.9) is 
 
 ### D11 — Phase 5 models 1-4: feature contract, temporal split, survival-framed price landscape, replay-based floor optimization, power-matched uplift estimator
 
-*2026-08-24. Category: ML methodology (design Section 8, Section 9 Phase 5 row). Proposed by the agent; **ratification requested** (see the Phase 6 handoff for the concrete ask). All four models train on the D10 marts only; all evaluation artifacts are static exports per the 2026-08-20 site directive.*
+*2026-08-24. Category: ML methodology (design Section 8, Section 9 Phase 5 row). Proposed by the agent; **ratified 2026-09-02** (decision packet Q-A: "accept"), accepted as recorded, with a framing direction attached (see below). All four models train on the D10 marts only; all evaluation artifacts are static exports per the 2026-08-20 site directive.*
+
+**Disposition:** ratified-as-proposed (2026-09-02, decision packet Q-A); no methodological amendment
+
+**Direction attached to the ratification (verbatim).** "accept. But I want to push back and ask what the point of each model is - explain in detail the business problem attempting to solve." Consequence: each model card and the models page gain a business-problem framing — the decision the model serves, who makes it, what it costs to make badly, and what the model changes — ahead of the method (Local unit). Recorded as INT-018, the same family of correction as INT-017: the artifacts state method before purpose. Phase 5 closes with this ratification; the models page and the model cards publish, the strategy memo may cite the numbers, and the model nodes enter the knowledge graph.
 
 **(a) Evaluation scripts with static reports, not notebooks.** The design's Phase 5 row says "evaluation notebooks"; the build ships one self-contained script per model writing metrics JSON plus a static Plotly evaluation page (`models/out/`), in the dashboards' validated look. Rationale: the 2026-08-20 directive makes every presentation artifact a cacheable static export; scripts rerun under pytest-adjacent discipline and diff cleanly. Design Section 9 amended (v1.7) to match.
 
@@ -382,6 +431,10 @@ Both exceed the band's 0.95 ceiling. The design's exit criterion (F1 >= 0.9) is 
 
 *2026-08-28. Category: sequencing and presentation stack (design Section 9 risk register, Section 10). Scope decided by the human in session; stack is the design's own recommendation, accepted by the agent; **ratified 2026-08-28, accepted as recorded**. The companion prompt-log candidate (P-012) was rejected at the same review as not log-worthy; the `Directs: P-012` trailer on commit d3144f1 therefore points at no entry — this note is the authoritative record of that directive's disposition.*
 
+**Disposition:** ratified-as-proposed (2026-08-28); companion prompt candidate P-012 rejected; superseded on the publishing condition by D14 (2026-09-02, decision packet Q-J)
+
+**Publishing condition, updated 2026-09-02 (D14, decision packet Q-J).** This record's manual-dispatch condition — "until the human review pass" — is satisfied: the human's 2026-08-31 start-to-finish read was that pass, and it produced the reframe (INT-017, D14). On this point D12 is superseded by D14: publishing flips to on-push once the reframed site deploys and the human has read it once, via a workflow-trigger commit made after the deploy. Every other part of D12 stands.
+
 **(a) Phase 7 (website) starts now, ahead of Phase 6 and ahead of D11 ratification.** Sanctioned by the risk register's cut-line ("site ships after Phase 4 regardless"). Phase 6 and the D11 ratification remain open and resume after the first site release.
 
 **(b) First release scope: Phases 0–4 content only** — the silo story, the ER scorecard (D9 numbers), cost engineering, and the six Phase 4 dashboards as embedded static exports. ML and strategy pages are held until D11 is ratified and Phase 6 closes, so the public site never cites unratified numbers. This is the "publish incrementally" mitigation applied to the site itself.
@@ -390,7 +443,11 @@ Both exceed the band's 0.95 ceiling. The design's exit criterion (F1 >= 0.9) is 
 
 ### D13 — Resume carve-out: employer names allowed in the site's resume artifacts; actual KPIs scrubbed
 
+*Superseded by D15 (directed 2026-09-01, ratified 2026-09-02): the resume artifacts left the repository, the carve-out is retired, and the unqualified redaction rule applies again. The house rule (employers named on the resume only, KPIs scrubbed, no contact identifiers) continues in the portfolio repository's README.*
+
 *2026-08-28. Category: conventions amendment (conventions Section 2 redaction rule; design Section 10.2 resume page). Options presented by the agent after flagging the conflict between the committed resume and the redaction rule; **decided by the human in session ("My current employer [REDACTED: employer] is fine to present but scrub actual KPIs"), recorded as ratified**. Conventions Section 2 and the CLAUDE.md digest are amended in the same commit.*
+
+**Disposition:** ratified-as-proposed (2026-08-28); superseded by D15 (ratified 2026-09-02, Q-C)
 
 **(a) Employer naming is permitted in resume/profile artifacts only** — `site/resume.qmd` and the PDF rendered from it. The current employer was approved explicitly; the prior employer appears as on the author's public resume. Everything else committed — the case study, meta/ logs, narrative copy — remains employer-free, and the case study never claims any connection to the author's employer.
 
@@ -400,11 +457,113 @@ Both exceed the band's 0.95 ceiling. The design's exit criterion (F1 >= 0.9) is 
 
 **(d) No personal contact identifiers committed** (conventions Section 2 unchanged on this point): the site resume carries no phone number or email; contact routes through LinkedIn and GitHub.
 
+### D14 — Case study repositioned: business problems and decisions lead; unification is the enabling step; infrastructure demoted; the method rendered, not linked
+
+*2026-08-31 (human direction) / 2026-09-01 (plan) / 2026-09-02 (record finalized). Category: presentation and framing (design Sections 1, 7, 10; conventions instruction 9). Direction by the human (INT-017; verbatim below and in P-013, conditional); plan synthesized by agents in a three-reader review (2026-08-31) and a four-unit round (2026-09-01); **ratification pending** (decision packet Q-B). Cross-ref: INT-009 (same theme, tagline only), D12 (first-release mechanism unchanged), D11 (blocking dependency for the models page).*
+
+**Disposition:** ratified-as-proposed (2026-09-02, decision packet Q-B: "accept"); INT-017 classified `ambiguity` per the same answer.
+
+**The human's direction (verbatim, 2026-09-01; attached: the 2026-08-31 three-reader record; recorded here under the prompt-log bar as a decision-cited quotation, not a P-entry).** Later in the same session (2026-09-02, after the Local unit was cut off by an API rate limit): "continue".
+
+> Read all repositories and the attached markdown file thoroughly. We need to do another significant reframe. Create subagents to take ownership over the investigation and correction of these various project units. The subagents should have a narrow-focus - only investigating their assigned project unit.
+>
+> Project Architect/Manager subagent:
+> - Synthesize the information reported by the subagents.
+> - Critique the search and retrieval process
+> - Group the information or entire reports by:
+>   - Job Search / Resume / Portfolio: anything related to creating and publishing a data science portfolio for the purpose of career networking or job searching.
+>   - Local: Tributary case study: the data science project
+>   - Global: Human-Agent interaction
+> - Job Search / Resume / Portfolio: move all of those elements outside of the tributary case study+global track infrastructure.
+>
+> Tributary Data Scientist Expert (Local):
+> - Report your findings to the Project Architect/Manager
+> - You work with me on the data science elements and solve hypothetical business problems using data science, machine learning, analytics, business intelligence.
+>
+> Job Search / Resume / Portfolio subagent:
+> - Report to the Project Manager with all findings
+> - Your objective is to extract existing content related to job searching, resume building, portfolio page, and related threads and move them into a parent repository with logic subfolders.
+>
+> Human-Agent record keeper (Global):
+> - Report your findings to the Project Architect/Manager
+> - Your job is to record the interactions on the way to solving business problems using data science.
+> - Explore visual representations or structures.
+
+**(a) Thesis.** Tributary shows a data scientist and analytics manager turning a lead marketplace's business questions into decisions backed by identity modeling, calibrated models, and an honestly read experiment, and doing it by directing AI agents through a harness whose records are rendered on the page rather than linked; the three-silo cloud build is how the lab was made, not what the lab is for.
+
+**(b) Case-study spine.** Filenames and URLs unchanged; titles and order change. Sidebar: Overview (opens with the four decisions: channel spend, duplicate cost, floor policy, nurture targeting; problem-framing table; a results table with at least five business or model rows and one "why you can trust these numbers" row), Findings (`dashboards.qmd`, reordered decision-first with one decision line per section), Models and experiments (new, gated on D11), Strategy memo (new, gated on D11 and D18), Identity modeling (`silo-problem.qmd`, retitled and reordered), How this was built (`method.qmd`), Appendix: how the lab was built (`cost.qmd`, absorbing the architecture block and the silo systems table, cost content intact), Run it yourself (`run-it.qmd`). Confirmed by the Local unit as the final sidebar and applied to `site/_quarto.yml` on 2026-09-02 (only the `contents:` block edited); the navbar's single left entry reads "Case study" (Portfolio unit's choice over "Tributary: the case study", which duplicated the new site title, and "Overview", which duplicated the sidebar's first entry). The overview's problem-framing table is the seven-row site form of `docs/problem_framing.md` (eight rows); its two model rows and the models and memo links depend on D11. Full-site render on 2026-09-02: exit 0, ten pages.
+
+**(c) Method made visible.** `method.qmd` is rebuilt around artifacts generated from the logs: the phase lifecycle and trigger table (the harness), the provenance-by-phase chart from `meta/tools/provenance_by_phase.py`, the identity interaction chain from `meta/logs/ledger.yaml`, D8 rendered in full, four prompts (P-005, P-008, P-010, P-011) rendered verbatim with one-line annotations of what each produced, and the statement that no commit is `H` and why. Method-note callouts are placed in the technical pages where a record produced that page's headline number (text by the Global unit, placement by the Local unit).
+
+**(d) Blocking dependency and sequencing.** D11 precedes the models page and memo (D12b stands). The reframe ships as a sequence of gated commits on the local branch `reframe-2026-09-01`; nothing deploys until the parent site (D15) is live so no link dangles.
+
+**Options considered.** (i) Reframe copy only, keep the structure — rejected: the sidebar order and the results table are the message. (ii) Full reframe with all existing work retained and re-prioritized — chosen; nothing is deleted. (iii) Defer until Phase 6 closes — rejected: the published site misrepresents the author now.
+
+**(e) Decisions made executing this record (Local unit, 2026-09-01/02; recorded here so the disposition covers them).** Findings page order 04 identity, 05 attribution, 06 uplift, 03 auction, 02 funnel, 01 before/after, each opening with a "Decision this informs" line — the audit closes the page as evidence rather than opening it (alternatives: build order; revenue-first). Consumer count 635,579 everywhere on the site (the `dim_consumer` population every finding and model is computed over) with one footnote on the identity page for the scorecard's 636,164 clusters; D10's 635,580 stands as history. One footnote on the findings page for the funded-rate denominators (12.7% all sold; 13.3% excluding 55,328 sold orphans; 13.4% CRM-side); no numbers changed. The stale "about 8% duplicate consumers" replaced with the C18 facts (heavy-tailed repeats, mean 3.8, about 51% of applications on drifted variants) on the identity page and in design Section 2.3 — the v1.4 changelog had claimed an amendment the text never received (en-route fix). Identity page retitled "Identity modeling" with the operating-point trade stated in numbers (dedupe P 0.990 / R 0.781 at 0.5 versus P 0.9998 / R 0.764 at 0.9); the three-system table moved to the appendix. Every derived number on a page is emitted by `analysis/dashboards/derived_figures.py` or `models/experiment_power.py`; 154 page figures were cross-checked by script against their JSON sources on 2026-09-02, all matching. The strategy memo (`models/strategy_memo.md`) was drafted interim with its engine-re-run figures tagged pending D18 — tags removed once D18 ratified on 2026-09-02 — and its C1 caveat is a named subsection; the send-policy valuation uses the injected segment-5 effect and declares the per-message cost missing rather than assumed; the memo does not recommend cutting display on average ROAS and names the two missing pieces (maturity adjustment, spend variation) with a pre-registered decision rule. Model cards gained "Decision this informs" and "What we would do next" blocks; the model 4 docstring now describes the 2-fold cross-fitting the code performs; the mart comment reads 26.4M rows. Method-note callouts (text by the Global unit) placed on the identity, findings and models pages and on the overview, where the Local unit chose option A — the reframe itself (INT-017 / D14) — over the calibration-judgment vignette, because the overview is where a reader first meets the new order; the ledger chain diagrams stay on the method page and are not embedded on the technical pages in this round. `site/tools/prerender.sh` writes a one-line placeholder include when `models/strategy_memo.md` is absent, so a clone without the gated memo still renders.
+
+**Consequences.** `docs/design.md` v1.8 (subtitle, Section 1 lifecycle, Sections 2.3, 2.4, 7, 8, 9, 10; changelog row 2026-09-02) and `project_guide.md` v2.13 (landed 2026-09-02); the site edits above; `README.md` router refreshed; `meta/tools/` and `meta/logs/ledger.yaml` (Global); the 2026-08-31 and 2026-09-01 sessions logged as `sessions/2026-09-01_reframe_session.md`. Publishing condition: D12's manual dispatch "until the human review pass" — the 2026-08-31 read was that pass; whether to flip to publish-on-push after the reframe deploys was decision packet Q-J, **answered 2026-09-02: flip to publish-on-push after the reframe deploys and the human has read the new site once**. Mechanics, deliberately deferred: `.github/workflows/publish-site.yml` gains a `push` trigger on `main` in a commit made *after* that deploy — an eleventh commit containing only the trigger change (see the packet's commit-ordering constraints). The workflow is unchanged in this round, so publishing stays manual (`workflow_dispatch`) until then. Conventions Section 3 amendment (INT-015 form and the prompt-log bar): authorized by the human 2026-09-02 (decision packet Q-G) and applied the same day as `meta/conventions.md` v1.2, recorded under this decision as conventions Section 3 itself requires; P-013 accepted at the same answer and its conditional marker dropped. The repositioning is itself method evidence and is recorded as such (INT-017, this entry, the session log).
+
+### D15 — Portfolio concerns separated: profile and resume move to the author's user-site repository; Tributary keeps the case study and the harness
+
+*2026-09-01 (direction) / 2026-09-02 (record finalized). Category: repository and site structure (design Section 10.2; conventions Section 2 D13 carve-out; plan Section 4). Direction by the human (2026-09-01: the job-search, resume and portfolio elements move outside the case study and the global-track infrastructure); mechanics proposed by the Portfolio unit; **ratification pending** (decision packet Q-C).*
+
+**Disposition:** ratified-as-proposed (2026-09-02, decision packet Q-C: "accept"): the path `/Users/jordanbeary/JordanBeary.github.io` and the repository name stand; the `resume.pdf` 404 with the HTML redirect stub is accepted; private job-search material stays in the parent's git-ignored folders; the parent sits outside this harness and carries `Provenance:` trailers only. D13 is superseded accordingly and Q1 is transferred.
+
+**(a) Scope split.** Parent repository at `/Users/jordanbeary/JordanBeary.github.io` (GitHub user site, public, Quarto in `site/`), holding the profile home, the resume (HTML and PDF from one source), a project index, and a case-study page mapping resume claims to Tributary artifacts; private job-search material outside `site/` and git-ignored, or in a separate private repository. Tributary keeps `site/tributary/*` at its current URLs, the method page, and all of `meta/`. As built 2026-09-01 (Portfolio unit): local path `/Users/jordanbeary/JordanBeary.github.io` (a rename under Q-C is one `mv`); intended GitHub repository `JordanBeary/JordanBeary.github.io`, public, Pages source "GitHub Actions", not yet created and no remote configured (`git init` on `main`, files staged, no commit; the drafted first-commit message is kept untracked and git-ignored as `COMMIT_MSG.txt` so the human can `git commit -F` it); intended URLs `https://jordanbeary.github.io/` (home), `/resume.html`, `/resume.pdf`, `/projects/`, `/projects/tributary.html`. Tributary's eight-URL contract (root `index.html`, `resume.html`, and `tributary/{index,silo-problem,cost,dashboards,method,run-it}.html`) is unchanged; after deployment the root is a case-study landing, `resume.html` a redirect stub, and `resume.pdf` is no longer produced. Parent text that cites D11/D18 numbers (the reserve-floor proof point and the model rows of `projects/tributary.qmd`) is held out of the parent until those records ratify.
+
+**(b) What moves, what is replaced.** Moved (copied to the parent, removed from Tributary): `site/index.qmd` (profile), `site/resume.qmd` and its rendered outputs, the profile title/description/navbar entries of `site/_quarto.yml`, and the resume lines of `site/README.md`. Replaced inside Tributary: a one-paragraph case-study landing at `site/index.qmd` (title "Tributary", `sidebar: false`, links to the overview, the method page and the portfolio site), a redirect stub at `site/resume.qmd` (0-second `meta refresh` plus a canonical link to the portfolio resume; names no employer; the PDF is allowed to return 404 — Q-C), `site/_quarto.yml` title "Tributary", a description without the word "portfolio", a single navbar-left entry "Case study", an "About the author" link in the navbar and footer, three lines in `site/README.md` describing the stub, and a README author line. Created in the parent, all staged: `.gitignore` (written first), `README.md` (public/private rules, the D13 house rule, the site plan from design 10.2, links to the case study; cites D13 and D15 by id), the publish workflow (triggers on push to `main` and on manual dispatch; Tributary's stays dispatch-only), `site/_quarto.yml`, `site/index.qmd`, `site/resume.qmd` (byte-identical to Tributary f5ae88f), `custom.scss`, `styles.css` minus the dashboard-frame rule, `site/.gitignore`, `tools/postrender.sh`, a new initials favicon, `site/projects/index.qmd`, `site/projects/tributary.qmd`, and one tracked `README.md` each in `resume/`, `resume/private/`, `job-search/`, `templates/` (kept visible via negation rules while the folders' contents are ignored). The parent home's positioning paragraph was reordered to open "I am a data scientist and analytics manager" with the infrastructure sentence last; every fact of the original copy (commit 3144109, HD, the author's own) is kept, and the reorder is flagged for the human's read. Its proof point on the reserve-price recommendation says it "follows once its validation closes" without citing D11 or Phase 6 by id on the public page. `writing/` is not created until there is content.
+
+**(c) Consequences for the record.** D13's carve-out (employer names permitted in `site/resume.qmd`) is superseded: once the resume leaves, the unqualified redaction rule is restored in `meta/conventions.md` Section 2 and the `CLAUDE.md` digest, and D13 is annotated "superseded by D15"; the D13 house rule (employers named on the resume only, KPIs scrubbed, no contact identifiers) travels to the parent's README. Q1 (domain) transfers to the parent. The parent sits outside this harness and carries `Provenance:` trailers only, unless the human extends the harness (Q-C). `graph.yaml`'s `site` node title changes; no node is removed. The "career artifact" objective and recruiter-audience wording in `project_guide.md` (objectives 2 and 5, Section 3 open items, Section 4 site bullet) and `docs/design.md` (Section 1 item 6 and the cost line, Section 9 Phase 7 row, Section 10.1 domain bullet, Section 10.2 tree and closing sentence, three "recruiter"/"interviewer" phrasings) are reworded so the case-study documents address technical evaluators and point to the portfolio repository; landed 2026-09-02 with the v1.8 / v2.13 rows. Conventions Section 2 and the `CLAUDE.md` digest are amended in the same commit as the removal (the separation commit), and D13 carries its supersession annotation.
+
+**(d) Decisions made executing this record (Portfolio unit, wave B, 2026-09-02).** Model and memo figures are withheld from the parent's pages until D11 and D18 ratify, applied to the claims-table rows of `site/projects/tributary.qmd` as well as the home proof point (the swap-in text is held in the handoff). A harness row was added to the claims table beyond the Local unit's artifact-to-skill table, mapping the `meta/` harness to the resume's "AI agent guardrails and knowledge base" bullet. Identity modeling is mapped to two resume bullets — "Fraud detection at scale" (identity graph) and "Closed-loop funding feedback pipeline" (hashed-identifier matching) — and the price landscape to two — the Experimentation bullet's auction-mechanics clause and the RL lead-routing bullet's auction simulator. The parent's project page states plainly that seven resume bullets are unmapped by any case-study artifact (department creation, revenue impact in part, fraud detection with unsupervised ML, alerting, competitor intelligence, risk modeling and visualization, data mining). The parent also carries a tracked `NEXT_STEPS.md` with the human's outward sequence and the exact `gh` commands, none executed.
+
+**Options considered.** (i) One repository with a stricter navigation split — rejected by the human's direction. (ii) Separate repositories, case study linked from the parent — chosen in principle; mechanics per (a)–(b). (iii) Move `meta/` to the parent as a portfolio-wide harness — not requested; noted as a future option since the harness is presented as reusable.
+
+### D16 — Retroactive record: the 2026-08-20 "site is a presentation layer" directive
+
+*2026-09-01, recording a human directive given 2026-08-20. Category: presentation architecture (design Section 10.1). Recorded retroactively because the directive shaped three later decisions but had no id of its own; under the prompt-log bar (D12) a scope directive is recorded here, not in `prompts.md`. **Ratification pending** (decision packet Q-K, as a confirmation).*
+
+**Disposition:** confirmed 2026-09-02 (decision packet Q-K: "accept recommendation"), together with the id allocation INT-017, D14–D18 and the URL-preserving filenames this plan assumed.
+
+**The directive (as recorded at the time; verbatim text not recoverable).** `project_guide.md` Section 4, added in commit d5465e6 (2026-08-20, subject "D7 ratified; site-as-presentation directive recorded (P3 guidance)"): "Site (Phase 7) is a presentation layer only (human directive, 2026-08-20): analysis, modeling, and DS products surface as static cached artifacts on the public site once complete — no live compute or backends behind it. This sharpens design Section 10's $0-hosting stance: build every deliverable so its presentation form is a cacheable static export."
+
+**What it decided.** Every presentation artifact is a cacheable static export; nothing on the site computes. Alternatives foreclosed: a live app (design 10.1 mentions Streamlit for the bandit simulator), notebook-rendered pages with runtime, any backend.
+
+**Records that cite it.** D10(c) (dashboards as static Plotly HTML built by one script), D11(a) (evaluation scripts with static reports instead of notebooks; design v1.7), D12(c) (Quarto static site on GitHub Pages; "nothing on it computes"); `site/tools/prerender.sh` header comment; the Phase 4 handoff ("Standing directives that shape Phase 4").
+
+**Why the record exists.** The interaction ledger (`meta/logs/ledger.yaml`) requires every step to reference an id; a directive with three downstream consequences and no id was the one gap the Round 1 audit found in the decision chain. Trailer note: commit d5465e6 carries no `Directs:`; this entry is the reference.
+
+### D17 — The charter's "ledger" clause: the provenance ledger is generated from commit trailers
+
+*2026-09-01. Category: harness (charter Section 2 item 3; provenance.md Section 3). Proposed by the Global unit after the Round 1 audit found the hand-kept ledger frozen at 2026-08-03 (14 backfill rows, nothing after Phase 0.5), so that the global exit criterion "provenance recorded (commit trailers + ledger)" had not been met as written by any phase since 0.5. **Ratification pending** (decision packet Q-F).*
+
+**Disposition:** ratified 2026-09-02 (decision packet Q-F, option 1): the generated table satisfies charter Section 2's "commit trailers + ledger" criterion; the charter is not amended. The criterion is met retroactively for Phases 1–7 now that the table exists, and the phase gate's provenance check is `provenance_by_phase.py --check` plus a trailer on every commit.
+
+**(a) Mechanism.** `meta/tools/provenance_by_phase.py` reads `git log` trailers, maps each commit to a phase by a rule stated in the script, and writes a per-phase summary and a per-commit table into `meta/provenance.md` Section 3 between generated-block markers, plus a static SVG chart (`meta/provenance_by_phase.svg`) that the site pre-render hook copies for the method page. The 14 backfill rows above the markers stay as history. `--check` exits non-zero when the committed ledger is stale or a commit cannot be mapped.
+
+**(b) The ask.** Either (1) accept that the generated table satisfies the charter's "commit trailers + ledger" criterion, retroactively for Phases 1–7 once the table exists (no charter edit), or (2) amend charter Section 2 so commit trailers are the sole ledger and the table is a convenience view (one charter edit plus a changelog line). Recommendation: (1) — it keeps the human-readable artifact the charter intended without manual upkeep.
+
+**(c) Consequence.** Whichever is chosen, the phase gate's provenance check becomes `provenance_by_phase.py --check` (and the trailer must be present on every commit); the check is not yet wired into CI: `.github/workflows/validate-graph.yml` runs only `validate_graph.py`, and `--check` cannot be added as a single extra step without also changing `actions/checkout` to `fetch-depth: 0` (the default shallow checkout exposes one commit, so the regenerated table would differ from the committed one and the job would fail). Proposed for the commit after this round: add `fetch-depth: 0` to the checkout step and a step `python meta/tools/provenance_by_phase.py --check`; until then the check runs locally at each phase gate.
+
+### D18 — Phase 6 validation method: engine floor override, seed band, bid-shading sensitivity
+
+*2026-09-01 (built) / 2026-09-02 (record finalized). Category: ML methodology (design Section 8 model 3, Section 9 Phase 6 row; D11e). Proposed by the Local unit; built in Round 2; **ratification pending** (decision packet Q-I: pre-approve the method, or review after the run). Record drafted by the Global unit from the Local unit's method description.*
+
+**Disposition:** ratified 2026-09-02 (decision packet Q-I: "accept recommendation"): the method is approved and the five-seed results below are the Phase 6 exit measurement ("simulated EPL lift quantified with uncertainty bands"). The strategy memo's "pending D18" tags come off and the seed band replaces the bootstrap CI as the headline; model 3's card carries the validation result.
+
+**(a) Method.** Engine floor override: `SimConfig.floor_multipliers` (six per-tier multipliers, default `None`) applied by `simulation/stages.landscape_for()` via `dataclasses.replace` on the frozen `AuctionLandscape` before `run_waterfall`; CLI `--floor-multipliers 1.2,0.7,0.45,0.3,0.2,0.2`. `models/validate_floors.py` generates consumers and leads per seed at scale 0.2 into `data/tmp/floor_validation/seed_<s>/` (about 478k leads each), then runs the waterfall under the deployed and the recommended schedule with the pipeline's own RNG stream (`SeedSequence([seed, 3])`) and the C19 recency dials, so each seed is a paired comparison with common random numbers; deployed at seed 42 reproduces the pipeline's auction outcomes at that scale. Bid shading is a stress test: buyers at a tier whose floor rose by factor m lower their valuations by the share s of the increase (multiplier 1 - s(m - 1); tiers whose floor fell are unaffected), implemented as a shift of the landscape's per-tier log-location with no engine change. Grid s = 0, 0.05, 0.10, 0.20 as asked, plus 0.35, 0.50, 1.00 so the zero crossing is bracketed; total runtime 55 seconds. The recency dials were confirmed independent of floors by reading the call path (`stages.run_waterfall` passes `recency_odds` / `recency_price` per lead; `run_auctions` applies them to the participation logit and to valuations, never to floors).
+
+**(b) Invariant, verified.** With no override the engine is unchanged: a scale-0.01 seed-42 run before and after the change produced content-identical artifacts for all 14 outputs (parquet compared by sorted-row hash, the partitioned auction tree included; CSV, JSONL and SQL by byte hash; both output directories redirected to the scratchpad so `data/generated` and `data/private` were never touched), re-verified on 2026-09-02 against `main` checked out into a temporary worktree. Test suite after the change: `.venv/bin/python -m pytest -q` reports 58 passed; `tests/test_models.py` 10 passed.
+
+**(c) Results (five seeds 42–46, scale 0.2) — the Phase 6 exit measurement (ratified 2026-09-02).** Deployed revenue per lead $87.05 (range $86.92–$87.18; full-scale logged $87.18), sell-through 49.2%. Recommended schedule, no shading: lift **+2.98%** mean, standard deviation 0.10pp, **range +2.88% to +3.15%**; revenue per lead $89.64; sell-through 76.5% (replay predicted 75.8%). The replay predicted +2.02% (CI +1.96% to +2.08%): the engine lift is higher, in the direction the replay's downward-biased hot-deck imputation implies. Shading sweep: +2.23% at s = 0.05; +1.43% at 0.10; -0.09% at 0.20; -2.46% at 0.35; -4.79% at 0.50; -12.59% at 1.00; break-even s about **0.19** — the rollout-gating argument the Phase 6 handoff asked for (A/B first; the recommendation survives only modest bid shading). Tier revenue per lead (mean of seeds), deployed to recommended: tier 1 $72.32 to $71.81; tier 2 $11.38 to $13.75; tier 3 $2.45 to $3.03; tiers 4–6 $0.90 to $1.06. Artifacts: `models/out/m3_validation.json`, `models/out/m3_validation.html`.
+
+**(d) Consequence.** The strategy memo's headline moves from the bootstrap CI (interim) to the seed band (final); model 3's card gains the validation result; graph node for the validation script. C1 (price scale) remains a stated caveat in the memo until its disposition (Q-E).
+
 ## Q-series — Open questions (parked, non-blocking)
 
 | # | Question | Status |
 | --- | --- | --- |
-| Q1 | Domain name choice + registrar (Phase 7 hard requirement, nice-to-have earlier) | Open |
+| Q1 | Domain name choice + registrar | **Transferred by D15** (ratified 2026-09-02) to the portfolio repository; the case study stays at the github.io project address and inherits any custom domain configured on the user site |
 | Q2 | Repo visibility | **Resolved by D1** |
 | Q3 | All-AWS variant (A3) | Closed unless target roles shift |
 | Q4 | Demo a PR-based workflow for portfolio optics (A6) | Open |

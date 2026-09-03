@@ -117,3 +117,31 @@ Entry status values: `verbatim` (exact text, redactions marked) or `summary — 
   >
   > I attached some stats on duplicates - dup1 = same day, dup7 = within the last 7 days, dup30 = within the last 30 days, unique_dup30+ = either never seen before OR previously seen but outside of the 30 day lookback window. KPI's win_rate (sold divided by leads), earnings-per-lead (EPL), etc. are lower for consumers that return soon after the last lead instance for the same contact. [REDACTED: proprietary duplicate-performance KPI table (sent/sold/revenue/win-rate/EPL by recency bucket) — raw figures retained locally in `data/private/duplicate_performance.csv`, never committed; distilled ratio targets in `simulation/params/repeat_demand.json`]
 - **Shaped:** C19 — recency-dependent buyer demand (participation and valuation dials per recency bucket, fitted to the table's win-rate and price ratios) and a mean-preserving price gradient on the funded flag. Consequences accepted with it: overall sell-through moves from the invented ~60% to the table's own ~49%, and mean clearing price falls toward the C1 anchor.
+
+## P-012 — (rejected candidate; tombstone)
+
+- **Date:** 2026-08-28
+- **Status:** rejected — at the D12 review the human judged the Phase 7 sequencing directive not log-worthy for this log (scope and sequencing directives are recorded in `decisions.md`; this log is for prompts whose content shaped an artifact). The entry exists only so that the `Directs: P-012` trailer on commit d3144f1 resolves; the directive's disposition is in D12.
+- **Content:** none recorded, by the human's decision.
+- **Shaped:** D12 (recorded there).
+
+## P-013 — Three-reader site repositioning review (Phase 7 / reframe)
+
+- **Date:** 2026-08-31
+- **Status:** verbatim; **accepted 2026-09-02** (decision packet Q-G). It clears the prompt-log bar (D12, 2026-08-28) because the prompt carries positioning content that shaped the site copy — "I am a data scientist and analytics manager ... taking a business problem and turning it into something data science can solve is my primary skillset" — rather than being only a scope or sequencing directive. The 2026-09-01 direction, by the same bar, is recorded in D14 and the session log instead of here.
+- **Content:** (attached context: `README.md`, `docs/design.md`, `docs/calibration_spec.md`, and the untracked fresh-eyes note `project_summary.md`)
+  > I have worked through most items in this project and have the contents hosted on a github webpage here: https://jordanbeary.github.io/tributary/tributary/ .
+  >
+  > The markdown attached project_summary.md is an agent review of what this project is. The point being, there are foundational elements that are misleading or misguided. For example, I am not a data engineer, I am a data scientist and analytics manager. In my initial project frameworking I put too much emphasis on the data silo problem when what I really want is to show I have the ability to link disparate data sources, but then taking a business problem and turning it into something data science can solve is my primary skillset and what I want to showcase.
+  >
+  > After reading through the home page and navigating the tributary case study start to finish, it is not clear to me that the project is to show the reader how I interact with an agent and the steps I took during initial project conception to manage the agent to ultimately explore the data and solve hypothetical business problems.
+  >
+  > Send out three reader agents to critique and plan a new draft:
+  > Strategic Planner - agent's primary objective is to synthesize what the other two readers report to create a plan to revise. This agent is the planner and strategic brain. All existing work is kept, but set priority levels for what should ultimately be presented.
+  >
+  > Director of Data Science - agent's primary objective is to critique how the Tributary case study showcases Jordan Beary's (me - a data scientist) ability to explore real business problems and produce results with the use of data science. Constantly asking do the contents of Jordan's resume align with what is exhibited in the case study?
+  >
+  > AI Implementation - agent's primary objective is to critique the presentation of the human-agent interaction. Consistently asking should I inject specific events or specific protocols or actions taken that produced this outcome?
+  >
+  > The case study reads like I am a data engineer - the infrastructure building should be listed as a secondary-level skill  and de-prioritized. The remainder of the project will focus more on analytics, data science, machine learning.
+- **Shaped:** INT-017 and D14: the repositioned thesis, the case-study spine, and the method page rebuilt around rendered records. The agent response (three reader reports and a prioritized plan) is preserved verbatim in `sessions/2026-09-01_reframe_session.md`. The prompt's structure — three evaluators with distinct objectives and a synthesis role, rather than a request to rewrite — is itself a method artifact.
