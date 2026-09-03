@@ -20,7 +20,7 @@ At session start, state which phase and which design-doc sections govern the ses
 - Quality over development cost; prefer simplicity, robustness, maintainability.
 - No emojis anywhere in the repository.
 - No fictional names for hypothetical entities — descriptive terms ("the simulated marketplace", "the exchange") or structured identifiers (`buyer_t2_004`) only.
-- Never name the author's employer in any committed file, including `meta/` logs. Redactions are marked in place. Sole exception: the site's resume artifacts (`site/resume.qmd` + rendered PDF) may name employers with performance KPIs scrubbed (D13).
+- Never name the author's employer in any committed file, including `meta/` logs. Redactions are marked in place. No exceptions: the D13 resume carve-out was retired by D15 when the resume left the repository.
 - No sensitive identifiers (account ids, personal emails) in committed files — use pointer language; real values live in `.env` and `~/.aws/credentials`.
 - Comment code blocks that perform distinct functions.
 - Fix what looks off, even outside the current task, and log the fix.
@@ -46,6 +46,7 @@ This machine deviates from defaults in ways that matter:
 - **Homebrew is partially broken** (`/usr/local/share/man/man8` not user-writable; fix needs sudo). All CLIs are installed user-locally instead: `gh`, `aws` (`~/aws-cli`), `gcloud`/`bq` (`~/google-cloud-sdk`), `uv`, `quarto` (`~/.local/opt/quarto-1.10.18`) — symlinked into `~/.local/bin`, which is on PATH for *interactive* shells only. Non-interactive shells: prefix with `PATH="$HOME/.local/bin:$PATH"`.
 - **System Pythons are 3.7/3.8 — too old for everything.** Use `.venv/bin/python` (3.12, all dev deps installed) for project code; never bare `python3`.
 - **gcloud needs `CLOUDSDK_PYTHON`** pointing at the uv-managed 3.12 interpreter (`~/.local/share/uv/python/cpython-3.12-macos-aarch64-none/bin/python3.12`). Exported in `~/.zshrc`; non-interactive scripts must export it explicitly.
+- **Git is 2.24**: no `git init -b`; use `git init` then `git symbolic-ref HEAD refs/heads/main`.
 - **Git auth** goes through `gh`'s credential helper (HTTPS). A broken `gh` binary exists in the `pBot` conda env; the real one is `~/.local/bin/gh`.
 - **AWS calls**: use `--profile tributary` (least-privilege, S3-only) for data work. The `tributary-admin` profile's access key is kept **deactivated**; re-enable it only for infra sessions, then deactivate again.
 - **Secrets**: `.env` (git-ignored) holds bucket/project/dataset names and the Postgres connection string; raw credential files live in `~/.tributary-credentials/` (mode 700), outside the repo.

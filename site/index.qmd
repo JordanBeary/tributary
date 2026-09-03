@@ -1,0 +1,22 @@
+---
+title: "Tributary"
+description: "A data science case study on a simulated lead marketplace: business questions turned into decisions with identity modeling, calibrated models, and an honestly read experiment, built by directing AI agents under an auditable harness."
+sidebar: false
+toc: false
+---
+
+Tributary is a data science case study. A simulated two-sided marketplace
+sells personal-loan leads through a six-tier waterfall auction, and its data
+arrives the way real marketplace data does: in three systems with no shared
+key. The case study asks the questions the business would ask — which
+channels earn their spend, what a duplicate consumer costs, where auction
+floors should sit, who a nurture campaign should reach — and answers them
+with identity modeling scored against hidden ground truth, calibrated models,
+and an experiment read at its actual power. It was directed by one person
+and built with AI agents, and the direction itself is kept as an auditable
+record.
+
+<p class="mt-4"><a class="btn btn-primary" href="tributary/index.qmd">Read the case study</a></p>
+
+[How this was built](tributary/method.qmd) ·
+[About the author](https://jordanbeary.github.io/)

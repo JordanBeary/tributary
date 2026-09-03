@@ -13,8 +13,8 @@ project:
     - assets/img/*
 
 website:
-  title: "Jordan Beary"
-  description: "Data science portfolio: the Tributary case study — silo unification, cost engineering, and ML on a simulated lead marketplace."
+  title: "Tributary"
+  description: "Tributary: a data science case study on a simulated lead marketplace — business questions turned into decisions with identity modeling, calibrated models, and an honestly read experiment, built by directing AI agents under an auditable harness."
   site-url: https://jordanbeary.github.io/tributary/
   favicon: assets/favicon.svg
   repo-url: https://github.com/JordanBeary/tributary
@@ -23,15 +23,15 @@ website:
   search: false
   navbar:
     left:
-      - href: index.qmd
-        text: Home
-      - href: resume.qmd
-        text: Resume
       - href: tributary/index.qmd
-        text: "Tributary: the case study"
+        text: "Case study"
     right:
-      # Text, not icon: the github icon alone pulls the 177KB bootstrap-icons
-      # font plus a render-blocking stylesheet on every page.
+      # Text links, not icons: the github icon alone pulls the 177KB
+      # bootstrap-icons font plus a render-blocking stylesheet on every page.
+      # The author's profile and resume live on the portfolio site (D15).
+      - text: About the author
+        href: https://jordanbeary.github.io/
+        aria-label: About the author (portfolio site)
       - text: GitHub
         href: https://github.com/JordanBeary/tributary
         aria-label: GitHub repository
@@ -56,7 +56,7 @@ website:
   page-footer:
     center: |
       Static site — every number links to the artifact that produced it.
-      [Repository](https://github.com/JordanBeary/tributary)
+      [Repository](https://github.com/JordanBeary/tributary) · [About the author](https://jordanbeary.github.io/)
 
 format:
   html:

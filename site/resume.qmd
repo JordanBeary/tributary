@@ -1,0 +1,16 @@
+---
+title: "This page has moved"
+description: "The author's resume is published on the portfolio site."
+sidebar: false
+toc: false
+format:
+  html:
+    include-in-header:
+      - text: |
+          <meta http-equiv="refresh" content="0; url=https://jordanbeary.github.io/resume.html">
+          <link rel="canonical" href="https://jordanbeary.github.io/resume.html">
+---
+
+The resume now lives on the author's portfolio site:
+[jordanbeary.github.io/resume.html](https://jordanbeary.github.io/resume.html).
+If you are not redirected automatically, follow that link.

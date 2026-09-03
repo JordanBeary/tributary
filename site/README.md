@@ -1,6 +1,6 @@
 # site
 
-Quarto site (Phase 7, D12): profile, resume, case study, embedded dashboards.
+Quarto case-study site (Phase 7, D12): overview, identity, cost, dashboards, method, run-it. The author's profile and resume are published from the portfolio repository (`JordanBeary/JordanBeary.github.io`, D15), which links here; this site links back through "About the author".
 
 - Render locally: `quarto render site` from the repo root (`quarto` is
   symlinked in `~/.local/bin`; non-interactive shells need
@@ -14,7 +14,6 @@ Quarto site (Phase 7, D12): profile, resume, case study, embedded dashboards.
   after the human review pass).
 - First-release scope (D12): Phases 0–4 content only. ML and strategy pages
   are added after D11 ratifies and Phase 6 closes.
-- The resume page renders HTML and the downloadable PDF from one source
-  (`resume.qmd`, html + typst formats). Per D13 it names employers but
-  carries no performance KPIs and no personal contact identifiers; the
-  full-KPI resume stays off-repo.
+- `resume.qmd` is a redirect stub only: it keeps the former `/resume.html`
+  address alive and forwards it to the portfolio site. No page here names
+  the author's employers.
