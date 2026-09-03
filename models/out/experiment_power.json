@@ -1,0 +1,84 @@
+{
+  "pooled": {
+    "n_treated": 729856,
+    "n_control": 128797,
+    "allocation_ratio": 5.666715839654651,
+    "app_rate_treated": 0.8456996996667836,
+    "app_rate_control": 0.8446081818675901,
+    "ate": 0.0010915177991934755,
+    "se": 0.0010944401584246592,
+    "ci95": [
+      -0.0010535849113188565,
+      0.0032366205097058075
+    ],
+    "injected": 0.0011518730521316279,
+    "revenue_lift_per_contact": -0.9869909524965976,
+    "revenue_ci95": [
+      -3.6353852589972857,
+      1.6614033540040904
+    ]
+  },
+  "sample_size": {
+    "for_injected_pooled_effect_85_15_power80": 6083863.168206177,
+    "for_injected_pooled_effect_85_15_power90": 8144566.654079349,
+    "for_injected_pooled_effect_50_50_power80": 3096165.49699459,
+    "current_total": 858653,
+    "mde_at_current_sample_power80": 0.003067488436648198
+  },
+  "top_segment": {
+    "segment": 5,
+    "n": 166248,
+    "injected_uplift": 0.00520898479951741,
+    "empirical_lift": 0.0036693204255394685,
+    "empirical_se": 0.0023541213042067963,
+    "ci95": [
+      -0.0009447573307058525,
+      0.00828339818178479
+    ],
+    "n_needed_85_15_power80": 266125.5649164924,
+    "n_needed_50_50_power80": 134178.61978900887,
+    "n_needed_50_50_power80_at_half_effect": 541143.2883745439,
+    "contacts_per_month": 13854.0,
+    "months_to_accrue_85_15": 19.209294421574448,
+    "months_to_accrue_50_50": 9.6851898216406
+  },
+  "send_policy": {
+    "messages_by_segment_treated": {
+      "1": {
+        "contacts": 150376,
+        "messages": 451165
+      },
+      "2": {
+        "contacts": 147906,
+        "messages": 443869
+      },
+      "3": {
+        "contacts": 146305,
+        "messages": 439361
+      },
+      "4": {
+        "contacts": 143958,
+        "messages": 432250
+      },
+      "5": {
+        "contacts": 141311,
+        "messages": 424457
+      }
+    },
+    "messages_avoided_if_only_top_segment": 1766645,
+    "contacts_no_longer_messaged": 588545,
+    "incremental_applicants_top_segment": 865.9833049501703,
+    "applications_per_applicant": 3.3050320789177188,
+    "revenue_per_application": 87.18040345074513,
+    "annual_revenue_value_top_segment_only": 249519.25961798022,
+    "annual_revenue_value_other_segments": 27375.126195602916,
+    "note": "per-message send cost is not in any silo; supply it to price the avoided messages"
+  },
+  "injected_by_segment": {
+    "1": 0.00012960150841457787,
+    "2": 8.905633266799407e-05,
+    "3": 0.00014577436730641176,
+    "4": 0.0001859482527517461,
+    "5": 0.00520898479951741
+  }
+}

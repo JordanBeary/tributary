@@ -1,7 +1,7 @@
 -- Event-grain wide fact (P-009): every auction event hydrated row-wise with the
 -- lead's offer payload, consumer entity, CRM outcome, and marketing
 -- acquisition attributes, so tier/buyer analyses segment by credit profile,
--- funding, and channel without joins. 24.5M rows; orphans keep null consumer
+-- funding, and channel without joins. 26.4M rows (C19 world); orphans keep null consumer
 -- columns. Payload columns are filled on every row (the silo carries them on
 -- bid_request rows only).
 select

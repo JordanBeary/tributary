@@ -15,9 +15,12 @@ multipliers -- the top segment carries ~4.5x the average, the other four are
 near zero). Features are pre-treatment only; the message funnel columns are
 post-treatment and excluded.
 
-Split: random 50/50 stratified by arm (seeded) -- treatment is randomized at
-acquisition and the outcome spans the whole year, so a temporal split has no
-leakage to prevent and would halve the control arm for no benefit (D11).
+Evaluation: 2-fold cross-fitting, folds stratified by arm (seeded) -- every
+contact is scored out-of-fold, so the whole experiment feeds both training
+and evaluation. Treatment is randomized at acquisition and the outcome spans
+the whole year, so a temporal split has no leakage to prevent, and a plain
+train/test split would halve the already-small control arm for no benefit
+(D11).
 
 Outputs: models/out/m4_metrics.json, models/out/m4_uplift.html, boosters
 under models/out/boosters/. Usage: .venv/bin/python models/train_uplift.py

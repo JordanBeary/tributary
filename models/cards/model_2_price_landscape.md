@@ -2,9 +2,35 @@
 
 *Phase 5, design Section 8. Trained 2026-08-24 on the C19 world. Provenance: A.*
 
-**Business question.** What would buyers pay? (The foundation for pricing:
-50.8% of leads never show a price — under C19, recency-suppressed demand makes
-the censoring structure first-class.)
+**The decision this serves.** Half the inventory has no price: 50.9% of
+leads never sell, and the ones that do reveal a price only at the tier that
+cleared. Every decision made *before* an outcome exists needs a value for a
+lead whose value was never revealed — what to pay to acquire a contact of a
+given channel and credit profile, whether unsold inventory is worth a
+second route, and what a segment is worth when a reserve schedule stops
+being one number per tier. The alternative in use today is the pipeline
+table a team ships first (baseline B0 below: sell rate x mean sold price by
+recency bucket and FICO band), which conditions on selling and so answers a
+systematically different question from the one being asked.
+
+**The rule someone acts on.** Expected value per lead in dollars, compared
+against a channel's cost per contact by the acquisition owner; compared
+against zero (not assumed to be zero) when deciding what to do with unsold
+leads; and as the per-segment starting point for the segment-level reserve
+schedule that model 3's per-tier search does not yet produce.
+
+**What is not claimed.** This card previously called the model "the
+foundation for pricing". In a second-price auction with fixed reserves the
+marketplace does not price leads — the auction does — and the one pricing
+decision it owns (the floors) was answered by model 3 from logged bids, not
+from this landscape. No dollar value is claimed for model 2 here: its three
+uses are real, and none has yet been carried through to a decision in this
+project. The measurable claim is the margin over the table a team would
+otherwise use.
+
+**Business question.** What would a lead fetch, including the 50.9% that
+never show a price at all? Under C19, recency-suppressed demand makes the
+censoring structure first-class rather than a nuisance.
 
 **Model.** The design's survival framing of censored regression. The waterfall
 is a discrete-time hazard process over the tier ladder, so the landscape is
@@ -48,6 +74,22 @@ specification test.
 - Sold-price bias is -$14 (model predicts conditional medians on a
   right-skewed price distribution); the tier-mean baseline is unbiased by
   construction but 26% worse in MAE.
+
+**Decision this informs.** Lead valuation in dollars: what a buyer would
+pay, and the probability the lead never sells. This is the pricing
+foundation for buyer-facing lead pricing and for reserves set per segment
+rather than per tier -- the survival landscape gives an expected value for
+every FICO band x recency cell, which model 3's per-tier search does not
+use yet. The specification test is itself a decision: a team that shipped
+the textbook Tobit here would price unsold leads two orders of magnitude
+too low.
+
+**What we would do next.** (1) Extend model 3's search from six tier
+multipliers to tier x FICO-band schedules, using the landscape's segment
+expected values as the starting point. (2) Publish the landscape's
+expected value by segment as a buyer-facing price guide. (3) Re-fit on a
+real log with the same two-head structure; the participation-driven
+censoring diagnosis is the part most likely to transfer.
 
 **Reproduce.** `.venv/bin/python models/train_price_landscape.py` →
 `models/out/m2_metrics.json`, `models/out/m2_price_landscape.html`.
