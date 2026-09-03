@@ -14,6 +14,10 @@ Outputs (all deterministic from `git log`):
   2. A static SVG bar chart, meta/provenance_by_phase.svg (no external
      services; the site pre-render hook copies it into the site tree).
 
+`--check` verifies the invariant "the committed table is current through the last
+commit that changed anything other than the table itself" (see
+`history_for_check` for why it cannot be "current through HEAD").
+
 Usage:
   .venv/bin/python meta/tools/provenance_by_phase.py            # print tables
   .venv/bin/python meta/tools/provenance_by_phase.py --write    # update files
@@ -34,6 +38,11 @@ LEDGER_PATH = REPO_ROOT / "meta" / "provenance.md"
 SVG_PATH = REPO_ROOT / "meta" / "provenance_by_phase.svg"
 BEGIN = "<!-- provenance-by-phase:begin -->"
 END = "<!-- provenance-by-phase:end -->"
+
+# The files this script writes. `--check` uses them to recognize a commit whose
+# only content is a regeneration of this script's own output (see
+# `history_for_check`). Paths are repo-relative, as `git show --name-only` prints them.
+GENERATED_PATHS = frozenset({"meta/provenance.md", "meta/provenance_by_phase.svg"})
 
 LEVELS = ("H", "HD", "A")
 PHASES = ("0", "0.5", "1", "2", "3", "4", "5", "6", "7", "unmapped")
@@ -223,6 +232,42 @@ def render_svg(commits: list[dict]) -> str:
     return "\n".join(parts)
 
 
+def changed_paths(commit_hash: str) -> set[str]:
+    """Repo-relative paths a commit touched (empty for an empty commit)."""
+    out = subprocess.run(
+        ["git", "show", "--name-only", "--format=", commit_hash],
+        capture_output=True, text=True, check=True, cwd=REPO_ROOT,
+    ).stdout
+    return {line.strip() for line in out.splitlines() if line.strip()}
+
+
+def history_for_check(commits: list[dict]) -> list[dict]:
+    """History `--check` compares against: the log minus any *trailing* run of
+    commits that changed nothing but this script's own outputs.
+
+    Why this exists (do not "simplify" it away). The per-commit table prints each
+    commit's short hash, so the commit that writes the table can never list
+    itself -- a fixed point that does not exist. Comparing the committed table
+    against a regeneration over the full history therefore reports STALE
+    immediately after every regeneration commit, forever, and a CI step wired to
+    `--check` would fail on every push.
+
+    Excluding the trailing table-only commits changes the invariant from the
+    impossible "current through HEAD" to the honest and checkable "current
+    through the last commit that changed anything other than the table itself".
+    Only a *trailing* run is dropped: a table-only commit with real work after it
+    means the table genuinely is stale, and the check still says so.
+    """
+    end = len(commits)
+    while end > 0:
+        paths = changed_paths(commits[end - 1]["hash"])
+        if paths and paths <= GENERATED_PATHS:
+            end -= 1
+        else:
+            break
+    return commits[:end]
+
+
 def splice(ledger_text: str, block: str) -> str:
     if BEGIN in ledger_text and END in ledger_text:
         head = ledger_text[: ledger_text.index(BEGIN)]
@@ -239,20 +284,23 @@ def main() -> int:
 
     commits = read_commits()
     unmapped = [c for c in commits if c["phase"] == "unmapped"]
-    block = render_markdown(commits)
-    svg = render_svg(commits)
 
     if args.write:
-        LEDGER_PATH.write_text(splice(LEDGER_PATH.read_text(), block))
-        SVG_PATH.write_text(svg + "\n")
+        # --write always covers the full history: the table is written as current
+        # through HEAD, and the commit that carries it is excluded by --check.
+        LEDGER_PATH.write_text(splice(LEDGER_PATH.read_text(), render_markdown(commits)))
+        SVG_PATH.write_text(render_svg(commits) + "\n")
         print(f"wrote {LEDGER_PATH.relative_to(REPO_ROOT)} and {SVG_PATH.relative_to(REPO_ROOT)}")
     elif args.check:
+        expected = history_for_check(commits)
+        skipped = len(commits) - len(expected)
         current = LEDGER_PATH.read_text()
-        stale = BEGIN not in current or splice(current, block) != current
-        print("provenance ledger is", "STALE" if stale else "current")
+        stale = BEGIN not in current or splice(current, render_markdown(expected)) != current
+        note = f" (through {expected[-1]['hash']}; {skipped} trailing table-only commit(s) excluded)" if skipped else ""
+        print("provenance ledger is", ("STALE" if stale else "current") + note)
         return 1 if stale or unmapped else 0
     else:
-        print(block)
+        print(render_markdown(commits))
 
     if unmapped:
         print(f"WARNING: {len(unmapped)} commit(s) could not be mapped to a phase:", file=sys.stderr)

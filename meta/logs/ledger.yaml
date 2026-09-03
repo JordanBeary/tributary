@@ -123,7 +123,7 @@ resolved_items:
   - {ref: D14, resolved: 2026-09-02, note: "Ratified (Q-B); INT-017 classified ambiguity; conventions Section 3 amended under it (Q-G)"}
   - {ref: D15, resolved: 2026-09-02, note: "Ratified (Q-C): path, PDF 404 with stub, git-ignored private notes, parent outside the harness"}
   - {ref: D16, resolved: 2026-09-02, note: "Confirmed with the id allocation (Q-K)"}
-  - {ref: D17, resolved: 2026-09-02, note: "Ratified option 1 (Q-F): the generated table satisfies the charter's ledger clause"}
+  - {ref: D17, resolved: 2026-09-02, note: "Ratified option 1 (Q-F): the generated table satisfies the charter's ledger clause; its check semantics were fixed 2026-09-03 (INT-019) and the CI wiring stays proposed"}
   - {ref: D18, resolved: 2026-09-02, note: "Ratified (Q-I): the five-seed band is the Phase 6 exit measurement"}
   - {ref: C1, resolved: 2026-09-02, note: "Closed (Q-E): the declared price scale stands; the memo's price-scale caveat is the honest statement"}
   - {ref: P-013, resolved: 2026-09-02, note: "Accepted into the prompt log (Q-G); the 2026-09-01 direction stays a decision-cited quotation"}

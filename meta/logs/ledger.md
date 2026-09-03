@@ -19,7 +19,7 @@
 | [D14](https://github.com/JordanBeary/tributary/blob/main/meta/logs/decisions.md) | 2026-09-02 | Ratified (Q-B); INT-017 classified ambiguity; conventions Section 3 amended under it (Q-G) |
 | [D15](https://github.com/JordanBeary/tributary/blob/main/meta/logs/decisions.md) | 2026-09-02 | Ratified (Q-C): path, PDF 404 with stub, git-ignored private notes, parent outside the harness |
 | [D16](https://github.com/JordanBeary/tributary/blob/main/meta/logs/decisions.md) | 2026-09-02 | Confirmed with the id allocation (Q-K) |
-| [D17](https://github.com/JordanBeary/tributary/blob/main/meta/logs/decisions.md) | 2026-09-02 | Ratified option 1 (Q-F): the generated table satisfies the charter's ledger clause |
+| [D17](https://github.com/JordanBeary/tributary/blob/main/meta/logs/decisions.md) | 2026-09-02 | Ratified option 1 (Q-F): the generated table satisfies the charter's ledger clause; its check semantics were fixed 2026-09-03 (INT-019) and the CI wiring stays proposed |
 | [D18](https://github.com/JordanBeary/tributary/blob/main/meta/logs/decisions.md) | 2026-09-02 | Ratified (Q-I): the five-seed band is the Phase 6 exit measurement |
 | [C1](https://github.com/JordanBeary/tributary/blob/main/meta/logs/decisions.md) | 2026-09-02 | Closed (Q-E): the declared price scale stands; the memo's price-scale caveat is the honest statement |
 | [P-013](https://github.com/JordanBeary/tributary/blob/main/meta/logs/prompts.md) | 2026-09-02 | Accepted into the prompt log (Q-G); the 2026-09-01 direction stays a decision-cited quotation |
