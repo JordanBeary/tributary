@@ -1,0 +1,16 @@
+---
+title: "Strategy memo"
+description: "The optimization strategy memo for the simulated marketplace's executive team: floor policy, send policy, channel spend, duplicate consumers, with expected value, uncertainty, risks, and a test-first rollout."
+toc: true
+---
+
+The memo below is single-sourced from
+[models/strategy_memo.md](https://github.com/JordanBeary/tributary/blob/main/models/strategy_memo.md)
+and rendered here unchanged. Its floor-policy figures rest on the Phase 6
+engine re-run whose method is recorded as decision D18; the models it draws
+on were accepted as D11. It is written for the simulated marketplace's
+executive team, so it states recommendations, expected value, uncertainty,
+risks, and a rollout plan rather than methods; the methods are on the
+[models and experiments](models.qmd) page.
+
+{{< include embedded/_strategy_memo_body.md >}}

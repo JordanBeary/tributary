@@ -1,0 +1,337 @@
+---
+title: "Models and experiments"
+description: "Four models and one experiment, each stated as the decision it informs: reserve floors, the nurture send policy, lead valuation, and lead decisioning."
+toc: true
+---
+
+Four models were trained on the unified warehouse and one randomized
+experiment was read through it. This page states each as the decision it
+informs, with the number that matters, the honest limit, and the static
+evaluation report embedded as built. Model cards and metrics live in
+[models/](https://github.com/JordanBeary/tributary/tree/main/models);
+every figure below is read from `models/out/m*_metrics.json`,
+`models/out/m3_validation.json`, or `models/out/experiment_power.json`.
+
+| Decision on the table | Model | The number | What someone does with it |
+| --- | --- | --- | --- |
+| Where the six reserve floors sit | 3: counterfactual replay, validated by engine re-run | **+2.02%** revenue per lead in replay (95% CI +1.96% to +2.08%); **+2.98%** re-running the engine (five-seed range +2.88% to +3.15%), about $4.2M a year | Stage the reshaped schedule behind lead-level randomized multipliers; stop if buyers shade more than 19% of the tier-1 increase. See the [memo](strategy-memo.qmd) |
+| Which contacts the nurture program enrols | 4: cross-fitted T-learner on a randomized holdout | Concentrated segment ranked first (+0.46pp vs +0.52pp injected); targeting by predicted response is **worse than random** | Enrol segment 5, suspend segments 1-4, hold a quarter and watch; about 1.77M messages a year avoided |
+| What a lead is worth before its outcome exists | 2: survival landscape over the tier ladder | Top expected-value decile captures **33.3%** of revenue vs 14.7% for the table a team ships first; 50.9% of leads never show a price | Compare expected value against a channel's cost per contact; value unsold inventory against zero rather than assuming it |
+| (No live decision) which leads will sell | 1: calibrated LightGBM + tier head | ECE **0.0017** vs 0.0168; tier head log-loss 1.096 vs 1.220 | Kept as the calibration and leakage contract every other model inherits, and as a consistency check on model 2 — see the honest framing below |
+
+Ordered by how much each one is actually load-bearing. Model 3 pays for the
+project; model 4 changes a policy cheaply and rests on the only randomized
+evidence here; model 2 has real but so-far unrealized value; model 1 is a
+discipline artifact, and this page says so rather than inventing a decision
+for it.
+
+## One discipline for all four
+
+Every model reads one feature contract
+([models/common.py](https://github.com/JordanBeary/tributary/blob/main/models/common.py)):
+the attributes observable when a lead is submitted, plus the consumer-entity
+history that only exists after identity resolution, with an explicit
+leakage list (notably `consumer_applications_total`, which counts future
+applications). Every model is evaluated on the same temporal split: eight
+months of training, two of validation for early stopping and calibration,
+and two test months untouched until evaluation. Evaluation ships as
+scripts writing metrics JSON and static pages, and ten model-layer tests
+gate the math. What transfers from a synthetic world is this discipline
+and the failure modes it caught; the headline metrics, especially model
+1's discrimination, are properties of the world.
+
+::: {.callout-important title="Status of these results"}
+Everything on this page was proposed by the agent on 2026-08-24 as decision D11 — one feature contract with an explicit leakage list, a temporal split, the survival framing for the price landscape with the textbook Tobit kept as a documented failure, exact counterfactual replay for the floor policy, and a cross-fitted T-learner evaluated on ranking because the experiment is underpowered for a level claim — and put to the human in the explicit-ask form the harness requires. **Accepted 2026-09-02**, with a pushback that changed this page: the human accepted the methodology and asked what business problem each model actually solves. Answering that honestly demoted two of the four — model 2 values censored inventory rather than "setting prices", and model 1 has no live decision at all — and this page now leads with those framings instead of with the metrics. The ask, verbatim, is in the [Phase 6 handoff](https://github.com/JordanBeary/tributary/blob/main/meta/logs/sessions/2026-08-24_phase6_handoff.md).
+:::
+
+## Reserve floors (model 3)
+
+**The problem.** Six numbers in the auction configuration — the reserve
+price at each tier — decide, for every one of 2.4M leads a year, whether it
+sells and at what price. Tier 1 carries 83% of revenue and its median
+clearing price equals its floor in every FICO band, so for most of the
+revenue base the floor *is* the price, not a backstop. Those numbers were
+calibrated once and left alone. Sell-through by tier is on a dashboard;
+whether a different schedule would earn more is not, because that
+comparison was never run.
+
+**Why this cannot be a report or a rule.** The intuition a business rule
+would encode is wrong in both directions: raising every floor 10% *reduces*
+revenue per lead ($87.18 to $86.90), raising them 20% costs more, and the
+global sweep peaks exactly at today's level. The entire gain is in
+reshaping across tiers, which no rule of thumb produces, and which cannot
+be A/B tested tier by tier because each tier changes what cascades into the
+next.
+
+**The decision rule.** The six recommended floors below, staged (tier 1 to
+x1.10 and the deep tiers to x0.50 first), with lead-level randomized
+multipliers from day one so the lift is measured rather than assumed.
+Guardrails: tier-1 sell-through, currently 28.4%, and per-buyer
+participation. Stop rule: the schedule stops paying if buyers give back
+more than about 19% of the tier-1 increase in shaded bids. The yield and
+pricing function acts on it; operations is consulted on roughly a doubling
+of deep-tier volume.
+
+**Method.** The lake logs every bid, sub-reserve included, and the engine's
+buyers bid their valuations independently of the reserve, so any candidate
+schedule can be replayed exactly wherever the logged cascade reached: a
+lead sells at the first tier whose candidate floor its logged top bid
+clears, at max(second bid, floor). Replay at the deployed schedule
+reproduces the logged outcome for 100.0% of 2,399,526 leads. Where a lead
+sold before reaching deeper tiers, raised floors need imputed demand,
+hot-deck sampled within FICO band x recency bucket and biased downward, so
+raised-floor estimates are conservative. Search: a global sweep, then
+per-tier coordinate descent bounded below at 20% of deployed.
+
+**Result.** The global sweep peaks exactly at the deployed level, so
+uniform scaling has nothing to give; the gain is all reshaping.
+
+| Tier | Deployed floor | Multiplier | Recommended |
+| --- | --- | --- | --- |
+| 1 | $187.11 | x1.20 | $224.53 |
+| 2 | $92.50 | x0.70 | $64.75 |
+| 3 | $45.73 | x0.45 | $20.58 |
+| 4 | $22.61 | x0.30 | $6.78 |
+| 5 | $11.18 | x0.20 | $2.24 |
+| 6 | $5.52 | x0.20 | $1.10 |
+
+Revenue per lead $87.18 to $88.94 (+2.02%; 95% lead-bootstrap CI +1.96% to
++2.08%; imputation-seed spread 0.01pp), about $4.2M a year at the logged
+volume; sell-through 49.1% to 75.8%.
+
+<iframe class="dashboard-frame" data-src="embedded/m3_floor_optimization.html" title="Model 3 evaluation report" loading="lazy"></iframe>
+
+[Open full page](embedded/m3_floor_optimization.html){target="_blank"}
+
+**Validation by re-running the engine (the Phase 6 exit; method recorded as D18).**
+The replay's imputation is removed by generating five fresh worlds (seeds
+42-46, scale 0.2, about 478k leads each) and running the waterfall itself
+under both schedules with common random numbers. Realized lift **+2.98%**
+(mean of seeds; standard deviation 0.10pp; range +2.88% to +3.15%), above
+the replay's +2.02%, as the replay's downward-biased imputation predicted;
+sell-through 49.2% to 76.5%. A bid-shading stress test asks what happens if
+buyers give back a share *s* of the tier-1 floor increase: the lift is
++2.23% at *s* = 0.05, +1.43% at 0.10, and reaches zero at about **0.19**;
+if buyers absorbed the whole increase the schedule would lose 12.6%. That
+break-even is the number the rollout plan is built around.
+
+<iframe class="dashboard-frame" data-src="embedded/m3_validation.html" title="Model 3 Phase 6 validation" loading="lazy"></iframe>
+
+[Open full page](embedded/m3_validation.html){target="_blank"}
+
+**Limits.** Bid invariance to reserves holds in this engine by
+construction; the shading test bounds, but does not measure, what real
+buyers would do, which is why the memo gates the change behind a test.
+Deep-tier multipliers sit at the declared 0.2x bound. The tier-1
+recommendation ($224.53) moves further from the design's $120 price
+anchor, an open decision recorded with the memo.
+
+## The nurture experiment and who to message (experiment; model 4)
+
+**The problem.** The nurture program messages 85% of acquired contacts,
+about 2.19M messages a year, and measures itself in opens and clicks — the
+only outcome its own silo can see, and not a business outcome. The decision
+is which contacts to enrol; today the answer is "everyone", which spends
+about 1.77M messages a year on 588,545 contacts whose incremental effect is
+indistinguishable from zero.
+
+**The decision rule.** Enrol engagement segment 5; suspend segments 1-4;
+hold the suspended segments for a quarter and watch their application rate,
+resuming if it falls by more than that sample's detectable effect. The
+marketing program owner acts on it. The value is small on revenue — about
+866 incremental applicants a year, roughly $249,519 — and real on focus and
+cost: about 1.77M messages avoided, priced by marketing, since no silo
+carries a per-message cost.
+
+**Why a model, honestly.** At the granularity the program can act on
+(five engagement segments by seven acquisition channels), a grouped
+arm-difference table gets close to the same ranking; this model's marginal
+contribution over that table is regularization across sparse cells and
+out-of-fold scoring. What is genuinely a modeling result rather than a
+query result is the comparison below — ranking by predicted uplift beats
+random while ranking by predicted *response* is worse than random — and
+that is what changes the policy.
+
+**The experiment.** Intention-to-treat; 729,856 treated and 128,797
+holdout contacts randomized at acquisition within engagement segment.
+Application-rate lift **+0.109pp** (95% CI -0.105pp to +0.324pp) against an
+injected +0.115pp; revenue lift per contact -$0.99 (CI -$3.64 to +$1.66).
+To detect the pooled effect with 80% power the experiment would need about
+**6.1M contacts** (7.1x its sample); its minimum detectable effect is
+0.307pp. It cannot establish the level. It can establish the ranking: the
+injected effect is concentrated in engagement segment 5 (+0.52pp), and the
+naive per-segment read recovers that (+0.37pp, CI -0.09pp to +0.83pp). The
+full arithmetic and the decision rule are in the
+[experiment read-out](https://github.com/JordanBeary/tributary/blob/main/docs/experiment_readout.md).
+
+**The model.** A cross-fitted T-learner, one logistic regression per arm on
+the program's action space (engagement segment, acquisition channel), every
+contact scored out of fold. Three choices were forced by power and each is
+verified against the failure it prevents: a linear base learner (a boosted
+T-learner was level-correct but rank-noisy at this effect size); covariates
+restricted to the action space (state adds pure arm-difference noise;
+acquisition month is imbalanced by the engine's construction and biased
+mean uplift to -3.1pp); cross-fitting so the small control arm is never
+halved. Out of fold: mean uplift +0.107pp (injected +0.115pp); segment 5
+ranked first at +0.46pp; area under the uplift curve 68% of the
+injected-oracle ceiling; **response-model targeting scores below random**,
+the textbook argument for uplift modeling realized in the data. A methods
+note that mattered: with about 35 distinct scores, stable-sort tie-breaking
+fabricated a 35x-inflated oracle curve until ties were broken by a seeded
+shuffle.
+
+**The policy.** Message segment 5; stop messaging segments 1-4. At the
+injected effect that is about 866 incremental applicants a year (about
+$250k of auction revenue) and about 1.77M messages avoided; the per-message
+cost is not in any silo. A follow-up test sized for the segment-5 effect
+needs 134k contacts at 50/50 (about ten months of segment-5 acquisition)
+or 266k at the current 85/15.
+
+<iframe class="dashboard-frame" data-src="embedded/m4_uplift.html" title="Model 4 evaluation report" loading="lazy"></iframe>
+
+[Open full page](embedded/m4_uplift.html){target="_blank"}
+
+## What a lead is worth, including the half that never sells (model 2)
+
+**The problem.** Half the inventory has no price: 50.9% of leads never
+sell, and the ones that do reveal a price only at the tier that cleared.
+Every decision taken *before* an outcome exists needs a value for a lead
+whose value was never revealed — what to pay for a contact of a given
+channel and credit profile (per-contact margins run from -$9 for display to
++$288 for organic), whether an unsold lead is worth a second route, and
+what a segment is worth once a reserve schedule stops being one number per
+tier.
+
+**Why a query gets this wrong.** "What did leads like this fetch?" is one
+line of SQL and is the wrong question: it conditions on selling, and the
+leads that sold are exactly the ones with unusual demand. The alternative
+in use today is the pipeline table a team ships first — sell rate times
+mean sold price by recency bucket and FICO band — and it is the baseline
+below.
+
+**The decision rule.** Expected value per lead in dollars, compared against
+a channel's cost per contact by the acquisition owner; compared against
+zero, rather than assumed to be zero, when deciding what to do with unsold
+leads; and as the per-segment starting point for a reserve schedule that
+varies by credit band and recency instead of by tier alone. One thing this
+page does not claim: that model 2 sets prices. The auction sets prices, and
+the one pricing decision the marketplace owns — the floors — was answered
+by model 3 from logged bids, not from this landscape.
+
+**Method.** The waterfall is a discrete-time hazard process over the tier
+ladder, so the landscape is two heads composed: a hazard head, P(clears
+tier t | reached tier t), trained on 6.29M stacked (lead, tier) rows, and a
+price head, E[log clearing price | cleared at t], trained on sales. Training
+uses only what a real marketplace observes: cascade depth and prices on
+sales, never sub-reserve bid amounts. Test months: expected-value rank
+correlation with realized revenue **0.859** vs 0.269 for the group table a
+team ships first; the top expected-value decile captures **33.3%** of
+revenue vs 14.7%; sold-price MAE $50.06 vs $63.07 for the tier mean; the
+predicted exit probability sits on the diagonal. 51.0% of test leads never
+show a price.
+
+**Why the textbook Tobit fails here.** A Type-I Tobit (left-censored
+Gaussian at the deepest reserve, sigma profiled) was fitted on the same
+split. It stretches to sigma 1.43 in logs and its latent value collapses to
+a median **$0.18** for unsold leads, against a median **$32.25** top bid
+actually logged for those same leads, bids the models never trained on.
+Censoring in this world is participation-driven (buyers who never bid), not
+low-valuation-driven, and a single-sigma latent Gaussian cannot express
+that. A team that priced unsold inventory off that model would be two
+orders of magnitude low. The Tobit is kept in the report as the
+specification test.
+
+<iframe class="dashboard-frame" data-src="embedded/m2_price_landscape.html" title="Model 2 evaluation report" loading="lazy"></iframe>
+
+[Open full page](embedded/m2_price_landscape.html){target="_blank"}
+
+## Which leads sell, and at which tier (model 1)
+
+**The honest framing.** Nothing in this marketplace turns on predicting
+whether a lead will sell. Every lead is auctioned, there is no triage gate,
+and the waterfall returns the true answer minutes later for free. The 0.994
+AUC below is the tell rather than the achievement: a model that accurate on
+a question that cheap is a sign the question carries no decision. The
+decision that *would* make it load-bearing — accepting or declining
+inbound third-party leads at an offered price, in milliseconds, before any
+auction runs — does not exist in this simulated world, and has not been
+retrofitted to justify the model.
+
+**What it is legitimately for.** First, it is this project's calibration
+and leakage exhibit: the auction-time feature contract is defined and
+enforced here, including the exclusion of a column that counts a consumer's
+*future* applications and would have inflated every model on this page.
+Calibration is what turns a probability into a dollar figure, and the
+expected calibration error is 0.0017 against 0.0168 for the group-rate
+table. Second, it is the probability component of a lead's value at
+acquisition time, where the real upstream decision lives — though model 2
+computes that directly and better, so this use is largely redundant. Third,
+its agreement with model 2's hazard head is a consistency check between two
+routes to the same quantity.
+
+LightGBM on the auction-time contract, isotonic-calibrated on the
+validation months, plus a multiclass head for the tier conditional on a
+sale. Test months: ECE **0.0017** (group table 0.0168), Brier 0.027 vs
+0.235, ROC-AUC 0.994 vs 0.633; tier head log-loss 1.096 vs 1.220. The
+discrimination is a property of the synthetic world: given the payload and
+the recency bucket, the demand model is low-noise, so the sold outcome is
+close to separable. The transferable evidence is the calibration
+discipline and the leakage contract, not the AUC, and the card says so.
+
+<iframe class="dashboard-frame" data-src="embedded/m1_sale_propensity.html" title="Model 1 evaluation report" loading="lazy"></iframe>
+
+[Open full page](embedded/m1_sale_propensity.html){target="_blank"}
+
+## Deferred, and why
+
+- **Adaptive waterfall ordering (design model 5).** A Thompson-sampling
+  bandit over tier orderings in the simulator loop. Deferred: its value is
+  bounded by the floor decision above and it needs the same engine hook the
+  validation added.
+- **Off-policy evaluation (design model 6).** Not estimable on the current
+  log: the deployed schedule is deterministic, so no logged propensities
+  exist. The memo's rollout plan randomizes floor multipliers at lead level
+  from day one, which is the logging change that makes off-policy
+  evaluation possible.
+
+## Reproduce
+
+```bash
+.venv/bin/python models/train_sale_propensity.py
+.venv/bin/python models/train_price_landscape.py
+.venv/bin/python models/optimize_floors.py
+.venv/bin/python models/train_uplift.py
+.venv/bin/python models/validate_floors.py      # Phase 6 engine re-run
+.venv/bin/python models/experiment_power.py     # read-out arithmetic
+```
+
+```{=html}
+<script>
+// Load each report iframe only as it approaches the viewport (same pattern
+// as the findings page): nothing heavy loads until the visitor interacts.
+(function () {
+  var frames = document.querySelectorAll("iframe[data-src]");
+  if (!("IntersectionObserver" in window)) {
+    frames.forEach(function (f) { f.src = f.dataset.src; });
+    return;
+  }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) {
+        e.target.src = e.target.dataset.src;
+        io.unobserve(e.target);
+      }
+    });
+  }, { rootMargin: "200px" });
+  var armed = false;
+  function arm() {
+    if (armed) return;
+    armed = true;
+    frames.forEach(function (f) { io.observe(f); });
+  }
+  ["scroll", "pointerdown", "keydown", "touchstart"].forEach(function (ev) {
+    window.addEventListener(ev, arm, { once: true, passive: true });
+  });
+})();
+</script>
+```

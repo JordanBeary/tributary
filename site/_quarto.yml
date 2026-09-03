@@ -40,17 +40,23 @@ website:
       title: "Tributary"
       style: docked
       collapse-level: 1
+      # Decision-first order (D14). Filenames are the URL contract and are
+      # unchanged. Models and memo entries publish under D11 (accepted) and D18.
       contents:
         - href: tributary/index.qmd
           text: Overview
-        - href: tributary/silo-problem.qmd
-          text: The silo problem
-        - href: tributary/cost.qmd
-          text: Cost engineering
         - href: tributary/dashboards.qmd
-          text: Dashboards
+          text: Findings
+        - href: tributary/models.qmd
+          text: Models and experiments
+        - href: tributary/strategy-memo.qmd
+          text: Strategy memo
+        - href: tributary/silo-problem.qmd
+          text: Identity modeling
         - href: tributary/method.qmd
           text: How this was built
+        - href: tributary/cost.qmd
+          text: "Appendix: how the lab was built"
         - href: tributary/run-it.qmd
           text: Run it yourself
   page-footer:
