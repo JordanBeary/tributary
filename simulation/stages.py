@@ -8,6 +8,8 @@ built against them. Fitting details: docs/calibration_spec.md.
 
 from __future__ import annotations
 
+import dataclasses
+
 import numpy as np
 import pandas as pd
 
@@ -65,6 +67,19 @@ def generate_leads(cfg: SimConfig) -> None:
     leads.to_parquet(cfg.out_dir / "leads.parquet", index=False)
 
 
+def landscape_for(cfg: SimConfig) -> AuctionLandscape:
+    """The calibrated landscape, with the reserve schedule overridden when the
+    config asks for it (Phase 6 validation, D18). With no override this is
+    exactly ``AuctionLandscape.from_params_dir`` -- the deployed schedule."""
+    land = AuctionLandscape.from_params_dir(cfg.params_dir)
+    if cfg.floor_multipliers is None:
+        return land
+    mult = np.asarray(cfg.floor_multipliers, dtype=float)
+    if mult.shape != land.floors.shape:
+        raise ValueError(f"floor_multipliers needs {land.floors.size} values, got {mult.size}")
+    return dataclasses.replace(land, floors=land.floors * mult)
+
+
 def run_waterfall(cfg: SimConfig) -> None:
     """6-tier sequential waterfall auction per lead (~9M events at scale=1).
 
@@ -79,7 +94,7 @@ def run_waterfall(cfg: SimConfig) -> None:
     timestamps are derived from it when present).
     """
     leads = pd.read_parquet(cfg.out_dir / "leads.parquet")
-    land = AuctionLandscape.from_params_dir(cfg.params_dir)
+    land = landscape_for(cfg)
     # Recency-dependent demand (C19): bucket each lead by days since the
     # person's previous application; buyers suppress and discount recents.
     demand = RepeatDemand.from_params_dir(cfg.params_dir)

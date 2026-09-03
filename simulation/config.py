@@ -33,6 +33,11 @@ class SimConfig:
     mutation_probs: dict = field(default_factory=lambda: {
         "new_phone": 0.45, "new_email": 0.40, "name_form": 0.35,
         "moved_zip": 0.18})
+    # Reserve-schedule override (Phase 6 validation, D18): per-tier multipliers
+    # applied to the calibrated floors in auction_landscape.json before the
+    # waterfall runs. None -> the deployed schedule, bit-identical to the
+    # engine before this field existed. Six values, tier 1 first.
+    floor_multipliers: tuple[float, ...] | None = None
 
     @property
     def n_persons(self) -> int:
