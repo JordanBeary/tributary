@@ -1,0 +1,135 @@
+# Interaction ledger: how each business problem was worked, as a chain of
+# existing records. This file duplicates nothing — every `ref` points at an
+# id in meta/logs/{decisions,interventions,prompts}.md, a repository path, or a
+# commit. `meta/tools/validate_ledger.py` checks that every ref resolves;
+# `meta/tools/render_ledger.py` renders meta/logs/ledger.md and the site
+# includes (Mermaid chain per problem). Edit this file, then rerun both.
+#
+# Step fields: actor (human | agent | harness), kind (prompt | proposal |
+# decision | correction | artifact | finding), ref, date, label (short, one
+# line; the record itself carries the detail).
+version: 1
+generated_views:
+  - meta/logs/ledger.md
+  - site/tributary/_includes/
+
+problems:
+  - id: identity
+    title: "Identity and duplicate spend"
+    question: "How many distinct consumers do we actually have, and what does buying the same consumer twice cost?"
+    finding: "2.40M lead ids resolve to 635,579 consumers (3.8x overcount); after buyer-side recency suppression, $12.0M (5.7% of revenue) is still paid for consumers bought within the prior 30 days."
+    finding_refs: [analysis/dashboards/data/04_identity.json, docs/silo_audit.md]
+    steps:
+      - {actor: human, kind: prompt, ref: P-002, date: 2026-07, label: "Seed: 'impose/add unifying keys' on simulated data"}
+      - {actor: agent, kind: proposal, ref: docs/design.md, date: 2026-07, label: "Hidden-crosswalk scoring mechanism (design 2.4; jointly attributed)"}
+      - {actor: agent, kind: proposal, ref: C13, date: 2026-08-07, label: "Consumer engine: record grain, synthetic identities, derived FICO band"}
+      - {actor: human, kind: decision, ref: P-007, date: 2026-08-07, label: "Ratified with domain confirmation (1:many borrowers); term amended to 'synthetic data'"}
+      - {actor: agent, kind: correction, ref: C14, date: 2026-08-07, label: "Applications-per-consumer mix corrected on paper (mean 1.32 -> 1.60)"}
+      - {actor: agent, kind: finding, ref: D8, date: 2026-08-20, label: "First ER run too clean: link F1 0.976, dedupe 0.997; recommends turning dials up"}
+      - {actor: human, kind: decision, ref: P-010, date: 2026-08-20, label: "Amended: author's leads-per-contact table, channel-dependent drift, band moved to 0.8-0.9"}
+      - {actor: agent, kind: artifact, ref: C18, date: 2026-08-20, label: "Engine amendment; first run lands link F1 0.879, dedupe 0.873"}
+      - {actor: agent, kind: decision, ref: D9, date: 2026-08-20, label: "Clusters at the 0.9998-precision operating point; deterministic auction linkage"}
+      - {actor: agent, kind: artifact, ref: er/scorecard.json, date: 2026-08-24, label: "Scorecard against the hidden crosswalk (C19 run)"}
+      - {actor: agent, kind: finding, ref: D10, date: 2026-08-20, label: "dim_consumer: 3.8x overcount; $40.0M same-buyer-30d duplicate revenue, unpenalized"}
+      - {actor: human, kind: prompt, ref: P-011, date: 2026-08-24, label: "'These two items are troublesome'; duplicate-performance KPI table supplied"}
+      - {actor: agent, kind: artifact, ref: C19, date: 2026-08-24, label: "Buyer-side recency penalties fitted to the table; redeployed end to end"}
+      - {actor: harness, kind: finding, ref: analysis/dashboards/data/04_identity.json, date: 2026-08-24, label: "Published: 635,579 consumers; $12.0M residual duplicate spend (5.7%)"}
+
+  - id: attribution
+    title: "Marketing attribution"
+    question: "Which acquisition channels earn their spend once revenue is joined through the auction?"
+    finding: "93% of $209.2M revenue is attributable to a marketing contact; paid ROAS runs 0.94x (display, below break-even) to 3.06x (affiliate). The unprofitable-channel answer changed twice as the author's domain inputs arrived."
+    finding_refs: [analysis/dashboards/data/05_attribution.json, docs/silo_audit.md]
+    steps:
+      - {actor: human, kind: prompt, ref: P-002, date: 2026-07, label: "Brief: organize, store, analyze; a marketing silo in scope"}
+      - {actor: agent, kind: proposal, ref: C5, date: 2026-07-31, label: "Message funnel rates declared (Criteo has no email funnel)"}
+      - {actor: agent, kind: proposal, ref: C15, date: 2026-08-10, label: "Contact pool with never-applier prospects; inverse construction; ITT"}
+      - {actor: human, kind: prompt, ref: P-008, date: 2026-08-10, label: "'Where are these never-applier prospects coming from' — channel mix with realistic intent and KPIs"}
+      - {actor: agent, kind: artifact, ref: C16, date: 2026-08-10, label: "Seven-channel intent ladder, unit economics, monthly spend ledger; ROAS 0.78x-2.7x"}
+      - {actor: agent, kind: decision, ref: D7, date: 2026-08-20, label: "Staging: marketing silo via local Parquet exports; naive-UTC convention"}
+      - {actor: agent, kind: decision, ref: D10, date: 2026-08-20, label: "Attribution operating points: acquisition-cohort ROAS, 30-day last touch"}
+      - {actor: agent, kind: finding, ref: D10, date: 2026-08-20, label: "Under C18 every paid channel clears break-even (display 1.29x); C16 table annotated, not rewritten"}
+      - {actor: human, kind: prompt, ref: P-011, date: 2026-08-24, label: "Recency KPI table (same prompt as the identity chain)"}
+      - {actor: agent, kind: artifact, ref: C19, date: 2026-08-24, label: "Recency penalties weigh hardest on repeat-heavy low-intent channels"}
+      - {actor: harness, kind: finding, ref: analysis/dashboards/data/05_attribution.json, date: 2026-08-24, label: "Published: display 0.94x, affiliate 3.06x; 93% of revenue attributed"}
+
+  - id: funnel
+    title: "Funnel and auction economics"
+    question: "What do leads sell for by tier and quality, and does a higher purchase price predict funding?"
+    finding: "Funded rate falls from 14.3% (tier 1) to 8.5% (tier 6) once price carries a modest gradient; overall sell-through moved from the invented ~60% to the source data's 49%. The absolute price level (C1) remains an open watch item."
+    finding_refs: [analysis/dashboards/data/02_funnel.json, analysis/dashboards/data/03_auction.json]
+    steps:
+      - {actor: agent, kind: proposal, ref: C1, date: 2026-07-31, label: "Price scale invented ($2 to $120 anchor); agent asked for a gut-check that never entered the log"}
+      - {actor: agent, kind: proposal, ref: C2, date: 2026-07-31, label: "Sell-through ~60% declared"}
+      - {actor: agent, kind: finding, ref: C9, date: 2026-08-07, label: "iPinYou elasticity -0.149 fitted; drafted as 'wrong-sign'"}
+      - {actor: human, kind: correction, ref: INT-013, date: 2026-08-07, label: "Reframed: valid in-domain estimate, non-transferable; empirical value preserved"}
+      - {actor: harness, kind: finding, ref: INT-014, date: 2026-08-07, label: "New Spearman gate falsifies the +1.0 override the same day; omission recorded"}
+      - {actor: agent, kind: artifact, ref: C11, date: 2026-08-07, label: "Rank-q, elasticity 3.0, within-vertical sigma; human's sigma prediction recorded as not load-bearing"}
+      - {actor: agent, kind: artifact, ref: C12, date: 2026-08-07, label: "Cherry-picking participation from a gate-verified dose-response grid"}
+      - {actor: agent, kind: proposal, ref: C17, date: 2026-08-10, label: "Offer payload on bid requests; funded flag drawn uniformly among sold leads"}
+      - {actor: human, kind: decision, ref: P-009, date: 2026-08-12, label: "Ratified with the OLAP wide-fact rationale"}
+      - {actor: agent, kind: decision, ref: D9, date: 2026-08-20, label: "Deterministic auction-CRM linkage recovers 99.8% of recoverable events"}
+      - {actor: agent, kind: finding, ref: D10, date: 2026-08-20, label: "Funded rate flat by construction (C17d); flagged as a realism watch item"}
+      - {actor: human, kind: prompt, ref: P-011, date: 2026-08-24, label: "'Higher purchase price should garner better results ... but the lift should be modest'"}
+      - {actor: agent, kind: artifact, ref: C19, date: 2026-08-24, label: "Price gradient on funded (beta 0.15, mean preserved); sell-through 60% -> 49%"}
+      - {actor: harness, kind: finding, ref: analysis/dashboards/data/02_funnel.json, date: 2026-08-24, label: "Published: funded 14.3% (tier 1) to 8.5% (tier 6)"}
+
+  - id: floors
+    title: "Reserve floors"
+    question: "Where should the per-tier reserve floors sit to maximize revenue per lead?"
+    finding: "Exact counterfactual replay recommends tier 1 x1.2 and deep tiers cut to a declared 20% bound: +2.02% revenue per lead (bootstrap CI +1.96 to +2.08); re-running the engine at that schedule realized +2.98% over five seeds (range +2.88 to +3.15), and the policy survives buyer bid shading only up to about 0.19. Ratified 2026-09-02 (D11, D18)."
+    finding_refs: [models/out/m3_metrics.json, models/cards/model_3_floor_optimization.md]
+    steps:
+      - {actor: human, kind: prompt, ref: P-002, date: 2026-07, label: "Brief: 'strategize machine learning optimization'"}
+      - {actor: agent, kind: proposal, ref: docs/design.md, date: 2026-07, label: "Design Section 8 model 3: floor optimization"}
+      - {actor: agent, kind: artifact, ref: D11, date: 2026-08-24, label: "Replay of logged bids (100% fidelity), hot-deck imputation, coordinate descent; +2.02%"}
+      - {actor: agent, kind: proposal, ref: meta/logs/sessions/2026-08-24_phase6_handoff.md, date: 2026-08-24, label: "Ratification requested in INT-015 form"}
+      - {actor: human, kind: decision, ref: D11, date: 2026-09-02, label: "Ratified as recorded, with a direction: state the business problem each model solves (INT-018)"}
+      - {actor: agent, kind: artifact, ref: D18, date: 2026-09-01, label: "Phase 6 validation: engine floor override, five seeds, bid-shading sweep"}
+      - {actor: human, kind: decision, ref: D18, date: 2026-09-02, label: "Ratified: +2.98% realized (range +2.88 to +3.15), break-even shading ~0.19 — the Phase 6 exit measurement"}
+      - {actor: harness, kind: finding, ref: models/out/m3_validation.json, date: 2026-09-02, label: "Published: the replay's +2.02% understates the engine result, as its downward-biased imputation implies"}
+
+  - id: uplift
+    title: "Uplift and nurture targeting"
+    question: "Whom should the nurture program message, and can the experiment support a level claim?"
+    finding: "The pooled effect is underpowered at project scale (CI spans zero); the cross-fitted T-learner recovers the injected concentration (top segment +0.46pp vs +0.52pp injected), so targeting claims are ranking-based. Chain is agent-led end to end; human touch points are ratifications as proposed."
+    finding_refs: [models/out/m4_metrics.json, analysis/dashboards/data/06_uplift.json]
+    steps:
+      - {actor: human, kind: prompt, ref: P-002, date: 2026-07, label: "Brief (marketing treatment structure via Criteo Uplift, P-001)"}
+      - {actor: agent, kind: proposal, ref: C6, date: 2026-07-31, label: "Uplift size and heterogeneity declared; measured 2026-08-04 at 7.04x, not 3-5x"}
+      - {actor: agent, kind: proposal, ref: C15, date: 2026-08-10, label: "Inverse construction of the holdout with per-segment injected uplift"}
+      - {actor: human, kind: decision, ref: C15, date: 2026-08-12, label: "Ratified as proposed"}
+      - {actor: agent, kind: finding, ref: D10, date: 2026-08-20, label: "Experiment underpowered for the pooled ATE; evaluate on Qini/ranking"}
+      - {actor: agent, kind: artifact, ref: D11, date: 2026-08-24, label: "T-learner, covariates = action space; tie-breaking artifact found and fixed"}
+      - {actor: human, kind: decision, ref: D11, date: 2026-09-02, label: "Ratified; targeting claims stay ranking-based, and the card must state the business problem (INT-018)"}
+
+cross_cutting:
+  - id: calibration-integrity
+    title: "Calibration integrity (precedes every number above)"
+    steps:
+      - {actor: human, kind: prompt, ref: P-005, date: 2026-08-03, label: "Sentinel triage; make every data mutation visible"}
+      - {actor: agent, kind: artifact, ref: INT-011, date: 2026-08-03, label: "Data-mutation ledger convention (calibration_spec v0.2)"}
+      - {actor: human, kind: prompt, ref: P-006, date: 2026-08-04, label: "Narrated EDA as a standing deliverable"}
+      - {actor: agent, kind: artifact, ref: INT-012, date: 2026-08-04, label: "EDA companion convention (calibration_spec v0.4); three *_eda notebooks"}
+
+open_items:
+  - {ref: D14, kind: action, status: scheduled, since: 2026-09-02, owner: human, ask: meta/logs/sessions/2026-09-01_decision_requests.md, note: "Publishing flips to on-push (Q-J, answered): a workflow-trigger commit made after the reframed site deploys and the human has read it. Nothing else is open from the packet."}
+  - {ref: INT-017, kind: intervention, status: open-until-deploy, since: 2026-09-01, owner: agent, ask: meta/logs/sessions/2026-09-01_reframe_session.md, note: "Closes when the reframed site deploys; the next Global session records the deployment"}
+  - {ref: INT-018, kind: intervention, status: in-progress, since: 2026-09-02, owner: agent, ask: meta/logs/sessions/2026-09-01_decision_requests.md, note: "Business-problem framing being written into the four model cards and the models page (Local unit)"}
+  - {ref: Q4, kind: question, status: open, since: 2026-08-03, owner: human, ask: meta/logs/decisions.md, note: "Whether to demonstrate a PR-based workflow; parked, non-blocking"}
+
+resolved_items:
+  - {ref: D11, resolved: 2026-09-02, note: "Ratified as recorded (packet Q-A), with the INT-018 framing direction attached; Phase 5 closes"}
+  - {ref: D14, resolved: 2026-09-02, note: "Ratified (Q-B); INT-017 classified ambiguity; conventions Section 3 amended under it (Q-G)"}
+  - {ref: D15, resolved: 2026-09-02, note: "Ratified (Q-C): path, PDF 404 with stub, git-ignored private notes, parent outside the harness"}
+  - {ref: D16, resolved: 2026-09-02, note: "Confirmed with the id allocation (Q-K)"}
+  - {ref: D17, resolved: 2026-09-02, note: "Ratified option 1 (Q-F): the generated table satisfies the charter's ledger clause"}
+  - {ref: D18, resolved: 2026-09-02, note: "Ratified (Q-I): the five-seed band is the Phase 6 exit measurement"}
+  - {ref: C1, resolved: 2026-09-02, note: "Closed (Q-E): the declared price scale stands; the memo's price-scale caveat is the honest statement"}
+  - {ref: P-013, resolved: 2026-09-02, note: "Accepted into the prompt log (Q-G); the 2026-09-01 direction stays a decision-cited quotation"}
+  - {ref: D12, resolved: 2026-09-02, note: "Superseded on the publishing condition by D14 (Q-J); every other part stands"}
+
+notes:
+  - {ref: 342701e, note: "Trailer `Directs: P-004` on the C12 engine commit is a mis-trailer (P-004 is the plan-adoption prompt); the directing record is C11/C12. Noted here; history is not rewritten."}
+  - {ref: d3144f1, note: "Trailer `Directs: P-012` points at a rejected prompt-log candidate; P-012 is a tombstone entry in prompts.md and D12 carries the disposition."}
+  - {ref: d5465e6, note: "Commit subject 'site-as-presentation directive recorded (P3 guidance)' is the only trailer-level trace of the 2026-08-20 directive; recorded retroactively as D16."}
