@@ -1,68 +1,80 @@
 ---
 title: "Tributary — Overview"
-description: "Problem, architecture, and results in sixty seconds."
+description: "A lead marketplace's business questions turned into decisions: which channels earn their spend, what duplicate consumers cost, where reserve floors sit, and whom to message."
 ---
 
-## The problem
+## Four decisions
 
-A simulated two-sided marketplace sells personal-loan leads to lenders through
-a six-tier sequential waterfall auction. Like most companies that grew fast,
-its data grew in pieces: engineering logs auction events to a data lake, sales
-operations runs the CRM, and a marketing agency exports campaign data to its
-own warehouse. Three silos, three identity schemes, no shared key — so the
-questions that matter most (what did this lead sell for? how many distinct
-consumers do we actually have? what revenue did marketing drive?) are
-unanswerable.
+A simulated two-sided marketplace sells personal-loan leads to lenders
+through a six-tier waterfall auction. Its data lives in three systems that
+share no key, so the questions its executives would ask cannot be answered
+from any one of them. Tributary builds that world, links its data with
+measured accuracy, and then does the work the marketplace actually needs:
 
-Tributary builds that world deliberately, then fixes it — and because the
-world is simulated from a hidden ground truth, every unification claim is
-*scored*, not asserted.
+1. **Which channels earn their spend?** Paid ROAS runs from 0.94x
+   (display, below break-even on $11.6M) to 3.06x (affiliate), and the
+   click ranking the marketing team can compute alone inverts it.
+   [Findings](dashboards.qmd)
+2. **What do duplicate consumers cost?** 2.40M lead ids are 635,579
+   people; buyers paid $12.0M (5.7% of revenue) for consumers they had
+   bought within the prior 30 days. [Findings](dashboards.qmd)
+3. **Where should reserve floors sit?** The level is right and the shape
+   is wrong: reshaping the schedule lifts revenue per lead by +2.0% in
+   counterfactual replay and +3.0% when the engine is re-run, about $4.2M a
+   year at the logged volume. [Models](models.qmd), [memo](strategy-memo.qmd)
+4. **Whom should we message?** One engagement segment carries the nurture
+   effect; response-model targeting is worse than random; the pooled
+   experiment is underpowered and says so. [Models](models.qmd)
 
-## Architecture
+Because the world is simulated from a hidden ground truth, every identity
+claim underneath these numbers is scored, not asserted.
 
-```text
-             simulation engine (local Python, seeded, --scale dial)
-                  │            │            │
-          ┌───────▼──┐   ┌─────▼─────┐  ┌───▼──────────┐
-          │ AWS S3   │   │ Neon      │  │ BigQuery     │
-          │ auction  │   │ Postgres  │  │ marketing    │
-          │ lake     │   │ CRM       │  │ exports      │
-          └───────┬──┘   └─────┬─────┘  └───┬──────────┘
-                  └──────┬─────┴─────┬──────┘
-                         ▼           ▼
-              DuckDB + dbt + Splink (unification, scored vs. ground truth)
-                         │
-                         ▼
-         wide analytics marts · static dashboards · ML models
-```
+## From business problem to data science problem
 
-One seeded command regenerates everything at any scale: 1.5M consumer records,
-2.4M leads, 26.4M auction events, and 2.19M marketing messages in about two
-and a half minutes at full scale. The simulator is calibrated against three
-public datasets (iPinYou bid logs, LendingClub applications, Criteo uplift),
-so its distributions are defensible, and the silo fracture injects the
-identity pathologies that make unification genuinely hard.
+The discipline this case study is meant to show is the translation step:
+naming the decision, the metric, and the counterfactual before choosing a
+method. The full table, with the data each row needed and its distance
+from decision-grade, is in
+[docs/problem_framing.md](https://github.com/JordanBeary/tributary/blob/main/docs/problem_framing.md).
+
+| Business problem | Decision | Metric | Counterfactual | Method | Artifact | Status |
+| --- | --- | --- | --- | --- | --- | --- |
+| Which channels earn their spend? | Next acquisition dollar; keep display? | ROAS, cost per sold lead | Marginal return, not average | Acquisition-cohort attribution through the auction | [Attribution](dashboards.qmd) | Answered; needs maturity adjustment and a spend test |
+| What do duplicates cost? | Marketplace-side suppression or re-pricing | Revenue on re-sold consumers in a window | Same consumer, fresh | Identity resolution, windowed flags, sensitivity 1-90 days | [Identity](dashboards.qmd) | Answered; policy needs a buyer-response experiment |
+| Where should floors sit? | Per-tier reserve schedule | Revenue per lead offered | Each logged lead under another schedule | Exact replay of logged bids, then engine re-run | [Model 3](models.qmd) | Decision-grade: validated, with a staged rollout in the [memo](strategy-memo.qmd) |
+| Whom to message? | Send policy by segment | Incremental applications per contact | Randomized holdout | ITT read, cross-fitted T-learner on the action space | [Model 4](models.qmd) | Decision-grade as a ranking; follow-up test specified |
+| What is a lead worth before its outcome exists? | Acquisition spend; what to do with unsold inventory | Expected revenue in dollars, censored leads included | Clearing at tiers never reached | Survival over the tier ladder; Tobit as a specification test | [Model 2](models.qmd) | Modeled; no decision yet consumes it |
+| Which leads will sell? | None live: the auction answers it minutes later for free | Calibrated P(sold) | None needed | Calibrated gradient boosting, kept as the leakage and calibration contract | [Model 1](models.qmd) | Weakly motivated, and labelled so |
+| Do sold leads fund? | Quality case for a stiffer tier-1 floor | Funded rate by price | Same lead at another price | Descriptive join | [Funnel](dashboards.qmd) | Direction only (calibrated) |
+| How many consumers are there? | Every per-consumer figure | Precision, recall, purity | Hidden crosswalk | Probabilistic + deterministic linkage at stated operating points | [Identity modeling](silo-problem.qmd) | Answered and scored |
+
+::: {.callout-note title="This page was rewritten after a correction"}
+The first release of this case study led with the silo architecture and the cloud bill. After reading it start to finish, the author recorded that it read like data engineering and that the human-agent method was asserted rather than shown (intervention INT-017); the design document's tagline had been corrected on that point in the founding chat (INT-009), but its body and site plan had not, and the agents built to the body. The repositioning was run through the same harness as every other correction — a decision record (D14), a session log, and a rebuilt [method page](method.qmd) that renders the records instead of linking to them.
+:::
 
 ## Results in sixty seconds
 
 | Claim | Number | Where it's proven |
 | --- | --- | --- |
-| Auction revenue events joinable to a consumer | **95.3%**, up from 0% | [ER scorecard](https://github.com/JordanBeary/tributary/blob/main/er/scorecard.json), [details](silo-problem.qmd) |
-| Entity-resolution accuracy vs. hidden ground truth | link F1 **0.879**, dedupe F1 **0.873** | [ER pipeline](https://github.com/JordanBeary/tributary/tree/main/er) |
-| Consumer identity: apparent vs. real | 2.40M lead ids → **635,579** consumers (3.8x overcount) | [Identity dashboard](dashboards.qmd) |
-| Duplicate spend exposed by unification | **$12.0M** (5.7% of revenue) paid for consumers bought within the prior 30 days | [Auction dashboard](dashboards.qmd) |
-| Marketing revenue attribution, previously impossible | **93%** of $209.2M revenue attributed; channel ROAS 0.94x–3.06x | [Attribution dashboard](dashboards.qmd) |
-| Total cloud bill for the three-silo deployment | **$0.01** | [Cost engineering](cost.qmd) |
-| Warehouse scan cost after partitioning | **10.9x** fewer bytes scanned | [Benchmark receipt](https://github.com/JordanBeary/tributary/blob/main/silos/marketing_bq/benchmark_receipt.json) |
+| Duplicate spend exposed | **$12.0M** (5.7% of revenue) paid for consumers bought within the prior 30 days; 635,579 consumers behind 2.40M lead ids (3.8x) | [Findings 1](dashboards.qmd) |
+| Channel economics | ROAS **0.94x to 3.06x**; display below break-even; cost per sold lead $57 to $183 | [Findings 2](dashboards.qmd) |
+| Reserve-floor policy | **+2.02%** revenue per lead in replay (95% CI +1.96% to +2.08%); **+2.98%** in the engine re-run (five-seed range +2.88% to +3.15%); zero if buyers give back 19% of the tier-1 increase | [Model 3](models.qmd), [memo](strategy-memo.qmd) |
+| Send policy | Concentrated segment ranked first (+0.46pp predicted vs +0.52pp injected); response targeting **worse than random**; pooled test needs ~6.1M contacts, has 859k | [Model 4](models.qmd) |
+| Lead valuation, censored half included | Top expected-value decile captures **33.3%** of revenue vs 14.7% for the table a team ships first; the textbook Tobit values unsold leads at $0.18 against $32.25 of logged demand | [Model 2](models.qmd) |
+| Why you can trust these numbers | **95.3%** of auction events consumer-joinable (0% before); link F1 **0.879**, dedupe F1 **0.873**, purity 0.9998 against a hidden ground truth | [Identity modeling](silo-problem.qmd), [scorecard](https://github.com/JordanBeary/tributary/blob/main/er/scorecard.json) |
 
-## What's here now, what's next
+## What is here
 
-This first release covers the build through analytics: the silo story,
-entity resolution with its scorecard, cost engineering, and six dashboards.
-The ML workstream (sale propensity, censored price modeling, reserve-price
-optimization, uplift) is trained and evaluated but publishes here only after
-its review closes — an ordering chosen deliberately so the site never cites
-unratified numbers.
+All of it: the findings, the identity work, the four models, and the
+strategy memo. The models were held off this site until their methodology
+was reviewed and accepted (decision D11, 2026-09-02) and the floor policy's
+uncertainty band until the method that produced it was ratified (D18), so
+every number here has passed a review before being published rather than
+after. That review is also why the models page opens the way it does: the
+acceptance came with a pushback — what business problem is each model
+actually solving — and answering it honestly demoted two of the four.
 
-Start with [the silo problem](silo-problem.qmd), or skip to
-[how this was built](method.qmd) if the working method is what you came for.
+How the lab was built (three cloud silos, the simulator, and the one-cent
+bill) is in the [appendix](cost.qmd); how the work was directed and
+recorded is in [how this was built](method.qmd); the whole world regenerates
+from one seeded command in [run it yourself](run-it.qmd).

@@ -1,66 +1,56 @@
 ---
-title: "The silo problem"
-description: "Three silos, no shared key — unified with entity resolution and scored against a hidden ground truth."
+title: "Identity modeling"
+description: "Three identity schemes and no shared key: probabilistic and deterministic linkage chosen by the evidence, run at stated operating points, and scored against a hidden ground truth."
 ---
 
-## Three silos that cannot talk to each other
+Every finding in this case study rests on one modeling problem: deciding
+which records across three systems are the same person. The auction lake
+keys leads by UUID, the CRM by an integer id plus a hashed email, and the
+marketing exports by an MD5 of the email; no system carries another's key.
+The world is built to make that hard in the ways real marketplace data is
+hard: people re-apply heavily (a fitted power-law tail, mean 3.8
+applications per person, a 100+ tail), identities drift between visits at a
+rate that depends on the acquisition channel (about 51% of applications
+arrive under a drifted name, email, phone, or zip), about 5% of auction
+events lost their CRM record in a simulated migration, timestamps come in
+three timezones, and "conversion" means three different things. The
+systems and their pathologies are tabulated in the
+[appendix](cost.qmd); this page is about the modeling choices and what
+they cost.
 
-The simulated marketplace's data is deliberately fractured the way real
-marketplace data fractures:
+## Three linkage problems, three tools
 
-| Silo | System | Grain | Identity scheme |
-| --- | --- | --- | --- |
-| Auction lake | S3, partitioned Parquet | one row per bid event | `lead_uuid` (UUIDv4) |
-| CRM | Neon Postgres | one mutable row per lead | integer `lead_id` + hashed email |
-| Marketing | BigQuery exports | one row per message | `contact_id` (MD5 of lowercased email) |
+The unification is not one matcher. Each link is chosen by the structure
+of the evidence, and each runs at a stated operating point that a
+downstream analyst can change in one place.
 
-No silo contains another silo's key, and the fracture injects the defects
-that make real unification hard: about 8% duplicate consumers (nickname vs.
-legal name, typo'd emails, new phone numbers), about 5% orphaned auction
-events from a simulated migration, timestamps logged in three different
-timezones (UTC, naive US/Pacific, US/Eastern), and "conversion" meaning three
-different things in three systems. Each pathology is parameterized in the
-[simulation engine](https://github.com/JordanBeary/tributary/tree/main/simulation),
-not hand-waved.
-
-The consequence: before unification, nobody can say what a lead sold for
-end-to-end, how many distinct consumers exist, or what revenue marketing
-drove. The [before/after dashboard](dashboards.qmd) walks through nine such
-questions.
-
-## The trick that makes it measurable
-
-The simulator generates every consumer with a true `consumer_key`, strips it
-from all three silos, and keeps it in a private crosswalk that never enters
-the cloud. The unification pipeline works blind, exactly as a real team
-would — and is then *scored* against the crosswalk. Every claim below is a
-measurement, not an assertion.
-
-One honest note on difficulty: the pathology dials were deliberately tuned so
-entity resolution lands in the 0.8–0.9 F1 band. Early versions of the
-fracture were too clean and the matcher saturated — a synthetic benchmark you
-can ace is not a benchmark.
-
-## How the unification works
-
-- **Probabilistic matching where it belongs.** CRM deduplication and the
+- **Probabilistic where identity is fuzzy.** CRM deduplication and the
   CRM-to-marketing link are [Splink](https://github.com/moj-analytical-services/splink)
-  models (term-frequency-adjusted comparisons over name, email, phone,
-  geography) — the classic fuzzy-identity problems.
-- **Deterministic SQL where a model would obscure the truth.** The
+  models: term-frequency-adjusted comparisons over name, email, phone, and
+  geography, blocked on the fields that survive drift. These are the
+  classic record-linkage problems and a Fellegi-Sunter model is the honest
+  tool.
+- **Deterministic where a model would obscure the truth.** The
   auction-to-CRM linkage is an exact composite key (state, loan amount,
-  purpose, FICO band) plus a nine-minute submission window, choosing
-  nearest-in-time. The residual errors are payload doppelgangers inside the
-  window — which no probabilistic model could separate either, so the honest
-  tool is the simple one. It also has to absorb a daylight-saving fall-back
-  hour where CRM timestamps land 3,600 seconds off.
-- **High-precision clustering.** Consumer entities are connected components
-  over dedupe pairs at the 0.9 threshold, where pairwise precision is 0.9998
-  — transitive closure amplifies any false edge, so clustering runs at the
-  high-precision operating point rather than the F1-optimal one.
-- **A thin dbt spine.** Two intermediate models map every lead and auction
-  event to its resolved consumer entity; wide denormalized marts join through
-  that spine.
+  purpose, FICO band) plus a nine-minute submission window, nearest in
+  time. The payload agrees exactly for 100% of true pairs, so the only
+  residual errors are payload doppelgangers inside the window, which no
+  probabilistic model could separate either. A model would have added
+  false confidence, not recall. It also has to absorb a daylight-saving
+  fall-back hour where CRM timestamps land 3,600 seconds off.
+- **Cluster at the high-precision operating point, not the F1-optimal
+  one.** Consumer entities are connected components over dedupe pairs at
+  threshold 0.9. At 0.5 the dedupe model is F1-optimal (precision 0.990,
+  recall 0.781); at 0.9 precision is 0.9998 and recall 0.764. Transitive
+  closure amplifies every false edge into a merged person, so clustering
+  trades 1.7 points of recall for a purity of 0.9998 and 98.1% of persons
+  kept whole. The link task's F1 barely moves with its threshold (0.879 at
+  0.5, 0.877 at 0.99): its ceiling is doppelganger ambiguity, so the
+  threshold is not the lever there.
+- **A thin spine, wide marts.** Two intermediate models map every lead
+  and auction event to its resolved consumer entity; wide denormalized
+  marts join through that spine so no dashboard query joins more than one
+  table.
 
 ## The scorecard
 
@@ -69,28 +59,60 @@ Scored against the hidden crosswalk
 
 | Task | Precision | Recall | F1 |
 | --- | --- | --- | --- |
-| CRM–marketing link (probabilistic, best match per lead) | 0.895 | 0.864 | **0.879** |
-| CRM dedupe (probabilistic, pairwise) | — | — | **0.873** |
-| Auction–CRM linkage (deterministic) | 0.995 (lead) | 0.998 (non-orphan) | — |
+| CRM to marketing link (probabilistic, best match per lead) | 0.895 | 0.864 | **0.879** |
+| CRM dedupe (probabilistic, pairwise, threshold 0.5) | 0.990 | 0.781 | **0.873** |
+| CRM dedupe at the clustering operating point (threshold 0.9) | 0.9998 | 0.764 | 0.866 |
+| Auction to CRM linkage (deterministic) | 0.995 (lead) | 0.998 (non-orphan) | — |
 
-Downstream identity quality: 636,164 resolved consumer clusters against
-623,470 true persons, weighted cluster purity 0.9998, and 98.1% of persons
-kept whole (unsplit).
+Downstream identity quality: weighted cluster purity 0.9998, 98.1% of
+persons unsplit, and **635,579 resolved consumers**^[The scorecard reports
+636,164 clusters because it clusters every CRM lead; 635,579 is the count
+of resolved consumers with at least one auctioned lead (`dim_consumer`),
+which is the population every finding and model on this site is computed
+over. The site uses 635,579 throughout.] against 2.40M auction lead ids and
+2.28M CRM rows.
 
 **The headline:** 95.3% of auction events are consumer-joinable after
-unification, against a >95% target and 0% before — and of the 4.7% gap,
-almost all is the ~5% migration-orphan population that is unjoinable by
-construction. The linkage recovers 99.8% of what is recoverable.
+unification, against a >95% target and 0% before. Of the 4.7% gap, almost
+all is the ~5% migration-orphan population that is unjoinable by
+construction; the linkage recovers 99.8% of what is recoverable.
 
-## What the unified view immediately paid for
+## Why these numbers can be trusted
 
-- The CRM's 2.40M lead ids resolve to **635,579 actual consumers** — a 3.8x
-  overcount; 69% of applications are repeat applicants.
-- Buyers paid **$12.0M (5.7% of revenue)** for consumers they had already
-  bought within the prior 30 days — invisible when every application looks
-  like a new person.
-- **93% of $209.2M** in revenue became attributable to a marketing
-  touch, exposing paid-channel ROAS ranging from 0.94x (below break-even)
-  to 3.06x.
+The simulator generates every consumer with a true `consumer_key`, strips
+it from all three silos, and keeps it in a private crosswalk that never
+enters the cloud. The linkage works blind, exactly as a real team would,
+and is then scored against the crosswalk. Every number above is a
+measurement, not an assertion.
 
-All three, with charts, in the [dashboards](dashboards.qmd).
+Difficulty was engineered, not assumed. The first fracture scored link F1
+0.976 and dedupe F1 0.997, both at the ceiling their own ambiguity allowed;
+a synthetic benchmark you can ace is not a benchmark. The repeat-application
+distribution and the channel-dependent drift were supplied from industry
+experience, the target band was moved to 0.8-0.9, and the first run under
+the new engine landed both tasks in band with no dial iteration.
+
+::: {.callout-note title="How this number was decided"}
+The first entity-resolution run scored link F1 0.976 and dedupe F1 0.997 — above the design's own band — and the agent flagged its result as too clean rather than reporting it (decision D8). It recommended turning the pathology dials up; the human did, but not the way the agent proposed: the author supplied a one-year leads-per-contact distribution from industry experience and a channel-dependent identity-drift mechanism, and moved the target band down to 0.8–0.9 (prompt P-010; the raw table never entered the repository, its fitted form did). The next full run landed at 0.879 and 0.873 on the default dials, which is why the scorecard above is evidence and not a benchmark the simulator was built to pass. Records: D8, P-010, C18 in the [decision and prompt logs](https://github.com/JordanBeary/tributary/tree/main/meta/logs); the chain is drawn on the [method page](method.qmd).
+:::
+
+## What identity error does to a decision
+
+Every downstream number inherits the linkage's error, so the case study
+measures the propagation once rather than assuming it away: the
+[nurture experiment](dashboards.qmd#the-nurture-experiment-and-who-to-message)
+compares the per-segment lift recovered through the F1-0.88 link against
+the effect the simulator injected. Linkage noise attenuates the recovered
+effect; it does not fabricate one. That is the property a decision-maker
+needs from an identity layer.
+
+## What the unified identity paid for
+
+- The 3.8x consumer overcount and the **$12.0M (5.7% of revenue)** buyers
+  paid for consumers they had already bought within 30 days: the
+  [identity and duplicate-spend finding](dashboards.qmd).
+- Channel ROAS from 0.94x to 3.06x, computable only once revenue joins
+  through the auction: the [attribution finding](dashboards.qmd).
+- Consumer-entity history (application sequence, recency, prior sales) as
+  the strongest features in the [models](models.qmd), and the recency
+  buckets the [strategy memo](strategy-memo.qmd) prices reserves against.

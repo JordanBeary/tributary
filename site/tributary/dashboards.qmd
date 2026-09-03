@@ -1,83 +1,134 @@
 ---
-title: "Dashboards"
-description: "Six static dashboards answering the nine questions no single silo could."
+title: "Findings"
+description: "Six findings from the unified warehouse, each opening with the decision it informs."
 toc: true
 ---
 
-Six dashboards, built from the unified warehouse marts as fully static Plotly
-pages — no server, no live compute, nothing to break. Each panel is tagged
-with the audit question it answers; the full question-by-question checklist
-(nine questions, each unanswerable or wrong from any single silo) lives in the
+Six static dashboards built from the unified warehouse marts, ordered by
+the decision each one informs rather than by the order they were built.
+Every panel is tagged with the audit question it answers; the full
+question-by-question checklist (nine questions, each unanswerable or wrong
+from any single silo) lives in the
 [silo audit memo](https://github.com/JordanBeary/tributary/blob/main/docs/silo_audit.md).
+The models that turn three of these findings into recommendations are on the
+[models and experiments](models.qmd) page; the recommendations themselves
+are in the [strategy memo](strategy-memo.qmd).
 
 Every frame below is the real artifact, embedded as-is; the source build is
-[analysis/dashboards](https://github.com/JordanBeary/tributary/tree/main/analysis/dashboards).
+[analysis/dashboards](https://github.com/JordanBeary/tributary/tree/main/analysis/dashboards),
+and every derived figure quoted here is recomputed by
+[derived_figures.py](https://github.com/JordanBeary/tributary/blob/main/analysis/dashboards/derived_figures.py).
 
-## 1. Before and after: the silo audit
+## 1. Consumer identity and what duplicates cost
 
-What each silo believed alone versus what the unified view shows — headcount
+**Decision this informs:** whether the marketplace should suppress or
+re-price recently sold consumers itself, rather than leave it to buyers.
+
+2.40M auction lead ids and 2.28M CRM lead ids resolve to 635,579
+consumers; 69% of applications are repeats; the 20% of consumers with five
+or more applications produce 53% of revenue; 112,049 orphaned applications
+are restored from the lake. Buyers paid **$12.0M (5.7% of revenue)** for
+consumers they had already bought within 30 days, and $48.3M (23.1%) of
+revenue is re-sales of a consumer any buyer had bought within 30 days --
+the leakage that remains after buyers' own suppression and discounting,
+with the window's sensitivity charted from 1 to 90 days.
+
+<iframe class="dashboard-frame" data-src="embedded/04_consumer_identity.html" title="Consumer identity dashboard" loading="lazy"></iframe>
+
+[Open full page](embedded/04_consumer_identity.html){target="_blank"}
+
+::: {.callout-note title="Why the duplicate-spend figure is $12.0M and not $40.0M"}
+The first version of these dashboards reported $40.0M (14% of revenue) paid by buyers for consumers they had bought within the prior 30 days, and a funded rate that was flat across tiers and prices. The human flagged both as "troublesome" and supplied a duplicate-performance table from industry experience: consumers who return soon after a prior lead win less and clear lower (prompt P-011). The engine learned buyer-side recency suppression and a modest price gradient on funding (decision C19), was redeployed end to end, and overall sell-through moved from the invented ~60% to the source data's 49%. The residual leakage after that suppression is the $12.0M (5.7%) shown here; the earlier figure stands in the record as history, not as an error.
+:::
+
+## 2. Marketing attribution: which channels earn their spend
+
+**Decision this informs:** where the next acquisition dollar goes, and
+whether display spend continues.
+
+$194.3M of $209.2M revenue (93%) is attributable to a marketing contact and
+$104.5M to paid channels, on $53.8M of paid spend (blended ROAS 1.94x).
+Channel ROAS runs from 0.94x (display, below break-even: $11.6M spent for
+$10.9M of revenue) to 3.06x (affiliate); cost per sold lead runs from $57
+(affiliate) to $183 (display). The click ranking the marketing silo can
+compute alone inverts this ordering. Cohort ROAS is right-censored for
+recent months, so the chart compares channels within a month; a
+maturity-adjusted projection is the open analysis item.
+
+<iframe class="dashboard-frame" data-src="embedded/05_marketing_attribution.html" title="Marketing attribution dashboard" loading="lazy"></iframe>
+
+[Open full page](embedded/05_marketing_attribution.html){target="_blank"}
+
+## 3. The nurture experiment and who to message
+
+**Decision this informs:** whom the nurture program should message at all,
+and whether the experiment can support a level claim.
+
+Read honestly: +0.109pp application lift against an injected +0.115pp, with
+a 95% interval of -0.105 to +0.324pp -- the experiment is underpowered for
+the pooled effect at this scale (it would need about 6.1M contacts against
+859k available), and the dashboard says so rather than torturing
+significance out of it. What it can support is a ranking: the injected
+effect is concentrated in one engagement segment, the naive read and the
+uplift model both recover that concentration, and the resulting send policy
+is on the [models page](models.qmd) with the power arithmetic in the
+[experiment read-out](https://github.com/JordanBeary/tributary/blob/main/docs/experiment_readout.md).
+
+<iframe class="dashboard-frame" data-src="embedded/06_uplift_experiment.html" title="Uplift experiment dashboard" loading="lazy"></iframe>
+
+[Open full page](embedded/06_uplift_experiment.html){target="_blank"}
+
+## 4. Auction economics: where the revenue is
+
+**Decision this informs:** where reserve floors should sit, and which
+segments the schedule should be shaped around.
+
+Tier 1 carries 83% of revenue, sells 28.4% of the leads offered to it at a
+mean $255 against a $187 floor, and its median clearing price equals the
+floor in every FICO band -- more than half of tier-1 sales are floor-pinned,
+so the floor is the price for most of the revenue base. Earnings per lead
+offered in tier 1 run from $51 (FICO 600-659) to $81 (780+); recent repeat
+applicants clear at 0.52-0.75x fresh prices. Buyer concentration (HHI about
+3,120 in every tier) is a construction of the five-buyer panels in the
+auction landscape, and the dashboard says so.
+
+<iframe class="dashboard-frame" data-src="embedded/03_auction_economics.html" title="Auction economics dashboard" loading="lazy"></iframe>
+
+[Open full page](embedded/03_auction_economics.html){target="_blank"}
+
+## 5. The full funnel
+
+**Decision this informs:** whether higher-priced leads are also better
+leads for buyers -- the quality argument behind a stiffer tier-1 floor.
+
+Message to application to auction to sale to funded loan in one view: stage
+volumes, stage-to-stage conversion by acquisition channel, and funded rate by
+tier and clearing-price band. 12.7% of sold leads fund^[Three funded-rate
+denominators appear across the project, all correct: 12.7% counts every sold
+lead; 13.3% excludes the 55,328 sold migration orphans whose CRM outcome is
+lost; 13.4% is the CRM's own funded-on-sold rate before unification. The
+dashboards state which one each panel uses.], declining from 14.3% in tier 1
+to 8.5% in tier 6 and rising with price from 8.4% (under $10) to 15.7%
+($300+). The gradient is a calibrated direction in the simulated world, so
+it supports the argument only as far as the calibration does.
+
+<iframe class="dashboard-frame" data-src="embedded/02_full_funnel.html" title="Full funnel dashboard" loading="lazy"></iframe>
+
+[Open full page](embedded/02_full_funnel.html){target="_blank"}
+
+## 6. Before and after: what a single silo would have told you
+
+**Decision this informs:** none directly -- this is the evidence that the
+five findings above could not have been produced from any one system, and
+the scorecard for the nine audit questions.
+
+What each silo believed alone versus what the unified view shows: headcount
 by system versus resolved consumers, and paid-channel ROI where the
 click-value ranking inverts once revenue is joined through the auction.
 
 <iframe class="dashboard-frame" data-src="embedded/01_silo_audit_before_after.html" title="Before/after silo audit dashboard" loading="lazy"></iframe>
 
 [Open full page](embedded/01_silo_audit_before_after.html){target="_blank"}
-
-## 2. The full funnel
-
-Message → application → auction → sale → funded loan in one view: stage
-volumes, stage-to-stage conversion by acquisition channel, and funded rate by
-tier and clearing-price band. 12.7% of sold leads fund, declining from 14.3%
-in tier 1 to 8.5% in tier 6.
-
-<iframe class="dashboard-frame" data-src="embedded/02_full_funnel.html" title="Full funnel dashboard" loading="lazy"></iframe>
-
-[Open full page](embedded/02_full_funnel.html){target="_blank"}
-
-## 3. Auction economics
-
-Earnings per lead offered by tier and FICO band, clearing-price spreads,
-sell-through against floors, and buyer concentration (revenue-share HHI) by
-tier. Tier-1 leads clear at a mean near $255; recent repeat applicants clear
-at 0.52–0.75x fresh prices.
-
-<iframe class="dashboard-frame" data-src="embedded/03_auction_economics.html" title="Auction economics dashboard" loading="lazy"></iframe>
-
-[Open full page](embedded/03_auction_economics.html){target="_blank"}
-
-## 4. Consumer identity
-
-The identity story quantified: 2.40M auction lead ids and 2.28M CRM lead ids
-resolve to 635,579 consumers; 69% of applications are repeats; 112,035
-orphaned applications restored from the lake; and $12.0M of buyer spend on
-consumers already bought within 30 days.
-
-<iframe class="dashboard-frame" data-src="embedded/04_consumer_identity.html" title="Consumer identity dashboard" loading="lazy"></iframe>
-
-[Open full page](embedded/04_consumer_identity.html){target="_blank"}
-
-## 5. Marketing attribution
-
-Revenue by channel through the auction — 93% of $209.2M attributable to a
-marketing contact, $104.5M to paid channels, ROAS from 0.94x (display, below
-break-even) to 3.06x (affiliate) — plus acquisition cost and last-touch
-campaign coverage.
-
-<iframe class="dashboard-frame" data-src="embedded/05_marketing_attribution.html" title="Marketing attribution dashboard" loading="lazy"></iframe>
-
-[Open full page](embedded/05_marketing_attribution.html){target="_blank"}
-
-## 6. The uplift experiment
-
-The nurture-campaign holdout, read honestly: +0.109pp application lift
-against an injected +0.115pp ground truth, with a confidence interval
-spanning zero — the experiment is underpowered for the pooled effect at this
-scale, and the dashboard says so rather than torturing significance out of
-it.
-
-<iframe class="dashboard-frame" data-src="embedded/06_uplift_experiment.html" title="Uplift experiment dashboard" loading="lazy"></iframe>
-
-[Open full page](embedded/06_uplift_experiment.html){target="_blank"}
 
 ```{=html}
 <script>

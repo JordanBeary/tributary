@@ -1,7 +1,61 @@
 ---
-title: "Cost engineering"
-description: "A three-silo cloud deployment for one cent, with receipts, and the design habits that keep it that way at scale."
+title: "Appendix: how the lab was built"
+description: "The three-silo architecture, the systems and their pathologies, and the cost engineering that keeps a live cloud deployment at one cent."
 ---
+
+The case study's findings, models, and memo all read from one unified
+warehouse. This appendix is how that warehouse came to exist: the
+architecture, the three systems the data was fractured into, and the
+habits that keep the whole thing running for pennies. None of it is the
+point of the project; all of it had to be true for the numbers to be
+computable.
+
+## Architecture
+
+```text
+             simulation engine (local Python, seeded, --scale dial)
+                  │            │            │
+          ┌───────▼──┐   ┌─────▼─────┐  ┌───▼──────────┐
+          │ AWS S3   │   │ Neon      │  │ BigQuery     │
+          │ auction  │   │ Postgres  │  │ marketing    │
+          │ lake     │   │ CRM       │  │ exports      │
+          └───────┬──┘   └─────┬─────┘  └───┬──────────┘
+                  └──────┬─────┴─────┬──────┘
+                         ▼           ▼
+              DuckDB + dbt + Splink (unification, scored vs. ground truth)
+                         │
+                         ▼
+         wide analytics marts · static dashboards · ML models
+```
+
+One seeded command regenerates everything at any scale: 1.5M consumer
+records, 2.4M leads, 26.4M auction events, and 2.19M marketing messages in
+about two and a half minutes at full scale. The simulator is calibrated
+against three public datasets (iPinYou bid logs, LendingClub applications,
+Criteo uplift), so its distributions are defensible, and the silo fracture
+injects the identity pathologies that make unification genuinely hard.
+
+## The three systems
+
+The simulated marketplace's data is deliberately fractured the way real
+marketplace data fractures:
+
+| Silo | System | Grain | Identity scheme |
+| --- | --- | --- | --- |
+| Auction lake | S3, partitioned Parquet | one row per bid event | `lead_uuid` (UUIDv4) |
+| CRM | Neon Postgres | one mutable row per lead | integer `lead_id` + hashed email |
+| Marketing | BigQuery exports | one row per message | `contact_id` (MD5 of lowercased email) |
+
+No silo contains another silo's key. The fracture adds heavy-tailed repeat
+applications with channel-dependent identity drift (about 51% of
+applications arrive under a drifted identity variant), about 5% orphaned
+auction events from a simulated migration, timestamps logged in three
+different timezones (UTC, naive US/Pacific, US/Eastern), and "conversion"
+meaning three different things in three systems. Each pathology is
+parameterized in the
+[simulation engine](https://github.com/JordanBeary/tributary/tree/main/simulation),
+not hand-waved. How the systems are re-linked, and how well, is the
+[identity modeling](silo-problem.qmd) page.
 
 ## The bill
 
