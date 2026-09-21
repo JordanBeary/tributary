@@ -579,7 +579,7 @@ Both exceed the band's 0.95 ceiling. The design's exit criterion (F1 >= 0.9) is 
 
 **(b) Scope the agent chose, for the human to amend.** Forward only. The 65 existing commits are not stamped retroactively, although the D19 rewrite would have allowed it at no extra cost: the record does not say which model produced each earlier commit, and a trailer asserting one would be an invented record. If the human holds that information, a message-only rewrite can add it.
 
-**(c) Doc changes.** `meta/provenance.md` Section 2; `CLAUDE.md`; INT-010 annotated "superseded by D20"; the agent's standing memory of the rule replaced.
+**(c) Doc changes.** `meta/provenance.md` Section 2; `CLAUDE.md`; INT-010 annotated "superseded by D20"; the agent's standing memory of the rule replaced; the method page's sentence on the INT-010 correction (`site/tributary/method.qmd`) now says the trailer was later restored, so the public page does not state a rule that no longer holds.
 
 ## Q-series — Open questions (parked, non-blocking)
 

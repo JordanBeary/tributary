@@ -199,7 +199,8 @@ and every headline number on this site changed.
 
 Sixteen interventions preceded this reframe, from the agent's fictional
 company name (overruled as meaningless) and its default AI co-author trailer
-(rejected in favour of the provenance trailers above) to the two that matter
+(rejected in favour of the provenance trailers above, then restored by the
+human beside them, with the model named, in September 2026) to the two that matter
 most for the science: the agent labelled a valid out-of-domain estimate as
 "wrong-sign" and the human reframed it (INT-013), and the agent then ratified
 a parameter together with its verification gate without one line of
