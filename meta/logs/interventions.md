@@ -106,6 +106,8 @@ Entries INT-001 through INT-008 were seeded during the 2026-08-03 reorganization
 
 ## INT-010 — AI co-author trailer on commits rejected
 
+*Rule superseded by D20 (2026-09-21): the human restored the co-author trailer and added a models-used trailer, forward only. This record stands as the history of the earlier rule.*
+
 - **Date:** 2026-08-03
 - **Phase:** 1 (dataset acquisition)
 - **What the agent did:** Appended its harness's default `Co-Authored-By: Claude ...` trailer to every commit it authored (six commits by the time of correction).

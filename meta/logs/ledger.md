@@ -6,8 +6,6 @@
 
 | Record | Kind | Status | Since | Owner | Where the ask is | Note |
 | --- | --- | --- | --- | --- | --- | --- |
-| [D14](https://github.com/JordanBeary/tributary/blob/main/meta/logs/decisions.md) | action | scheduled | 2026-09-02 | human | [`meta/logs/sessions/2026-09-01_decision_requests.md`](https://github.com/JordanBeary/tributary/blob/main/meta/logs/sessions/2026-09-01_decision_requests.md) | Publishing flips to on-push (Q-J, answered): a workflow-trigger commit made after the reframed site deploys and the human has read it. Nothing else is open from the packet. |
-| [INT-017](https://github.com/JordanBeary/tributary/blob/main/meta/logs/interventions.md) | intervention | open-until-deploy | 2026-09-01 | agent | [`meta/logs/sessions/2026-09-01_reframe_session.md`](https://github.com/JordanBeary/tributary/blob/main/meta/logs/sessions/2026-09-01_reframe_session.md) | Closes when the reframed site deploys; the next Global session records the deployment |
 | [INT-018](https://github.com/JordanBeary/tributary/blob/main/meta/logs/interventions.md) | intervention | in-progress | 2026-09-02 | agent | [`meta/logs/sessions/2026-09-01_decision_requests.md`](https://github.com/JordanBeary/tributary/blob/main/meta/logs/sessions/2026-09-01_decision_requests.md) | Business-problem framing being written into the four model cards and the models page (Local unit) |
 | [Q4](https://github.com/JordanBeary/tributary/blob/main/meta/logs/decisions.md) | question | open | 2026-08-03 | human | [`meta/logs/decisions.md`](https://github.com/JordanBeary/tributary/blob/main/meta/logs/decisions.md) | Whether to demonstrate a PR-based workflow; parked, non-blocking |
 
@@ -24,6 +22,11 @@
 | [C1](https://github.com/JordanBeary/tributary/blob/main/meta/logs/decisions.md) | 2026-09-02 | Closed (Q-E): the declared price scale stands; the memo's price-scale caveat is the honest statement |
 | [P-013](https://github.com/JordanBeary/tributary/blob/main/meta/logs/prompts.md) | 2026-09-02 | Accepted into the prompt log (Q-G); the 2026-09-01 direction stays a decision-cited quotation |
 | [D12](https://github.com/JordanBeary/tributary/blob/main/meta/logs/decisions.md) | 2026-09-02 | Superseded on the publishing condition by D14 (Q-J); every other part stands |
+| [INT-017](https://github.com/JordanBeary/tributary/blob/main/meta/logs/interventions.md) | 2026-09-21 | The reframed site deployed 2026-09-21 and the human read it |
+| [D14](https://github.com/JordanBeary/tributary/blob/main/meta/logs/decisions.md) | 2026-09-21 | Q-J action done: publishing flipped to on-push after the deploy and the human read-through |
+| [INT-020](https://github.com/JordanBeary/tributary/blob/main/meta/logs/interventions.md) | 2026-09-21 | En-route fix: the publish workflow runs the pre-render hook before Quarto, so a clean checkout renders |
+| [D19](https://github.com/JordanBeary/tributary/blob/main/meta/logs/decisions.md) | 2026-09-21 | History rewritten and force-pushed to remove the employer name; the hosting cache purge is a support request for the human |
+| [D20](https://github.com/JordanBeary/tributary/blob/main/meta/logs/decisions.md) | 2026-09-21 | Models-Used and Co-Authored-By trailers restored, forward only; supersedes the INT-010 rule |
 
 ## Identity and duplicate spend
 

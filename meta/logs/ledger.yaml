@@ -113,8 +113,6 @@ cross_cutting:
       - {actor: agent, kind: artifact, ref: INT-012, date: 2026-08-04, label: "EDA companion convention (calibration_spec v0.4); three *_eda notebooks"}
 
 open_items:
-  - {ref: D14, kind: action, status: scheduled, since: 2026-09-02, owner: human, ask: meta/logs/sessions/2026-09-01_decision_requests.md, note: "Publishing flips to on-push (Q-J, answered): a workflow-trigger commit made after the reframed site deploys and the human has read it. Nothing else is open from the packet."}
-  - {ref: INT-017, kind: intervention, status: open-until-deploy, since: 2026-09-01, owner: agent, ask: meta/logs/sessions/2026-09-01_reframe_session.md, note: "Closes when the reframed site deploys; the next Global session records the deployment"}
   - {ref: INT-018, kind: intervention, status: in-progress, since: 2026-09-02, owner: agent, ask: meta/logs/sessions/2026-09-01_decision_requests.md, note: "Business-problem framing being written into the four model cards and the models page (Local unit)"}
   - {ref: Q4, kind: question, status: open, since: 2026-08-03, owner: human, ask: meta/logs/decisions.md, note: "Whether to demonstrate a PR-based workflow; parked, non-blocking"}
 
@@ -128,6 +126,11 @@ resolved_items:
   - {ref: C1, resolved: 2026-09-02, note: "Closed (Q-E): the declared price scale stands; the memo's price-scale caveat is the honest statement"}
   - {ref: P-013, resolved: 2026-09-02, note: "Accepted into the prompt log (Q-G); the 2026-09-01 direction stays a decision-cited quotation"}
   - {ref: D12, resolved: 2026-09-02, note: "Superseded on the publishing condition by D14 (Q-J); every other part stands"}
+  - {ref: INT-017, resolved: 2026-09-21, note: "The reframed site deployed 2026-09-21 and the human read it"}
+  - {ref: D14, resolved: 2026-09-21, note: "Q-J action done: publishing flipped to on-push after the deploy and the human read-through"}
+  - {ref: INT-020, resolved: 2026-09-21, note: "En-route fix: the publish workflow runs the pre-render hook before Quarto, so a clean checkout renders"}
+  - {ref: D19, resolved: 2026-09-21, note: "History rewritten and force-pushed to remove the employer name; the hosting cache purge is a support request for the human"}
+  - {ref: D20, resolved: 2026-09-21, note: "Models-Used and Co-Authored-By trailers restored, forward only; supersedes the INT-010 rule"}
 
 notes:
   - {ref: 342701e, note: "Trailer `Directs: P-004` on the C12 engine commit is a mis-trailer (P-004 is the plan-adoption prompt); the directing record is C11/C12. Noted here; history is not rewritten."}

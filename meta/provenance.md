@@ -24,11 +24,13 @@ Every commit carries:
 ```text
 Provenance: H | HD | A
 Directs: <prompt-log id>        (optional — the prompt that directed this work)
+Models-Used: <model id>         (when an agent did work in the commit; D20)
+Co-Authored-By: <model name> <noreply address>   (same condition; D20)
 ```
 
 Design documents additionally carry a provenance line in their front matter.
 
-Commits carry **no AI co-author trailers** (`Co-Authored-By: Claude ...` or similar) — the human's standing decision (INT-010). Contribution attribution is expressed solely through the `Provenance:`/`Directs:` trailers and this ledger, which say something precise; a boilerplate signature says nothing.
+From 2026-09-21 (D20, the human's decision, superseding INT-010) a commit in which an agent did work also names the model: `Models-Used:` gives the model id and `Co-Authored-By:` names it. Commits before D20 carry neither, by the earlier rule (INT-010, 2026-08-03), and were not stamped retroactively because the record does not say which model produced each. `Provenance:` and `Directs:` remain the ground truth this ledger is generated from: they say who directed and who wrote, which a co-author line alone does not.
 
 ## 3. Ledger
 
