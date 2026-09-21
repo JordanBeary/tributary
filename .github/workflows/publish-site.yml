@@ -25,6 +25,13 @@ jobs:
       - uses: quarto-dev/quarto-actions/setup@v2
         with:
           version: 1.10.18   # match the version pinned locally in ~/.local/opt
+      # Run the pre-render hook once before Quarto does. Quarto resolves
+      # include shortcodes while loading the project, which is before its own
+      # pre-render step, so on a clean checkout the strategy memo's git-ignored
+      # include target would not exist yet and the render fails (INT-020). The
+      # hook is idempotent; Quarto running it again is harmless.
+      - run: sh tools/prerender.sh
+        working-directory: site
       - run: quarto render site
       - uses: actions/upload-pages-artifact@v3
         with:
