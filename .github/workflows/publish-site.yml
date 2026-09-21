@@ -1,11 +1,17 @@
 # Renders the Quarto site and deploys it to GitHub Pages.
 #
-# Trigger is manual (workflow_dispatch) until the human review pass before
-# launch; then add a push trigger on main so the site tracks the repo.
+# Publishes on every push to main so the site tracks the repo (D14, decision
+# packet Q-J: flipped 2026-09-21, after the reframed site deployed and the
+# human read it). No path filter: the pages draw on sources across the repo
+# (dashboards, model reports, the strategy memo, the meta records), and a
+# filter that missed one would publish a stale site silently. Manual dispatch
+# is kept for re-deploys.
 # Requires Pages enabled with source "GitHub Actions" in repo settings.
 name: publish-site
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
